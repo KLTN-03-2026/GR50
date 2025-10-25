@@ -28,7 +28,7 @@ async def create_admin():
         "id": str(uuid.uuid4()),
         "email": "admin@medischedule.com",
         "username": "admin",
-        "password": pwd_context.hash("123456"),
+        "password": pwd_context.hash("12345678"),
         "full_name": "Root Admin",
         "phone": "0123456789",
         "date_of_birth": "1990-01-01",
@@ -49,7 +49,7 @@ async def create_admin():
     print("Admin created successfully!")
     print("Email: admin@medischedule.com")
     print("Username: admin")
-    print("Password: 123456")
+    print("Password: 12345678")
     
     client.close()
 
