@@ -167,7 +167,7 @@ async def create_sample_data():
     dept_head_data = {
         "email": "departmenthead@test.com",
         "username": "dephead",
-        "password": "123456",
+        "password": "12345678",
         "full_name": "Trưởng khoa Nguyễn Văn G",
         "phone": "0907890123"
     }
