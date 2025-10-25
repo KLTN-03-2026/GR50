@@ -497,19 +497,10 @@ class PasswordChangeRequest(BaseModel):
     @field_validator('new_password')
     @classmethod
     def validate_password(cls, v):
-        import re
         if len(v) < 8 or len(v) > 20:
             raise ValueError('Mật khẩu phải có độ dài từ 8-20 ký tự')
         if ' ' in v:
             raise ValueError('Mật khẩu không được chứa khoảng trắng')
-        if not re.search(r'[a-z]', v):
-            raise ValueError('Mật khẩu phải có ít nhất 1 chữ thường')
-        if not re.search(r'[A-Z]', v):
-            raise ValueError('Mật khẩu phải có ít nhất 1 chữ hoa')
-        if not re.search(r'\d', v):
-            raise ValueError('Mật khẩu phải có ít nhất 1 chữ số')
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
-            raise ValueError('Mật khẩu phải có ít nhất 1 ký tự đặc biệt')
         return v
 
 # Update profile endpoint - works for all roles
