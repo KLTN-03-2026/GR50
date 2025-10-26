@@ -1,15 +1,23 @@
 import React, { useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Calendar, Users, Clock, Home, User, BarChart, FileText, MessageSquare, Settings, Shield, UserPlus } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Calendar, Users, Clock, Home, User, BarChart, FileText, MessageSquare, Settings, Shield, UserPlus, LogOut } from 'lucide-react';
 import { AuthContext } from '@/App';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
+import ThemeToggle from '@/components/ThemeToggle';
+import { Button } from '@/components/ui/button';
 
 export default function Layout({ children }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const role = location.pathname.split('/')[1];
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const { t } = useLanguage();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   const patientLinks = [
     { path: '/patient/dashboard', icon: Home, label: t('home') },
