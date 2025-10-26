@@ -38,12 +38,12 @@ export default function PatientDashboard() {
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Xin chào, {user?.full_name}!</h1>
-              <p className="text-gray-600 mt-1">Chào mừng trở lại với MediSchedule</p>
+              <h1 className="text-3xl font-bold text-gray-900">{t('greeting')}, {user?.full_name}!</h1>
+              <p className="text-gray-600 mt-1">{t('welcomeToMediSchedule')}</p>
             </div>
             <Button data-testid="logout-btn" variant="outline" onClick={logout}>
               <LogOut className="w-4 h-4 mr-2" />
-              Đăng xuất
+              {t('logout')}
             </Button>
           </div>
 
@@ -51,22 +51,22 @@ export default function PatientDashboard() {
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             <QuickActionCard
               icon={<Search className="w-8 h-8" />}
-              title="Tìm bác sĩ"
-              description="Tìm kiếm bác sĩ theo chuyên khoa"
+              title={t('findDoctor')}
+              description={t('findDoctorDesc')}
               onClick={() => navigate('/patient/search-doctors')}
               testId="search-doctors-card"
             />
             <QuickActionCard
               icon={<Calendar className="w-8 h-8" />}
-              title="Lịch hẹn"
-              description="Xem và quản lý lịch hẹn của bạn"
+              title={t('appointments')}
+              description={t('appointmentsDesc')}
               onClick={() => navigate('/patient/appointments')}
               testId="appointments-card"
             />
             <QuickActionCard
               icon={<Clock className="w-8 h-8" />}
-              title="Lịch sử"
-              description="Xem lại các lịch hẹn trước đây"
+              title={t('history')}
+              description={t('historyDesc')}
               onClick={() => navigate('/patient/appointments')}
               testId="history-card"
             />
@@ -75,20 +75,20 @@ export default function PatientDashboard() {
           {/* Recent Appointments */}
           <div className="bg-white rounded-3xl shadow-xl p-8">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Lịch hẹn gần đây</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('recentAppointments')}</h2>
               <Button data-testid="view-all-appointments-btn" variant="outline" onClick={() => navigate('/patient/appointments')}>
-                Xem tất cả
+                {t('viewAll')}
               </Button>
             </div>
 
             {loading ? (
-              <p className="text-center text-gray-500 py-8">Đang tải...</p>
+              <p className="text-center text-gray-500 py-8">{t('loading')}</p>
             ) : appointments.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">Bạn chưa có lịch hẹn nào</p>
+                <p className="text-gray-500 mb-4">{t('noAppointmentsYet')}</p>
                 <Button data-testid="book-now-btn" onClick={() => navigate('/patient/search-doctors')} className="bg-gradient-to-r from-teal-500 to-cyan-500">
-                  Đặt lịch ngay
+                  {t('bookNow')}
                 </Button>
               </div>
             ) : (
