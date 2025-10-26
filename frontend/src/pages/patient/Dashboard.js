@@ -2,14 +2,13 @@ import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext, API } from '@/App';
 import axios from 'axios';
-import { Button } from '@/components/ui/button';
-import { Calendar, Search, Clock, LogOut } from 'lucide-react';
+import { Calendar, Search, Clock } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function PatientDashboard() {
   const navigate = useNavigate();
-  const { user, token, logout } = useContext(AuthContext);
+  const { user, token } = useContext(AuthContext);
   const { t } = useLanguage();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,15 +35,9 @@ export default function PatientDashboard() {
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{t('greeting')}, {user?.full_name}!</h1>
-              <p className="text-gray-600 mt-1">{t('welcomeToMediSchedule')}</p>
-            </div>
-            <Button data-testid="logout-btn" variant="outline" onClick={logout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              {t('logout')}
-            </Button>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">{t('greeting')}, {user?.full_name}!</h1>
+            <p className="text-gray-600 mt-1">{t('welcomeToMediSchedule')}</p>
           </div>
 
           {/* Quick Actions */}
