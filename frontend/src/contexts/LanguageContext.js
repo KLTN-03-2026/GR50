@@ -452,6 +452,19 @@ export const translations = {
     schedule: 'Schedule',
     myAppointments: 'My Appointments',
     
+    // Payments
+    payments: 'Payments',
+    paymentHistory: 'Payment History',
+    payNow: 'Pay Now',
+    totalRevenue: 'Total Revenue',
+    completedPayments: 'Completed Payments',
+    pendingPayments: 'Pending Payments',
+    totalTransactions: 'Total Transactions',
+    transactionId: 'Transaction ID',
+    paymentMethod: 'Payment Method',
+    paymentStatus: 'Payment Status',
+    paymentDate: 'Payment Date',
+    
     // Specialties
     cardiology: 'Cardiology',
     pediatrics: 'Pediatrics',
