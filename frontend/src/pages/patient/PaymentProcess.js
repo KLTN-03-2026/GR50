@@ -58,6 +58,7 @@ export default function PaymentProcess() {
     try {
       const response = await axios.post(`${API}/payments/${paymentId}/process`, {
         ...formData,
+        payment_method: paymentMethod,
         success: true // Mock: always success for demo
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -76,6 +77,24 @@ export default function PaymentProcess() {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast.success('Đã sao chép!');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Generate VietQR data
+  const generateVietQRData = () => {
+    const bankAccount = '1017592879600097'; // Example account number
+    const bankCode = '970422'; // VietinBank code
+    const amount = payment?.amount || 0;
+    const description = `HD${paymentId.slice(-8)}`;
+    
+    // VietQR format: https://img.vietqr.io/image/[BANK]-[ACCOUNT]-[TEMPLATE].jpg?amount=[AMOUNT]&addInfo=[DESCRIPTION]
+    return `https://img.vietqr.io/image/${bankCode}-${bankAccount}-compact.jpg?amount=${amount}&addInfo=${description}&accountName=MEDISCHEDULE`;
   };
 
   if (loading) {
