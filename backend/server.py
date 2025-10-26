@@ -424,7 +424,7 @@ async def register(user_data: UserCreate):
     if user_data.role in [UserRole.DOCTOR, UserRole.DEPARTMENT_HEAD]:
         doctor_profile = {
             "user_id": user.id,
-            "specialty_id": "",
+            "specialty_id": user_data.specialty_id if user_data.specialty_id else "",
             "bio": "",
             "experience_years": 0,
             "consultation_fee": 0,
