@@ -542,6 +542,7 @@ export const translations = {
     createNewAccount: 'Create New Account',
     createAccountSubtitle: 'Create patient or doctor account',
     selectRole: 'Select Role',
+    pleaseSelectRole: 'Please select an account type',
     accountCreatedSuccess: 'Account created successfully',
     accountCreatedError: 'Error creating account',
     bioPlaceholder: 'Enter a brief introduction about the doctor...',
