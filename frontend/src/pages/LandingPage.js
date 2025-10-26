@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { AuthContext } from '@/App';
 import { Calendar, Users, MessageSquare, Shield } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import ThemeToggle from '@/components/ThemeToggle';
+import LanguageToggle from '@/components/LanguageToggle';
 
 export default function LandingPage() {
   const navigate = useNavigate();
