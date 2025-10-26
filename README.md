@@ -133,12 +133,12 @@ JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=10080
 EOL
 
-# Khởi tạo dữ liệu mẫu
-python init_data.py
-python create_admin.py
-python create_sample_data.py
+# Khởi tạo dữ liệu mẫu (tự động tạo admin, patients, doctors, department head)
+python init_data.py          # Tạo 8 chuyên khoa
+python create_admin.py       # Tạo tài khoản admin root
+python create_sample_data.py # Tạo dữ liệu mẫu (3 patients, 3 doctors, 1 department head)
 
-# Chạy server
+# Chạy server (hoặc sử dụng supervisor trong môi trường production)
 uvicorn server:app --reload --host 0.0.0.0 --port 8001
 ```
 
