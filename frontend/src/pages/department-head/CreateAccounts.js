@@ -295,53 +295,55 @@ export default function CreateAccounts() {
                     </div>
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('bio')}
-                  </label>
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder={t('bioPlaceholder')}
-                  />
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t('bio')}
+                      </label>
+                      <textarea
+                        name="bio"
+                        value={formData.bio}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        placeholder={t('bioPlaceholder')}
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* Submit Button */}
-          <div className="flex justify-end space-x-3 pt-6 border-t">
-            <button
-              type="button"
-              onClick={() => setFormData({
-                email: '',
-                password: '',
-                full_name: '',
-                phone: '',
-                date_of_birth: '',
-                address: '',
-                specialty_id: '',
-                bio: '',
-                experience_years: '',
-                consultation_fee: ''
-              })}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              {t('reset')}
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-            >
-              <UserPlus className="w-5 h-5" />
-              <span>{t('createAccount')}</span>
-            </button>
+              {/* Submit Button */}
+              <div className="flex justify-end space-x-3 pt-6 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setFormData({
+                    email: '',
+                    password: '',
+                    full_name: '',
+                    phone: '',
+                    date_of_birth: '',
+                    address: '',
+                    specialty_id: '',
+                    bio: '',
+                    experience_years: '',
+                    consultation_fee: ''
+                  })}
+                >
+                  {t('reset')}
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600"
+                >
+                  <UserPlus className="w-5 h-5 mr-2" />
+                  {t('createAccount')}
+                </Button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 }
