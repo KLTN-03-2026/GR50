@@ -177,7 +177,15 @@ Quyền: Quản lý bác sĩ và bệnh nhân trong khoa, xem thống kê (khôn
 1. **Đăng ký tài khoản mới** (hoặc dùng tài khoản test)
    - Truy cập trang đăng ký
    - Chọn vai trò "Bệnh nhân"
-   - Điền thông tin: Email, Mật khẩu, Họ tên, SĐT, Ngày sinh, Địa chỉ
+   - Điền thông tin bắt buộc:
+     - ✅ **Họ và tên**
+     - ✅ **Tên đăng nhập** (username - duy nhất)
+     - ✅ **Email** (duy nhất)
+     - ✅ **Số điện thoại** (10-11 chữ số)
+     - ✅ **Mật khẩu** (tối thiểu 8 ký tự)
+   - Điền thông tin tùy chọn:
+     - 📅 Ngày sinh
+     - 📍 Địa chỉ
 
 2. **Tìm và đặt lịch bác sĩ**
    - Vào "Tìm bác sĩ" từ dashboard
