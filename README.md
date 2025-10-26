@@ -473,7 +473,30 @@ yarn test
 
 ## 🚀 Production Deployment
 
-### Backend
+### Kubernetes/Container Environment (Current Setup)
+Ứng dụng hiện đang chạy trong môi trường container với Kubernetes orchestration:
+
+```bash
+# Kiểm tra trạng thái services
+sudo supervisorctl status
+
+# Khởi động lại services
+sudo supervisorctl restart all
+sudo supervisorctl restart backend
+sudo supervisorctl restart frontend
+
+# Xem logs
+tail -f /var/log/supervisor/backend.err.log
+tail -f /var/log/supervisor/frontend.err.log
+```
+
+**Services đang chạy:**
+- Backend: http://0.0.0.0:8001 (FastAPI + Uvicorn)
+- Frontend: http://0.0.0.0:3000 (React Development Server)
+- MongoDB: mongodb://localhost:27017
+- Nginx: Reverse proxy
+
+### Backend (Traditional)
 ```bash
 # Install production dependencies
 pip install -r requirements.txt
@@ -482,7 +505,7 @@ pip install -r requirements.txt
 gunicorn server:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001
 ```
 
-### Frontend
+### Frontend (Traditional)
 ```bash
 # Build production
 yarn build
