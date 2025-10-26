@@ -318,11 +318,71 @@ export default function PaymentProcess() {
                   )}
 
                   {paymentMethod === 'mock_bank' && (
-                    <div className="text-center py-8">
-                      <Building className="w-16 h-16 text-teal-500 mx-auto mb-4" />
-                      <p className="text-gray-600">
-                        Chuyển khoản ngân hàng demo - Nhấn thanh toán để hoàn tất
-                      </p>
+                    <div className="space-y-4">
+                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 mb-4">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                          <Building className="w-5 h-5 text-blue-600" />
+                          Thông tin chuyển khoản
+                        </h3>
+                        
+                        <div className="bg-white rounded-lg p-4 space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Ngân hàng:</span>
+                            <span className="font-semibold text-gray-900">VietinBank</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Chi nhánh:</span>
+                            <span className="font-semibold text-gray-900">Hà Nội</span>
+                          </div>
+                          <div className="flex justify-between items-center border-t pt-3">
+                            <span className="text-sm text-gray-600">Số tài khoản:</span>
+                            <div className="flex items-center gap-2">
+                              <code className="font-mono font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded">
+                                1017592879600097
+                              </code>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard('1017592879600097')}
+                                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                              >
+                                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Chủ tài khoản:</span>
+                            <span className="font-semibold text-gray-900">MEDISCHEDULE</span>
+                          </div>
+                          <div className="flex justify-between items-center border-t pt-3">
+                            <span className="text-sm text-gray-600">Số tiền:</span>
+                            <span className="text-xl font-bold text-teal-600">{payment.amount.toLocaleString()} VNĐ</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Nội dung:</span>
+                            <div className="flex items-center gap-2">
+                              <code className="font-mono font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded">
+                                HD{paymentId.slice(-8)}
+                              </code>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(`HD${paymentId.slice(-8)}`)}
+                                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                              >
+                                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <p className="text-sm text-amber-800 font-medium mb-2">⚠️ Lưu ý quan trọng:</p>
+                        <ul className="text-sm text-amber-700 space-y-1 list-disc list-inside">
+                          <li>Vui lòng chuyển <strong>ĐÚNG số tiền</strong> {payment.amount.toLocaleString()} VNĐ</li>
+                          <li>Ghi <strong>ĐÚNG nội dung</strong> HD{paymentId.slice(-8)} để hệ thống xác nhận tự động</li>
+                          <li>Sau khi chuyển khoản, vui lòng nhấn "Hoàn tất thanh toán" bên dưới</li>
+                        </ul>
+                      </div>
                     </div>
                   )}
 
