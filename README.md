@@ -85,14 +85,15 @@ Hệ thống quản lý đặt lịch khám bệnh trực tuyến hiện đại 
 ### 🔐 Admin (Quyền root - Full permissions)
 ```
 Email: admin@medischedule.com
-Password: admin123
+Password: 12345678
 Quyền: Tất cả quyền (can_create_admins, can_manage_doctors, can_manage_patients, can_view_stats, can_manage_specialties)
 ```
 
 ### 👔 Trưởng khoa (Department Head)
 ```
 Email: departmenthead@test.com
-Password: dept123
+Username: dephead
+Password: 12345678
 Quyền: Quản lý bác sĩ và bệnh nhân trong khoa, xem thống kê (không thể tạo admin)
 ```
 
@@ -100,19 +101,22 @@ Quyền: Quản lý bác sĩ và bệnh nhân trong khoa, xem thống kê (khôn
 ```
 1. BS. Phạm Minh D - Chuyên khoa Tim mạch
    Email: doctor1@test.com
-   Password: doctor123
+   Username: doctor1
+   Password: 12345678
    Kinh nghiệm: 15 năm
    Phí tư vấn: 300,000 VNĐ
 
 2. BS. Hoàng Thị E - Chuyên khoa Nhi khoa
    Email: doctor2@test.com
-   Password: doctor123
+   Username: doctor2
+   Password: 12345678
    Kinh nghiệm: 10 năm
    Phí tư vấn: 250,000 VNĐ
 
 3. BS. Võ Văn F - Chuyên khoa Nội khoa
    Email: doctor3@test.com
-   Password: doctor123
+   Username: doctor3
+   Password: 12345678
    Kinh nghiệm: 12 năm
    Phí tư vấn: 280,000 VNĐ
 ```
@@ -121,25 +125,31 @@ Quyền: Quản lý bác sĩ và bệnh nhân trong khoa, xem thống kê (khôn
 ```
 1. Nguyễn Văn A
    Email: patient1@test.com
-   Password: patient123
+   Username: patient1
+   Password: 12345678
    SĐT: 0901234567
    Địa chỉ: 123 Lê Lợi, Q1, TP.HCM
 
 2. Trần Thị B
    Email: patient2@test.com
-   Password: patient123
+   Username: patient2
+   Password: 12345678
    SĐT: 0902345678
    Địa chỉ: 456 Nguyễn Huệ, Q1, TP.HCM
 
 3. Lê Văn C
    Email: patient3@test.com
-   Password: patient123
+   Username: patient3
+   Password: 12345678
    SĐT: 0903456789
    Địa chỉ: 789 Hai Bà Trưng, Q3, TP.HCM
 ```
 
-> 💡 **Lưu ý**: Tất cả tài khoản test được tạo sẵn. Bạn có thể đăng nhập trực tiếp hoặc tạo tài khoản mới.
-> 📁 **File test accounts chi tiết**: Xem file `TEST_ACCOUNTS.md` để có thông tin đầy đủ.
+> 💡 **Lưu ý quan trọng**: 
+> - **Tất cả tài khoản test đều dùng password: `12345678`**
+> - Bạn có thể đăng nhập bằng **Email** hoặc **Username**
+> - Để tạo dữ liệu test: chạy `python backend/create_sample_data.py`
+> - Để tạo root admin: chạy `python backend/create_admin.py`
 
 ## 📖 Hướng dẫn Sử dụng
 
