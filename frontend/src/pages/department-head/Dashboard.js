@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Users, UserCheck, UserPlus, Calendar, ClipboardCheck, TrendingUp } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import Layout from '../../components/Layout';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
