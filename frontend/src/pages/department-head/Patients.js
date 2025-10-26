@@ -67,120 +67,82 @@ export default function Patients() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">{t('managePatients')}</h1>
-          <p className="text-gray-600 mt-1">{t('managePatientsSubtitle')}</p>
-        </div>
-      </div>
+    <Layout>
+      <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('patientManagement')}</h1>
 
-      {/* Search */}
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder={t('searchPatients')}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <div className="flex items-center space-x-4">
-          <div className="p-3 bg-purple-100 rounded-full">
-            <User className="w-6 h-6 text-purple-600" />
-          </div>
-          <div>
-            <p className="text-gray-600 text-sm">{t('totalPatients')}</p>
-            <p className="text-2xl font-bold text-gray-800">{patients.length}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Patients Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPatients.length === 0 ? (
-          <div className="col-span-full bg-white rounded-lg shadow-md p-8 text-center text-gray-500">
-            {t('noPatientsFound')}
-          </div>
-        ) : (
-          filteredPatients.map((patient) => (
-            <div key={patient.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-              <div className="p-6">
-                {/* Patient Info */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800">{patient.full_name}</h3>
-                      <p className="text-sm text-gray-500">{patient.email}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Details */}
-                <div className="space-y-2 mb-4">
-                  {patient.phone && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Phone className="w-4 h-4 mr-2" />
-                      <span>{patient.phone}</span>
-                    </div>
-                  )}
-                  {patient.date_of_birth && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      <span>{formatDate(patient.date_of_birth)}</span>
-                    </div>
-                  )}
-                  {patient.address && (
-                    <div className="flex items-start text-sm text-gray-600">
-                      <MapPin className="w-4 h-4 mr-2 mt-0.5" />
-                      <span className="flex-1">{patient.address}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="border-t pt-4 flex justify-end">
-                  <button
-                    onClick={() => handleDelete(patient.id)}
-                    className="flex items-center space-x-2 text-red-600 hover:text-red-800 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span className="text-sm">{t('delete')}</span>
-                  </button>
-                </div>
-              </div>
+          {/* Search */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Input
+                placeholder={t('searchPatients')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          ))
-        )}
-      </div>
+          </div>
 
-      {/* Empty State with Info */}
-      {filteredPatients.length === 0 && patients.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-blue-800 text-sm">
-            {t('noResultsForSearch')}
-          </p>
+          {/* Patients List */}
+          {loading ? (
+            <p className="text-center text-gray-500">{t('loading')}</p>
+          ) : filteredPatients.length === 0 ? (
+            <div className="bg-white rounded-2xl p-12 text-center">
+              <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">{t('noData')}</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white">
+                  <tr>
+                    <th className="px-6 py-4 text-left font-semibold">{t('fullName')}</th>
+                    <th className="px-6 py-4 text-left font-semibold">{t('email')}</th>
+                    <th className="px-6 py-4 text-left font-semibold">{t('registeredDate')}</th>
+                    <th className="px-6 py-4 text-left font-semibold">{t('actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPatients.map((patient, index) => (
+                    <tr key={patient.id} className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-teal-50 transition-colors`}>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white font-bold">
+                            {patient.full_name?.charAt(0) || 'P'}
+                          </div>
+                          <span className="font-semibold text-gray-900">{patient.full_name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">{patient.email}</td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {patient.created_at ? new Date(patient.created_at).toLocaleDateString('vi-VN') : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Button 
+                          onClick={() => handleDelete(patient.id, patient.full_name)} 
+                          variant="outline"
+                          className="border-red-300 text-red-600 hover:bg-red-50"
+                          size="sm"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          {t('remove')}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="mt-6 text-center text-gray-600">
+            {t('totalPatients')}: <span className="font-bold text-teal-600">{filteredPatients.length}</span>
+          </div>
         </div>
-      )}
-    </div>
+      </div>
+    </Layout>
   );
 }
