@@ -165,6 +165,19 @@ export const translations = {
     schedule: 'Lịch làm việc',
     myAppointments: 'Lịch hẹn của tôi',
     
+    // Payments
+    payments: 'Thanh toán',
+    paymentHistory: 'Lịch sử thanh toán',
+    payNow: 'Thanh toán ngay',
+    totalRevenue: 'Tổng doanh thu',
+    completedPayments: 'Đã thanh toán',
+    pendingPayments: 'Chờ thanh toán',
+    totalTransactions: 'Tổng giao dịch',
+    transactionId: 'Mã giao dịch',
+    paymentMethod: 'Phương thức thanh toán',
+    paymentStatus: 'Trạng thái thanh toán',
+    paymentDate: 'Ngày thanh toán',
+    
     // Specialties
     cardiology: 'Tim mạch',
     pediatrics: 'Nhi khoa',
