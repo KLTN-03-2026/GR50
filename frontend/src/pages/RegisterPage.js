@@ -9,10 +9,12 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { Calendar, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { getErrorMessage } from '@/utils/errorHandler';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -35,15 +37,14 @@ export default function RegisterPage() {
       const { token, user } = response.data;
       
       login(token, user);
-      toast.success('Đăng ký thành công!');
+      toast.success(t('registerSuccess'));
       
-      // Redirect based on role
       if (user.role === 'patient') navigate('/patient/dashboard');
       else if (user.role === 'doctor') navigate('/doctor/dashboard');
       else if (user.role === 'department_head') navigate('/department-head/dashboard');
       else if (user.role === 'admin') navigate('/admin/dashboard');
     } catch (error) {
-      const errorMessage = getErrorMessage(error, 'Đăng ký thất bại');
+      const errorMessage = getErrorMessage(error, t('registerFailed'));
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -55,7 +56,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         <Button data-testid="back-to-home-btn" variant="ghost" onClick={() => navigate('/')} className="mb-6">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Về trang chủ
+          {t('backToHome')}
         </Button>
         
         <div className="bg-white rounded-3xl shadow-2xl p-8">
@@ -66,16 +67,15 @@ export default function RegisterPage() {
             <span className="text-3xl font-bold text-gray-800">MediSchedule</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">Đăng ký tài khoản</h2>
+          <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">{t('registerAccount')}</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <Label htmlFor="full_name">Họ và tên</Label>
+              <Label htmlFor="full_name">{t('fullName')}</Label>
               <Input
                 data-testid="fullname-input"
                 id="full_name"
                 type="text"
-                placeholder="Nguyễn Văn A"
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                 required
@@ -84,12 +84,11 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <Label htmlFor="username">Tên đăng nhập</Label>
+              <Label htmlFor="username">{t('username')}</Label>
               <Input
                 data-testid="username-input"
                 id="username"
                 type="text"
-                placeholder="nguyenvana"
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 required
@@ -98,12 +97,11 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('email')}</Label>
               <Input
                 data-testid="email-input"
                 id="email"
                 type="email"
-                placeholder="email@example.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
@@ -112,12 +110,11 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <Label htmlFor="phone">Số điện thoại</Label>
+              <Label htmlFor="phone">{t('phone')}</Label>
               <Input
                 data-testid="phone-input"
                 id="phone"
                 type="tel"
-                placeholder="0901234567"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required
@@ -126,13 +123,13 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <Label htmlFor="password">Mật khẩu</Label>
+              <Label htmlFor="password">{t('password')}</Label>
               <div className="relative mt-2">
                 <Input
                   data-testid="password-input"
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Tối thiểu 8 ký tự"
+                  placeholder={t('minPasswordLength')}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
@@ -154,7 +151,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <Label htmlFor="date_of_birth">Ngày sinh (không bắt buộc)</Label>
+              <Label htmlFor="date_of_birth">{t('dateOfBirth')} ({t('optional')})</Label>
               <Input
                 data-testid="dob-input"
                 id="date_of_birth"
@@ -166,12 +163,11 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <Label htmlFor="address">Địa chỉ (không bắt buộc)</Label>
+              <Label htmlFor="address">{t('address')} ({t('optional')})</Label>
               <Input
                 data-testid="address-input"
                 id="address"
                 type="text"
-                placeholder="123 Lê Lợi, Q1, TP.HCM"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 className="mt-2"
@@ -179,27 +175,27 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <Label htmlFor="role">Loại tài khoản</Label>
+              <Label htmlFor="role">{t('accountType')}</Label>
               <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
                 <SelectTrigger data-testid="role-select" className="mt-2">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem data-testid="role-patient" value="patient">Bệnh nhân</SelectItem>
-                  <SelectItem data-testid="role-doctor" value="doctor">Bác sĩ</SelectItem>
+                  <SelectItem data-testid="role-patient" value="patient">{t('patient')}</SelectItem>
+                  <SelectItem data-testid="role-doctor" value="doctor">{t('doctor')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <Button data-testid="submit-register-btn" type="submit" disabled={loading} className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600">
-              {loading ? 'Đang xử lý...' : 'Đăng ký'}
+              {loading ? t('loading') : t('register')}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-gray-600">
-            Đã có tài khoản?{' '}
+            {t('alreadyHaveAccount')}{' '}
             <Link to="/login" className="text-teal-600 hover:text-teal-700 font-semibold">
-              Đăng nhập
+              {t('loginNow')}
             </Link>
           </p>
         </div>

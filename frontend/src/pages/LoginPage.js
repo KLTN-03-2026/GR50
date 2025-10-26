@@ -9,10 +9,12 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { Calendar, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { getErrorMessage } from '@/utils/errorHandler';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -26,7 +28,6 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Transform data to match backend expectations
       const loginPayload = {
         login: formData.email,
         password: formData.password
@@ -35,7 +36,6 @@ export default function LoginPage() {
       const response = await axios.post(`${API}/auth/login`, loginPayload);
       const { token, user } = response.data;
       
-      // Remember email if checkbox is checked
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', formData.email);
       } else {
@@ -43,27 +43,17 @@ export default function LoginPage() {
       }
       
       login(token, user);
-      toast.success('Đăng nhập thành công!');
+      toast.success(t('loginSuccess'));
       
-      // Redirect based on role
       if (user.role === 'patient') navigate('/patient/dashboard');
       else if (user.role === 'doctor') navigate('/doctor/dashboard');
       else if (user.role === 'department_head') navigate('/department-head/dashboard');
       else if (user.role === 'admin') navigate('/admin/dashboard');
     } catch (error) {
-      // Handle different error cases
-      let errorMessage = 'Đăng nhập thất bại. Vui lòng thử lại!';
+      let errorMessage = t('loginFailed');
       
       if (error.response?.status === 401) {
-        errorMessage = getErrorMessage(error, 'Email hoặc mật khẩu không đúng!');
-      } else if (error.response?.status === 422) {
-        errorMessage = getErrorMessage(error, 'Dữ liệu không hợp lệ!');
-      } else if (error.response?.status === 500) {
-        errorMessage = 'Lỗi hệ thống. Vui lòng thử lại sau!';
-      } else if (error.code === 'ERR_NETWORK') {
-        errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng!';
-      } else {
-        errorMessage = getErrorMessage(error, 'Đăng nhập thất bại. Vui lòng thử lại!');
+        errorMessage = getErrorMessage(error, t('invalidCredentials'));
       }
       
       toast.error(errorMessage);
@@ -77,7 +67,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <Button data-testid="back-to-home-btn" variant="ghost" onClick={() => navigate('/')} className="mb-6">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Về trang chủ
+          {t('backToHome')}
         </Button>
         
         <div className="bg-white rounded-3xl shadow-2xl p-8">
@@ -88,11 +78,11 @@ export default function LoginPage() {
             <span className="text-3xl font-bold text-gray-800">MediSchedule</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">Đăng nhập</h2>
+          <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">{t('login')}</h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('email')}</Label>
               <Input
                 data-testid="email-input"
                 id="email"
@@ -102,12 +92,11 @@ export default function LoginPage() {
                 required
                 className="mt-2"
                 autoComplete="email"
-                placeholder="Nhập email của bạn"
               />
             </div>
 
             <div>
-              <Label htmlFor="password">Mật khẩu</Label>
+              <Label htmlFor="password">{t('password')}</Label>
               <div className="relative mt-2">
                 <Input
                   data-testid="password-input"
@@ -118,7 +107,6 @@ export default function LoginPage() {
                   required
                   className="pr-10"
                   autoComplete="current-password"
-                  placeholder="Nhập mật khẩu"
                 />
                 <button
                   type="button"
@@ -145,23 +133,23 @@ export default function LoginPage() {
                   htmlFor="remember"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
-                  Lưu đăng nhập
+                  {t('rememberMe')}
                 </label>
               </div>
               <Link to="/forgot-password" className="text-sm text-teal-600 hover:text-teal-700">
-                Quên mật khẩu?
+                {t('forgotPassword')}
               </Link>
             </div>
 
             <Button data-testid="submit-login-btn" type="submit" disabled={loading} className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600">
-              {loading ? 'Đang xử lý...' : 'Đăng nhập'}
+              {loading ? t('loading') : t('login')}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-gray-600">
-            Chưa có tài khoản?{' '}
+            {t('dontHaveAccount')}{' '}
             <Link to="/register" className="text-teal-600 hover:text-teal-700 font-semibold">
-              Đăng ký ngay
+              {t('registerNow')}
             </Link>
           </p>
         </div>
