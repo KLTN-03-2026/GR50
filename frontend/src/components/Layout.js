@@ -62,15 +62,15 @@ export default function Layout({ children }) {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Sidebar */}
-      <aside className="w-64 bg-white shadow-xl fixed h-full z-10 flex flex-col">
+      <aside className="w-64 bg-white dark:bg-gray-800 shadow-xl fixed h-full z-10 flex flex-col">
         <div className="p-6 flex-1">
           <Link to="/" className="flex items-center gap-2 mb-8">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
               <Calendar className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-gray-800">MediSchedule</span>
+            <span className="text-2xl font-bold text-gray-800 dark:text-white">MediSchedule</span>
           </Link>
 
           <nav className="space-y-2">
@@ -85,7 +85,7 @@ export default function Layout({ children }) {
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                     isActive
                       ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -95,16 +95,28 @@ export default function Layout({ children }) {
             })}
           </nav>
         </div>
-        
-        {/* Language Toggle at bottom of sidebar */}
-        <div className="p-6 border-t">
-          <LanguageToggle />
-        </div>
       </aside>
 
       {/* Main Content */}
-      <main className="ml-64 flex-1">
-        {children}
+      <main className="ml-64 flex-1 flex flex-col">
+        {/* Top Header Bar */}
+        <header className="bg-white dark:bg-gray-800 shadow-sm px-6 py-4 flex justify-end items-center gap-3">
+          <ThemeToggle />
+          <LanguageToggle />
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            className="flex items-center gap-2 border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
+          >
+            <LogOut className="w-4 h-4" />
+            {t('logout')}
+          </Button>
+        </header>
+        
+        {/* Page Content */}
+        <div className="flex-1">
+          {children}
+        </div>
       </main>
     </div>
   );
