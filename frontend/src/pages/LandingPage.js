@@ -21,7 +21,7 @@ export default function LandingPage() {
   }, [user, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-10 px-6 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -29,10 +29,12 @@ export default function LandingPage() {
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
               <Calendar className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-gray-800">MediSchedule</span>
+            <span className="text-2xl font-bold text-gray-800 dark:text-white">MediSchedule</span>
           </div>
-          <div className="flex gap-3">
-            <Button data-testid="login-btn" variant="outline" onClick={() => navigate('/login')} className="border-teal-500 text-teal-600 hover:bg-teal-50">
+          <div className="flex gap-3 items-center">
+            <ThemeToggle />
+            <LanguageToggle />
+            <Button data-testid="login-btn" variant="outline" onClick={() => navigate('/login')} className="border-teal-500 text-teal-600 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-950">
               {t('login')}
             </Button>
             <Button data-testid="register-btn" onClick={() => navigate('/register')} className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600">
