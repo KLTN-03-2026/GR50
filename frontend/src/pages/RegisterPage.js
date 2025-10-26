@@ -68,15 +68,30 @@ export default function RegisterPage() {
 
           <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">Đăng ký tài khoản</h2>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <Label htmlFor="full_name">Họ và tên</Label>
               <Input
                 data-testid="fullname-input"
                 id="full_name"
                 type="text"
+                placeholder="Nguyễn Văn A"
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                required
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="username">Tên đăng nhập</Label>
+              <Input
+                data-testid="username-input"
+                id="username"
+                type="text"
+                placeholder="nguyenvana"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 required
                 className="mt-2"
               />
@@ -88,8 +103,23 @@ export default function RegisterPage() {
                 data-testid="email-input"
                 id="email"
                 type="email"
+                placeholder="email@example.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="phone">Số điện thoại</Label>
+              <Input
+                data-testid="phone-input"
+                id="phone"
+                type="tel"
+                placeholder="0901234567"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required
                 className="mt-2"
               />
@@ -102,9 +132,11 @@ export default function RegisterPage() {
                   data-testid="password-input"
                   id="password"
                   type={showPassword ? "text" : "password"}
+                  placeholder="Tối thiểu 8 ký tự"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
+                  minLength={8}
                   className="pr-10"
                 />
                 <button
@@ -119,6 +151,31 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="date_of_birth">Ngày sinh (không bắt buộc)</Label>
+              <Input
+                data-testid="dob-input"
+                id="date_of_birth"
+                type="date"
+                value={formData.date_of_birth}
+                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="address">Địa chỉ (không bắt buộc)</Label>
+              <Input
+                data-testid="address-input"
+                id="address"
+                type="text"
+                placeholder="123 Lê Lợi, Q1, TP.HCM"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                className="mt-2"
+              />
             </div>
 
             <div>
