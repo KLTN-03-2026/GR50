@@ -258,6 +258,7 @@ class UserCreate(BaseModel):
     date_of_birth: Optional[str] = None
     address: Optional[str] = None
     role: str = UserRole.PATIENT
+    specialty_id: Optional[str] = None  # For doctor registration
     admin_permissions: Optional[dict] = None
     
     @field_validator('email')
