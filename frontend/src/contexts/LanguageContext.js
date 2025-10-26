@@ -329,9 +329,19 @@ export const translations = {
     dontHaveAccount: "Don't have an account?",
     registerNow: 'Register now',
     
-    // Patient
+    // Patient Dashboard
+    greeting: 'Hello',
+    welcomeToMediSchedule: 'Welcome back to MediSchedule',
     findDoctor: 'Find Doctor',
+    findDoctorDesc: 'Search for doctors by specialty',
     appointments: 'Appointments',
+    appointmentsDesc: 'View and manage your appointments',
+    history: 'History',
+    historyDesc: 'View your past appointments',
+    recentAppointments: 'Recent Appointments',
+    viewAll: 'View All',
+    noAppointmentsYet: 'You have no appointments yet',
+    bookNow: 'Book Now',
     bookAppointment: 'Book Appointment',
     
     // Doctor
