@@ -49,26 +49,26 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
-              <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+              <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
                 {t('landingTitle').split('easier than ever')[0]}
                 <span className="block mt-2 bg-gradient-to-r from-teal-500 to-cyan-500 bg-clip-text text-transparent">
                   {t('landingTitle').includes('easier') ? t('landingTitle').split('doctors ')[1] : 'Dễ dàng & Nhanh chóng'}
                 </span>
               </h1>
-              <p className="text-lg text-gray-600">
+              <p className="text-lg text-gray-600 dark:text-gray-300">
                 {t('landingSubtitle')}
               </p>
               <div className="flex gap-4">
                 <Button data-testid="get-started-btn" size="lg" onClick={() => navigate('/register')} className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-lg px-8">
                   {t('getStarted')}
                 </Button>
-                <Button data-testid="learn-more-btn" size="lg" variant="outline" className="border-teal-500 text-teal-600 hover:bg-teal-50 text-lg px-8">
+                <Button data-testid="learn-more-btn" size="lg" variant="outline" className="border-teal-500 text-teal-600 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-950 text-lg px-8">
                   {t('learnMore')}
                 </Button>
               </div>
             </div>
             <div className="relative">
-              <div className="aspect-square rounded-3xl bg-gradient-to-br from-teal-100 to-cyan-100 p-8 backdrop-blur-lg">
+              <div className="aspect-square rounded-3xl bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-900/30 dark:to-cyan-900/30 p-8 backdrop-blur-lg">
                 <img
                   src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=600&fit=crop"
                   alt="Medical professionals"
@@ -81,9 +81,9 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section className="py-20 px-6 bg-white/50 backdrop-blur-sm">
+      <section className="py-20 px-6 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-16 text-gray-900">{t('whyChooseUs')}</h2>
+          <h2 className="text-4xl font-bold text-center mb-16 text-gray-900 dark:text-white">{t('whyChooseUs')}</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <FeatureCard
               icon={<Calendar className="w-8 h-8" />}
