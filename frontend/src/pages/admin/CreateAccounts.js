@@ -16,7 +16,7 @@ export default function CreateAccounts() {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState('patient');
+  const [selectedRole, setSelectedRole] = useState('');
   const [specialties, setSpecialties] = useState([]);
   const [formData, setFormData] = useState({
     email: '',
