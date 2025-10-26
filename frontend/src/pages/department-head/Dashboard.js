@@ -57,114 +57,105 @@ export default function DepartmentHeadDashboard() {
     );
   }
 
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">{t('departmentHeadDashboard')}</h1>
-          <p className="text-gray-600 mt-1">{t('welcomeBack')}</p>
-        </div>
-      </div>
+    <Layout>
+      <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('departmentHeadDashboard')}</h1>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard
-          icon={Users}
-          title={t('totalDoctors')}
-          value={stats?.total_doctors || 0}
-          subtitle={`${stats?.approved_doctors || 0} ${t('approved')}`}
-          color="bg-blue-500"
-          onClick={() => navigate('/department-head/doctors')}
-        />
-        
-        <StatCard
-          icon={UserCheck}
-          title={t('approvedDoctors')}
-          value={stats?.approved_doctors || 0}
-          subtitle={`${stats?.pending_doctors || 0} ${t('pending')}`}
-          color="bg-green-500"
-          onClick={() => navigate('/department-head/doctors')}
-        />
-        
-        <StatCard
-          icon={UserPlus}
-          title={t('totalPatients')}
-          value={stats?.total_patients || 0}
-          color="bg-purple-500"
-          onClick={() => navigate('/department-head/patients')}
-        />
-        
-        <StatCard
-          icon={Calendar}
-          title={t('totalAppointments')}
-          value={stats?.total_appointments || 0}
-          color="bg-orange-500"
-        />
-        
-        <StatCard
-          icon={ClipboardCheck}
-          title={t('completedAppointments')}
-          value={stats?.completed_appointments || 0}
-          color="bg-teal-500"
-        />
-        
-        <StatCard
-          icon={TrendingUp}
-          title={t('successRate')}
-          value={stats?.total_appointments > 0 
-            ? `${Math.round((stats?.completed_appointments / stats?.total_appointments) * 100)}%`
-            : '0%'}
-          color="bg-indigo-500"
-        />
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">{t('quickActions')}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            onClick={() => navigate('/department-head/create-accounts')}
-            className="flex items-center justify-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg transition-colors"
-          >
-            <UserPlus className="w-5 h-5" />
-            <span>{t('createAccount')}</span>
-          </button>
-          
-          <button
-            onClick={() => navigate('/department-head/doctors')}
-            className="flex items-center justify-center space-x-2 bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg transition-colors"
-          >
-            <Users className="w-5 h-5" />
-            <span>{t('manageDoctors')}</span>
-          </button>
-          
-          <button
-            onClick={() => navigate('/department-head/patients')}
-            className="flex items-center justify-center space-x-2 bg-purple-500 hover:bg-purple-600 text-white py-3 px-6 rounded-lg transition-colors"
-          >
-            <Users className="w-5 h-5" />
-            <span>{t('managePatients')}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Info Card */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <StatCard
+              icon={Users}
+              title={t('totalDoctors')}
+              value={stats?.total_doctors || 0}
+              subtitle={`${stats?.approved_doctors || 0} ${t('approved')}`}
+              color="bg-gradient-to-br from-teal-500 to-cyan-500"
+              onClick={() => navigate('/department-head/doctors')}
+            />
+            
+            <StatCard
+              icon={UserCheck}
+              title={t('approvedDoctors')}
+              value={stats?.approved_doctors || 0}
+              subtitle={`${stats?.pending_doctors || 0} ${t('pending')}`}
+              color="bg-gradient-to-br from-green-500 to-emerald-500"
+              onClick={() => navigate('/department-head/doctors')}
+            />
+            
+            <StatCard
+              icon={UserPlus}
+              title={t('totalPatients')}
+              value={stats?.total_patients || 0}
+              color="bg-gradient-to-br from-purple-500 to-pink-500"
+              onClick={() => navigate('/department-head/patients')}
+            />
+            
+            <StatCard
+              icon={Calendar}
+              title={t('totalAppointments')}
+              value={stats?.total_appointments || 0}
+              color="bg-gradient-to-br from-orange-500 to-red-500"
+            />
+            
+            <StatCard
+              icon={ClipboardCheck}
+              title={t('completedAppointments')}
+              value={stats?.completed_appointments || 0}
+              color="bg-gradient-to-br from-teal-500 to-blue-500"
+            />
+            
+            <StatCard
+              icon={TrendingUp}
+              title={t('successRate')}
+              value={stats?.total_appointments > 0 
+                ? `${Math.round((stats?.completed_appointments / stats?.total_appointments) * 100)}%`
+                : '0%'}
+              color="bg-gradient-to-br from-indigo-500 to-purple-500"
+            />
           </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">{t('departmentHeadInfo')}</h3>
-            <p className="mt-2 text-sm text-blue-700">
-              {t('departmentHeadInfoText')}
-            </p>
+
+          {/* Quick Actions */}
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">{t('quickActions')}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button
+                onClick={() => navigate('/department-head/create-accounts')}
+                className="flex items-center justify-center space-x-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white py-3 px-6 rounded-xl transition-all shadow-md hover:shadow-lg"
+              >
+                <UserPlus className="w-5 h-5" />
+                <span>{t('createAccount')}</span>
+              </button>
+              
+              <button
+                onClick={() => navigate('/department-head/doctors')}
+                className="flex items-center justify-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-3 px-6 rounded-xl transition-all shadow-md hover:shadow-lg"
+              >
+                <Users className="w-5 h-5" />
+                <span>{t('manageDoctors')}</span>
+              </button>
+              
+              <button
+                onClick={() => navigate('/department-head/patients')}
+                className="flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-3 px-6 rounded-xl transition-all shadow-md hover:shadow-lg"
+              >
+                <Users className="w-5 h-5" />
+                <span>{t('managePatients')}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Layout>
   );
 }
