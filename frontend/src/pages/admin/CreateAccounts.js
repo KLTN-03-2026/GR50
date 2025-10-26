@@ -106,6 +106,7 @@ export default function CreateAccounts() {
   };
 
   const resetForm = () => {
+    setSelectedRole('');
     setFormData({
       email: '',
       password: '',
