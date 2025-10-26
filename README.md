@@ -169,25 +169,25 @@ yarn start
 ### Admin (Quản Trị Viên)
 ```
 Email: admin@medischedule.com
-Password: Admin@123
+Password: 12345678
 ```
 
 ### Department Head (Trưởng Khoa)
 ```
 Email: departmenthead@test.com
-Password: dept123
+Password: 12345678
 ```
 
 ### Doctor (Bác Sĩ)
 ```
 Email: doctor1@test.com
-Password: doctor123
+Password: 12345678
 ```
 
 ### Patient (Bệnh Nhân)
 ```
 Email: patient1@test.com
-Password: patient123
+Password: 12345678
 ```
 
 ## 📚 API Documentation
