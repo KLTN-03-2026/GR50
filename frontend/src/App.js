@@ -126,6 +126,7 @@ function App() {
             <Route path="/admin/stats" element={user?.role === "admin" ? <AdminStats /> : <Navigate to="/login" />} />
             <Route path="/admin/admins" element={user?.role === "admin" ? <AdminsManagement /> : <Navigate to="/login" />} />
             <Route path="/admin/create-accounts" element={user?.role === "admin" ? <CreateAccounts /> : <Navigate to="/login" />} />
+            <Route path="/admin/payments" element={user?.role === "admin" ? <AdminPayments /> : <Navigate to="/login" />} />
 
             {/* Department Head Routes */}
             <Route path="/department-head/dashboard" element={user?.role === "department_head" ? <DepartmentHeadDashboard /> : <Navigate to="/login" />} />
