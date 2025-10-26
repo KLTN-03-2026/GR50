@@ -19,11 +19,17 @@ export default function PaymentProcess() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('mock_card');
+  const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState({
     card_number: '4111111111111111',
     card_holder: 'NGUYEN VAN A',
     expiry: '12/25',
-    cvv: '123'
+    cvv: '123',
+    // Bank transfer fields
+    bank_account_number: '',
+    bank_account_name: '',
+    bank_name: '',
+    bank_branch: ''
   });
 
   useEffect(() => {
