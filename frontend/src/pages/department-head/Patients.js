@@ -52,25 +52,19 @@ export default function Patients() {
     setFilteredPatients(filtered);
   };
 
-  const handleDelete = async (patientId) => {
-    if (!window.confirm(t('confirmDeletePatient'))) return;
+  const handleDelete = async (patientId, patientName) => {
+    if (!window.confirm(`${t('confirmDeleteUser')} ${patientName}?`)) return;
 
     try {
       const token = localStorage.getItem('token');
       await axios.delete(`${API_BASE_URL}/api/department-head/remove-patient/${patientId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast.success(t('patientDeletedSuccess'));
+      toast.success(t('userDeleted'));
       fetchPatients();
     } catch (error) {
-      toast.error(error.response?.data?.detail || t('errorDeletingPatient'));
+      toast.error(error.response?.data?.detail || t('cannotDeleteUser'));
     }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN');
   };
 
   if (loading) {
