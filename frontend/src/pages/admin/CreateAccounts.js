@@ -53,6 +53,13 @@ export default function CreateAccounts() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate role selection
+    if (!selectedRole) {
+      toast.error(t('pleaseSelectRole') || 'Vui lòng chọn loại tài khoản');
+      return;
+    }
+    
     setLoading(true);
 
     try {
