@@ -133,6 +133,7 @@ function App() {
       </div>
     </AuthContext.Provider>
     </LanguageProvider>
+    </ThemeProvider>
   );
 }
 
