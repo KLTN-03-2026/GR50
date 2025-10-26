@@ -34,9 +34,11 @@ export default function RegisterPage() {
     const fetchSpecialties = async () => {
       try {
         const response = await axios.get(`${API}/specialties`);
+        console.log('Fetched specialties:', response.data);
         setSpecialties(response.data);
       } catch (error) {
         console.error('Error fetching specialties:', error);
+        toast.error('Không thể tải danh sách chuyên khoa');
       }
     };
     fetchSpecialties();
