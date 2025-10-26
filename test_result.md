@@ -479,8 +479,8 @@ frontend:
         comment: "✅ WORKING: Multi-language support fully functional! Language toggle (EN/VI) working in sidebar. All tested pages display Vietnamese text correctly. Admin dashboard, Department Head dashboard, and all management pages show proper Vietnamese translations. Language preference appears to be saved. Translation system working across all tested interfaces."
   
   - task: "Patient and Doctor Login Credentials"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "backend/create_sample_data.py"
     stuck_count: 0
     priority: "medium"
@@ -489,6 +489,9 @@ frontend:
       - working: false
         agent: "testing"
         comment: "❌ NOT WORKING: Patient login (patient@test.com/patient123) and Doctor login (doctor@test.com/doctor123) both return 401 authentication errors. These test credentials do not exist in the database or have incorrect passwords. Need to create valid patient and doctor test accounts or provide correct credentials for testing patient and doctor dashboards and features."
+      - working: true
+        agent: "main"
+        comment: "✅ FIXED: All test credentials working correctly. Recreated sample data with correct password (12345678). Verified login for all roles: admin@medischedule.com, departmenthead@test.com, doctor1@test.com, patient1@test.com all authenticate successfully. Created CREDENTIALS.md and QUICK_LOGIN.md files for easy reference. Updated README with complete credential information."
 
 metadata:
   created_by: "main_agent"
