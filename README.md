@@ -166,28 +166,100 @@ yarn start
 
 ## 👥 Tài Khoản Demo
 
-### Admin (Quản Trị Viên)
+> ⚠️ **Lưu ý quan trọng**: Tất cả tài khoản demo đều sử dụng password: **12345678**
+
+### 🔐 Admin (Quản Trị Viên)
 ```
-Email: admin@medischedule.com
+Email:    admin@medischedule.com
+Username: admin
 Password: 12345678
+```
+**Quyền hạn**: Toàn quyền quản trị, tạo mọi loại tài khoản, phân quyền admin
+
+---
+
+### 👔 Department Head (Trưởng Khoa)
+```
+Email:    departmenthead@test.com
+Username: dephead
+Password: 12345678
+```
+**Quyền hạn**: Tạo và quản lý bác sĩ & bệnh nhân, phê duyệt bác sĩ
+
+---
+
+### 👨‍⚕️ Doctors (Bác Sĩ)
+
+**Bác sĩ 1 - Chuyên khoa Tim mạch**
+```
+Email:    doctor1@test.com
+Username: doctor1
+Password: 12345678
+Specialty: Tim mạch
+Experience: 15 năm
+Fee: 300,000 VNĐ
 ```
 
-### Department Head (Trưởng Khoa)
+**Bác sĩ 2 - Chuyên khoa Nhi**
 ```
-Email: departmenthead@test.com
+Email:    doctor2@test.com
+Username: doctor2
 Password: 12345678
+Specialty: Nhi khoa
+Experience: 10 năm
+Fee: 250,000 VNĐ
 ```
 
-### Doctor (Bác Sĩ)
+**Bác sĩ 3 - Chuyên khoa Nội**
 ```
-Email: doctor1@test.com
+Email:    doctor3@test.com
+Username: doctor3
 Password: 12345678
+Specialty: Nội khoa
+Experience: 12 năm
+Fee: 280,000 VNĐ
 ```
 
-### Patient (Bệnh Nhân)
+---
+
+### 👤 Patients (Bệnh Nhân)
+
+**Bệnh nhân 1**
 ```
-Email: patient1@test.com
+Email:    patient1@test.com
+Username: patient1
 Password: 12345678
+Name: Nguyễn Văn A
+Phone: 0901234567
+```
+
+**Bệnh nhân 2**
+```
+Email:    patient2@test.com
+Username: patient2
+Password: 12345678
+Name: Trần Thị B
+Phone: 0902345678
+```
+
+**Bệnh nhân 3**
+```
+Email:    patient3@test.com
+Username: patient3
+Password: 12345678
+Name: Lê Văn C
+Phone: 0903456789
+```
+
+---
+
+### 🔄 Tạo lại dữ liệu mẫu
+
+Nếu cần tạo lại tất cả tài khoản test:
+```bash
+cd backend
+python create_admin.py          # Tạo admin
+python create_sample_data.py    # Tạo patients, doctors, department head
 ```
 
 ## 📚 API Documentation
