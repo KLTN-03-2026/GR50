@@ -386,12 +386,6 @@ export default function PaymentProcess() {
                     </div>
                   )}
 
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="text-sm text-yellow-800">
-                      <strong>Demo Mode:</strong> Đây là hệ thống thanh toán giả lập. Không có giao dịch thật được thực hiện.
-                    </p>
-                  </div>
-
                   <Button 
                     type="submit" 
                     disabled={processing}
@@ -402,7 +396,10 @@ export default function PaymentProcess() {
                     ) : (
                       <>
                         <CheckCircle className="w-5 h-5 mr-2" />
-                        Thanh toán {payment.amount.toLocaleString()} VNĐ
+                        {paymentMethod === 'mock_bank' || paymentMethod === 'mock_wallet' 
+                          ? 'Hoàn tất thanh toán'
+                          : `Thanh toán ${payment.amount.toLocaleString()} VNĐ`
+                        }
                       </>
                     )}
                   </Button>
