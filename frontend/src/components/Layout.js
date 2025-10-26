@@ -38,7 +38,8 @@ export default function Layout({ children }) {
     { path: '/admin/create-accounts', icon: UserPlus, label: t('createAccounts') },
     { path: '/admin/doctors', icon: Users, label: t('doctors') },
     { path: '/admin/patients', icon: FileText, label: t('patients') },
-    { path: '/admin/stats', icon: BarChart, label: t('stats') }
+    { path: '/admin/stats', icon: BarChart, label: t('stats') },
+    { path: '/admin/payments', icon: CreditCard, label: t('payments') }
   ];
 
   // Add Admins management link if user has permission
