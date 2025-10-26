@@ -9,7 +9,7 @@ const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001
 
 export default function CreateAccounts() {
   const { t } = useLanguage();
-  const [selectedRole, setSelectedRole] = useState('patient');
+  const [selectedRole, setSelectedRole] = useState('');
   const [specialties, setSpecialties] = useState([]);
   const [formData, setFormData] = useState({
     email: '',
