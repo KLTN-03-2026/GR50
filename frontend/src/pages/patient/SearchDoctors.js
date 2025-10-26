@@ -200,16 +200,26 @@ function BookingDialog({ doctor, open, onClose, token }) {
     setLoading(true);
 
     try {
-      await axios.post(`${API}/appointments`, {
+      const appointmentRes = await axios.post(`${API}/appointments`, {
         ...formData,
         doctor_id: doctor.user_id
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      toast.success('Đặt lịch thành công!');
+      // Create payment for the appointment
+      const consultationFee = doctor.consultation_fee || 200000;
+      await axios.post(`${API}/payments/create`, {
+        appointment_id: appointmentRes.data.id,
+        amount: consultationFee,
+        payment_method: 'mock_card'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      toast.success('Đặt lịch thành công! Vui lòng thanh toán để xác nhận.');
       onClose();
-      navigate('/patient/appointments');
+      navigate('/patient/payments');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Đặt lịch thất bại');
     } finally {
