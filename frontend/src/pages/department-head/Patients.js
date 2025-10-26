@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Search, Trash2, User, Phone, MapPin, Calendar } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import Layout from '../../components/Layout';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
