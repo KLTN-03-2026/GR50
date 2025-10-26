@@ -105,24 +105,6 @@ export default function Doctors() {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const styles = {
-      approved: 'bg-green-100 text-green-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-      rejected: 'bg-red-100 text-red-800'
-    };
-    const labels = {
-      approved: t('approved'),
-      pending: t('pending'),
-      rejected: t('rejected')
-    };
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${styles[status]}`}>
-        {labels[status]}
-      </span>
-    );
-  };
-
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
