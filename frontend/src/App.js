@@ -18,6 +18,8 @@ import PatientDashboard from "@/pages/patient/Dashboard";
 import SearchDoctors from "@/pages/patient/SearchDoctors";
 import PatientAppointments from "@/pages/patient/Appointments";
 import PatientChat from "@/pages/patient/Chat";
+import PatientPayments from "@/pages/patient/Payments";
+import PaymentProcess from "@/pages/patient/PaymentProcess";
 
 // Doctor Pages
 import DoctorDashboard from "@/pages/doctor/Dashboard";
