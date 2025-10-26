@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [specialties, setSpecialties] = useState([]);
   const [formData, setFormData] = useState({
     email: '',
     username: '',
@@ -24,16 +25,35 @@ export default function RegisterPage() {
     full_name: '',
     phone: '',
     date_of_birth: '',
-    address: '',
-    role: 'patient'
+    role: 'patient',
+    specialty_id: ''
   });
+
+  // Fetch specialties when component mounts
+  useEffect(() => {
+    const fetchSpecialties = async () => {
+      try {
+        const response = await axios.get(`${API}/specialties`);
+        setSpecialties(response.data);
+      } catch (error) {
+        console.error('Error fetching specialties:', error);
+      }
+    };
+    fetchSpecialties();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API}/auth/register`, formData);
+      // Prepare data - remove specialty_id if not doctor
+      const submitData = { ...formData };
+      if (formData.role !== 'doctor') {
+        delete submitData.specialty_id;
+      }
+
+      const response = await axios.post(`${API}/auth/register`, submitData);
       const { token, user } = response.data;
       
       login(token, user);
@@ -163,20 +183,11 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <Label htmlFor="address">{t('address')} ({t('optional')})</Label>
-              <Input
-                data-testid="address-input"
-                id="address"
-                type="text"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="mt-2"
-              />
-            </div>
-
-            <div>
               <Label htmlFor="role">{t('accountType')}</Label>
-              <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+              <Select 
+                value={formData.role} 
+                onValueChange={(value) => setFormData({ ...formData, role: value, specialty_id: '' })}
+              >
                 <SelectTrigger data-testid="role-select" className="mt-2">
                   <SelectValue />
                 </SelectTrigger>
@@ -186,6 +197,28 @@ export default function RegisterPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Show specialty selection only for doctors */}
+            {formData.role === 'doctor' && (
+              <div>
+                <Label htmlFor="specialty">{t('specialty')}</Label>
+                <Select 
+                  value={formData.specialty_id} 
+                  onValueChange={(value) => setFormData({ ...formData, specialty_id: value })}
+                >
+                  <SelectTrigger data-testid="specialty-select" className="mt-2">
+                    <SelectValue placeholder={t('selectSpecialty')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {specialties.map((specialty) => (
+                      <SelectItem key={specialty.id} value={specialty.id}>
+                        {specialty.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <Button data-testid="submit-register-btn" type="submit" disabled={loading} className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600">
               {loading ? t('loading') : t('register')}
