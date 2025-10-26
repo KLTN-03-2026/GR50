@@ -253,11 +253,67 @@ export default function PaymentProcess() {
                   )}
 
                   {paymentMethod === 'mock_wallet' && (
-                    <div className="text-center py-8">
-                      <Wallet className="w-16 h-16 text-teal-500 mx-auto mb-4" />
-                      <p className="text-gray-600">
-                        Ví điện tử demo - Nhấn thanh toán để hoàn tất
-                      </p>
+                    <div className="text-center py-4">
+                      <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl p-8 mb-6">
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">
+                          💳 Thanh toán
+                        </h3>
+                        <div className="flex items-center justify-center gap-2 mb-4">
+                          <p className="text-sm text-gray-600">Mã đơn hàng:</p>
+                          <code className="bg-white px-3 py-1 rounded-lg text-teal-600 font-mono text-sm font-bold">
+                            HD{paymentId.slice(-8)}
+                          </code>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(`HD${paymentId.slice(-8)}`)}
+                            className="p-1 hover:bg-white rounded transition-colors"
+                          >
+                            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
+                          </button>
+                        </div>
+                        <div className="mb-4">
+                          <p className="text-sm text-gray-600">Tổng tiền:</p>
+                          <p className="text-3xl font-bold text-teal-600">{payment.amount.toLocaleString()} VNĐ</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-6 rounded-2xl shadow-lg mb-4 inline-block">
+                        <p className="text-sm text-gray-600 mb-3">Chuyển khoản QR:</p>
+                        <div className="bg-white p-4 rounded-xl border-4 border-teal-500">
+                          <img 
+                            src={generateVietQRData()}
+                            alt="VietQR Code"
+                            className="w-64 h-64 mx-auto"
+                            onError={(e) => {
+                              // Fallback to QR code if image fails
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'block';
+                            }}
+                          />
+                          <div style={{display: 'none'}}>
+                            <QRCodeSVG 
+                              value={`VietQR|970422|1017592879600097|${payment.amount}|HD${paymentId.slice(-8)}|MEDISCHEDULE`}
+                              size={256}
+                              level="H"
+                              includeMargin={true}
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-4 flex items-center justify-center gap-2">
+                          <img src="https://vietqr.net/img/vietqr_logo.png" alt="VietQR" className="h-6" />
+                          <img src="https://api.vietqr.io/img/MB.png" alt="MB Bank" className="h-6" />
+                        </div>
+                      </div>
+
+                      <div className="text-left bg-blue-50 rounded-xl p-4">
+                        <p className="text-sm font-semibold text-blue-900 mb-2">Quét mã QR để thanh toán:</p>
+                        <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                          <li>Mở ứng dụng ngân hàng của bạn</li>
+                          <li>Chọn chức năng quét mã QR</li>
+                          <li>Quét mã QR phía trên</li>
+                          <li>Xác nhận thông tin và thanh toán</li>
+                        </ol>
+                      </div>
                     </div>
                   )}
 
