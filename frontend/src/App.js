@@ -35,6 +35,7 @@ import AdminPatients from "@/pages/admin/Patients";
 import AdminStats from "@/pages/admin/Stats";
 import AdminsManagement from "@/pages/admin/Admins";
 import CreateAccounts from "@/pages/admin/CreateAccounts";
+import AdminPayments from "@/pages/admin/Payments";
 
 // Department Head Pages
 import DepartmentHeadDashboard from "@/pages/department-head/Dashboard";
