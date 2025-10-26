@@ -78,11 +78,11 @@ export default function LoginPage() {
             <span className="text-3xl font-bold text-gray-800 dark:text-white">MediSchedule</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">{t('login')}</h2>
+          <h2 className="text-2xl font-bold text-center mb-8 text-gray-900 dark:text-white">{t('login')}</h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="email">{t('email')}</Label>
+              <Label htmlFor="email" className="dark:text-gray-200">{t('email')}</Label>
               <Input
                 data-testid="email-input"
                 id="email"
@@ -90,13 +90,13 @@ export default function LoginPage() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                className="mt-2"
+                className="mt-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 autoComplete="email"
               />
             </div>
 
             <div>
-              <Label htmlFor="password">{t('password')}</Label>
+              <Label htmlFor="password" className="dark:text-gray-200">{t('password')}</Label>
               <div className="relative mt-2">
                 <Input
                   data-testid="password-input"
@@ -105,13 +105,13 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
-                  className="pr-10"
+                  className="pr-10 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5" />
@@ -131,12 +131,12 @@ export default function LoginPage() {
                 />
                 <label
                   htmlFor="remember"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer dark:text-gray-200"
                 >
                   {t('rememberMe')}
                 </label>
               </div>
-              <Link to="/forgot-password" className="text-sm text-teal-600 hover:text-teal-700">
+              <Link to="/forgot-password" className="text-sm text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300">
                 {t('forgotPassword')}
               </Link>
             </div>
