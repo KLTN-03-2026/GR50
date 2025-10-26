@@ -5,10 +5,12 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Calendar, Search, Clock, LogOut } from 'lucide-react';
 import Layout from '@/components/Layout';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function PatientDashboard() {
   const navigate = useNavigate();
   const { user, token, logout } = useContext(AuthContext);
+  const { t } = useLanguage();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
