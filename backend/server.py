@@ -1731,6 +1731,205 @@ async def get_ai_chat_history(session_id: Optional[str] = None, current_user: di
     return {"sessions": sessions, "total_messages": len(chat_history)}
 
 
+# ============= PAYMENT ROUTES =============
+
+class PaymentStatus:
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    REFUNDED = "refunded"
+
+class PaymentCreate(BaseModel):
+    appointment_id: str
+    amount: float
+    payment_method: str = "mock_card"  # mock_card, mock_wallet, mock_bank
+
+class PaymentProcess(BaseModel):
+    card_number: Optional[str] = None
+    card_holder: Optional[str] = None
+    expiry: Optional[str] = None
+    cvv: Optional[str] = None
+    success: bool = True  # For mock, we can control success/failure
+
+class Payment(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    appointment_id: str
+    patient_id: str
+    patient_name: str
+    doctor_id: str
+    doctor_name: str
+    amount: float
+    payment_method: str
+    status: str = PaymentStatus.PENDING
+    transaction_id: Optional[str] = None
+    payment_date: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+@api_router.post("/payments/create")
+async def create_payment(payment_data: PaymentCreate, current_user: dict = Depends(get_current_user)):
+    """Create a payment for an appointment"""
+    if current_user["role"] != UserRole.PATIENT:
+        raise HTTPException(status_code=403, detail="Patient access required")
+    
+    # Get appointment details
+    appointment = await db.appointments.find_one({"id": payment_data.appointment_id}, {"_id": 0})
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    if appointment["patient_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Not your appointment")
+    
+    # Check if payment already exists
+    existing_payment = await db.payments.find_one({
+        "appointment_id": payment_data.appointment_id,
+        "status": {"$in": [PaymentStatus.PENDING, PaymentStatus.COMPLETED]}
+    }, {"_id": 0})
+    
+    if existing_payment:
+        return existing_payment
+    
+    # Get doctor details
+    doctor = await db.doctors.find_one({"user_id": appointment["doctor_id"]}, {"_id": 0})
+    consultation_fee = doctor.get("consultation_fee", 200000) if doctor else 200000
+    
+    # Create payment
+    payment = Payment(
+        appointment_id=payment_data.appointment_id,
+        patient_id=current_user["id"],
+        patient_name=current_user["full_name"],
+        doctor_id=appointment["doctor_id"],
+        doctor_name=appointment.get("doctor_name", "Doctor"),
+        amount=payment_data.amount if payment_data.amount > 0 else consultation_fee,
+        payment_method=payment_data.payment_method,
+        status=PaymentStatus.PENDING
+    )
+    
+    doc = payment.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    if doc["payment_date"]:
+        doc["payment_date"] = doc["payment_date"].isoformat()
+    
+    await db.payments.insert_one(doc)
+    return payment
+
+@api_router.post("/payments/{payment_id}/process")
+async def process_payment(payment_id: str, payment_process: PaymentProcess, current_user: dict = Depends(get_current_user)):
+    """Process payment (Mock simulation)"""
+    if current_user["role"] != UserRole.PATIENT:
+        raise HTTPException(status_code=403, detail="Patient access required")
+    
+    # Get payment
+    payment = await db.payments.find_one({"id": payment_id}, {"_id": 0})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    if payment["patient_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Not your payment")
+    
+    if payment["status"] != PaymentStatus.PENDING:
+        raise HTTPException(status_code=400, detail=f"Payment already {payment['status']}")
+    
+    # Mock payment processing
+    import random
+    transaction_id = f"TXN{random.randint(100000, 999999)}"
+    
+    # Simulate payment success/failure based on input
+    if payment_process.success:
+        new_status = PaymentStatus.COMPLETED
+        payment_date = datetime.now(timezone.utc)
+    else:
+        new_status = PaymentStatus.FAILED
+        payment_date = None
+    
+    # Update payment
+    await db.payments.update_one(
+        {"id": payment_id},
+        {
+            "$set": {
+                "status": new_status,
+                "transaction_id": transaction_id,
+                "payment_date": payment_date.isoformat() if payment_date else None
+            }
+        }
+    )
+    
+    updated_payment = await db.payments.find_one({"id": payment_id}, {"_id": 0})
+    return updated_payment
+
+@api_router.get("/payments/my")
+async def get_my_payments(current_user: dict = Depends(get_current_user)):
+    """Get patient's payment history"""
+    if current_user["role"] != UserRole.PATIENT:
+        raise HTTPException(status_code=403, detail="Patient access required")
+    
+    payments = await db.payments.find({"patient_id": current_user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return payments
+
+@api_router.get("/payments/{payment_id}")
+async def get_payment_detail(payment_id: str, current_user: dict = Depends(get_current_user)):
+    """Get payment details"""
+    payment = await db.payments.find_one({"id": payment_id}, {"_id": 0})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Check access
+    if current_user["role"] == UserRole.PATIENT:
+        if payment["patient_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+    elif current_user["role"] == UserRole.DOCTOR:
+        if payment["doctor_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+    elif current_user["role"] not in [UserRole.ADMIN, UserRole.DEPARTMENT_HEAD]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return payment
+
+@api_router.get("/admin/payments")
+async def admin_get_payments(current_user: dict = Depends(get_current_user)):
+    """Admin get all payments"""
+    if current_user["role"] != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    payments = await db.payments.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Add stats
+    total_revenue = sum(p["amount"] for p in payments if p["status"] == PaymentStatus.COMPLETED)
+    pending_payments = len([p for p in payments if p["status"] == PaymentStatus.PENDING])
+    completed_payments = len([p for p in payments if p["status"] == PaymentStatus.COMPLETED])
+    
+    return {
+        "payments": payments,
+        "stats": {
+            "total_payments": len(payments),
+            "completed_payments": completed_payments,
+            "pending_payments": pending_payments,
+            "total_revenue": total_revenue
+        }
+    }
+
+@api_router.get("/doctor/payments")
+async def doctor_get_payments(current_user: dict = Depends(get_current_user)):
+    """Doctor get their payments"""
+    if current_user["role"] != UserRole.DOCTOR:
+        raise HTTPException(status_code=403, detail="Doctor access required")
+    
+    payments = await db.payments.find({"doctor_id": current_user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Calculate stats
+    total_earnings = sum(p["amount"] for p in payments if p["status"] == PaymentStatus.COMPLETED)
+    pending_amount = sum(p["amount"] for p in payments if p["status"] == PaymentStatus.PENDING)
+    
+    return {
+        "payments": payments,
+        "stats": {
+            "total_payments": len(payments),
+            "total_earnings": total_earnings,
+            "pending_amount": pending_amount
+        }
+    }
+
+
 # Include router in the main app after all routes are defined
 app.include_router(api_router, prefix=API_PREFIX)
 
