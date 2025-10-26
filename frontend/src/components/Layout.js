@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Calendar, Users, Clock, Home, User, BarChart, FileText, MessageSquare, Settings, Shield, UserPlus, LogOut } from 'lucide-react';
+import { Calendar, Users, Clock, Home, User, BarChart, FileText, MessageSquare, Settings, Shield, UserPlus, LogOut, CreditCard } from 'lucide-react';
 import { AuthContext } from '@/App';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
