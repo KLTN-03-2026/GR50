@@ -298,10 +298,6 @@ export default function PaymentProcess() {
                             />
                           </div>
                         </div>
-                        <div className="mt-4 flex items-center justify-center gap-2">
-                          <img src="https://vietqr.net/img/vietqr_logo.png" alt="VietQR" className="h-6" />
-                          <img src="https://api.vietqr.io/img/MB.png" alt="MB Bank" className="h-6" />
-                        </div>
                       </div>
 
                       <div className="text-left bg-blue-50 rounded-xl p-4">
