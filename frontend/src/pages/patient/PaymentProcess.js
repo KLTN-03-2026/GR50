@@ -278,7 +278,6 @@ export default function PaymentProcess() {
                       </div>
 
                       <div className="bg-white p-6 rounded-2xl shadow-lg mb-4 inline-block">
-                        <p className="text-sm text-gray-600 mb-3">Chuyển khoản QR:</p>
                         <div className="bg-white p-4 rounded-xl border-4 border-teal-500">
                           <img 
                             src={generateVietQRData()}
