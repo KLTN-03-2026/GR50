@@ -268,6 +268,7 @@ export const translations = {
     createNewAccount: 'Tạo tài khoản mới',
     createAccountSubtitle: 'Tạo tài khoản bệnh nhân hoặc bác sĩ',
     selectRole: 'Chọn vai trò',
+    pleaseSelectRole: 'Vui lòng chọn loại tài khoản',
     accountCreatedSuccess: 'Tạo tài khoản thành công',
     accountCreatedError: 'Lỗi tạo tài khoản',
     bioPlaceholder: 'Nhập giới thiệu ngắn về bác sĩ...',
