@@ -22,7 +22,8 @@ export default function Layout({ children }) {
   const patientLinks = [
     { path: '/patient/dashboard', icon: Home, label: t('home') },
     { path: '/patient/search-doctors', icon: Users, label: t('findDoctor') },
-    { path: '/patient/appointments', icon: Calendar, label: t('appointments') }
+    { path: '/patient/appointments', icon: Calendar, label: t('appointments') },
+    { path: '/patient/payments', icon: CreditCard, label: t('payments') }
   ];
 
   const doctorLinks = [
