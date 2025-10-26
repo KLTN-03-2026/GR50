@@ -72,26 +72,26 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-6 transition-colors duration-300">
       <div className="w-full max-w-md">
-        <Button data-testid="back-to-home-btn" variant="ghost" onClick={() => navigate('/')} className="mb-6">
+        <Button data-testid="back-to-home-btn" variant="ghost" onClick={() => navigate('/')} className="mb-6 dark:text-gray-200 dark:hover:bg-gray-800">
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('backToHome')}
         </Button>
         
-        <div className="bg-white rounded-3xl shadow-2xl p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8">
           <div className="flex items-center justify-center gap-2 mb-8">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
               <Calendar className="w-7 h-7 text-white" />
             </div>
-            <span className="text-3xl font-bold text-gray-800">MediSchedule</span>
+            <span className="text-3xl font-bold text-gray-800 dark:text-white">MediSchedule</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">{t('registerAccount')}</h2>
+          <h2 className="text-2xl font-bold text-center mb-8 text-gray-900 dark:text-white">{t('registerAccount')}</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <Label htmlFor="full_name">{t('fullName')}</Label>
+              <Label htmlFor="full_name" className="dark:text-gray-200">{t('fullName')}</Label>
               <Input
                 data-testid="fullname-input"
                 id="full_name"
@@ -99,12 +99,12 @@ export default function RegisterPage() {
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                 required
-                className="mt-2"
+                className="mt-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
             </div>
 
             <div>
-              <Label htmlFor="username">{t('username')}</Label>
+              <Label htmlFor="username" className="dark:text-gray-200">{t('username')}</Label>
               <Input
                 data-testid="username-input"
                 id="username"
@@ -112,12 +112,12 @@ export default function RegisterPage() {
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 required
-                className="mt-2"
+                className="mt-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
             </div>
 
             <div>
-              <Label htmlFor="email">{t('email')}</Label>
+              <Label htmlFor="email" className="dark:text-gray-200">{t('email')}</Label>
               <Input
                 data-testid="email-input"
                 id="email"
@@ -125,12 +125,12 @@ export default function RegisterPage() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                className="mt-2"
+                className="mt-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
             </div>
 
             <div>
-              <Label htmlFor="phone">{t('phone')}</Label>
+              <Label htmlFor="phone" className="dark:text-gray-200">{t('phone')}</Label>
               <Input
                 data-testid="phone-input"
                 id="phone"
@@ -138,12 +138,12 @@ export default function RegisterPage() {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required
-                className="mt-2"
+                className="mt-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
             </div>
 
             <div>
-              <Label htmlFor="password">{t('password')}</Label>
+              <Label htmlFor="password" className="dark:text-gray-200">{t('password')}</Label>
               <div className="relative mt-2">
                 <Input
                   data-testid="password-input"
@@ -154,12 +154,12 @@ export default function RegisterPage() {
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
                   minLength={8}
-                  className="pr-10"
+                  className="pr-10 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5" />
@@ -171,29 +171,29 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <Label htmlFor="date_of_birth">{t('dateOfBirth')} ({t('optional')})</Label>
+              <Label htmlFor="date_of_birth" className="dark:text-gray-200">{t('dateOfBirth')} ({t('optional')})</Label>
               <Input
                 data-testid="dob-input"
                 id="date_of_birth"
                 type="date"
                 value={formData.date_of_birth}
                 onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                className="mt-2"
+                className="mt-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
             </div>
 
             <div>
-              <Label htmlFor="role">{t('accountType')}</Label>
+              <Label htmlFor="role" className="dark:text-gray-200">{t('accountType')}</Label>
               <Select 
                 value={formData.role} 
                 onValueChange={(value) => setFormData({ ...formData, role: value, specialty_id: '' })}
               >
-                <SelectTrigger data-testid="role-select" className="mt-2">
+                <SelectTrigger data-testid="role-select" className="mt-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem data-testid="role-patient" value="patient">{t('patient')}</SelectItem>
-                  <SelectItem data-testid="role-doctor" value="doctor">{t('doctor')}</SelectItem>
+                <SelectContent className="dark:bg-gray-700 dark:border-gray-600">
+                  <SelectItem data-testid="role-patient" value="patient" className="dark:text-white">{t('patient')}</SelectItem>
+                  <SelectItem data-testid="role-doctor" value="doctor" className="dark:text-white">{t('doctor')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -201,17 +201,17 @@ export default function RegisterPage() {
             {/* Show specialty selection only for doctors */}
             {formData.role === 'doctor' && (
               <div>
-                <Label htmlFor="specialty">{t('specialty')}</Label>
+                <Label htmlFor="specialty" className="dark:text-gray-200">{t('specialty')}</Label>
                 <Select 
                   value={formData.specialty_id} 
                   onValueChange={(value) => setFormData({ ...formData, specialty_id: value })}
                 >
-                  <SelectTrigger data-testid="specialty-select" className="mt-2">
+                  <SelectTrigger data-testid="specialty-select" className="mt-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                     <SelectValue placeholder={t('selectSpecialty')} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-gray-700 dark:border-gray-600">
                     {specialties.map((specialty) => (
-                      <SelectItem key={specialty.id} value={specialty.id}>
+                      <SelectItem key={specialty.id} value={specialty.id} className="dark:text-white">
                         {specialty.name}
                       </SelectItem>
                     ))}
@@ -225,9 +225,9 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-gray-600">
+          <p className="mt-6 text-center text-gray-600 dark:text-gray-300">
             {t('alreadyHaveAccount')}{' '}
-            <Link to="/login" className="text-teal-600 hover:text-teal-700 font-semibold">
+            <Link to="/login" className="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 font-semibold">
               {t('loginNow')}
             </Link>
           </p>
