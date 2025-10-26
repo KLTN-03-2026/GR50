@@ -4,6 +4,10 @@ import { toast } from 'sonner';
 import { UserPlus, User, Stethoscope } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getErrorMessage } from '@/utils/errorHandler';
+import Layout from '../../components/Layout';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
