@@ -2,13 +2,12 @@ import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext, API } from '@/App';
 import axios from 'axios';
-import { Button } from '@/components/ui/button';
-import { Calendar, Users, Clock, LogOut, AlertCircle } from 'lucide-react';
+import { Calendar, Users, Clock, AlertCircle } from 'lucide-react';
 import Layout from '@/components/Layout';
 
 export default function DoctorDashboard() {
   const navigate = useNavigate();
-  const { user, token, logout } = useContext(AuthContext);
+  const { user, token } = useContext(AuthContext);
   const [appointments, setAppointments] = useState([]);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -40,15 +39,9 @@ export default function DoctorDashboard() {
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Xin chào, BS. {user?.full_name}!</h1>
-              <p className="text-gray-600 mt-1">Quản lý lịch khám của bạn</p>
-            </div>
-            <Button data-testid="logout-btn" variant="outline" onClick={logout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Đăng xuất
-            </Button>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Xin chào, BS. {user?.full_name}!</h1>
+            <p className="text-gray-600 mt-1">Quản lý lịch khám của bạn</p>
           </div>
 
           {/* Status Warning */}
