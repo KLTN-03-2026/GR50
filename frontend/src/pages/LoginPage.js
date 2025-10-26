@@ -63,19 +63,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-6 transition-colors duration-300">
       <div className="w-full max-w-md">
-        <Button data-testid="back-to-home-btn" variant="ghost" onClick={() => navigate('/')} className="mb-6">
+        <Button data-testid="back-to-home-btn" variant="ghost" onClick={() => navigate('/')} className="mb-6 dark:text-gray-200 dark:hover:bg-gray-800">
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('backToHome')}
         </Button>
         
-        <div className="bg-white rounded-3xl shadow-2xl p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8">
           <div className="flex items-center justify-center gap-2 mb-8">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
               <Calendar className="w-7 h-7 text-white" />
             </div>
-            <span className="text-3xl font-bold text-gray-800">MediSchedule</span>
+            <span className="text-3xl font-bold text-gray-800 dark:text-white">MediSchedule</span>
           </div>
 
           <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">{t('login')}</h2>
