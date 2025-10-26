@@ -146,9 +146,9 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-gray-600">
+          <p className="mt-6 text-center text-gray-600 dark:text-gray-300">
             {t('dontHaveAccount')}{' '}
-            <Link to="/register" className="text-teal-600 hover:text-teal-700 font-semibold">
+            <Link to="/register" className="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 font-semibold">
               {t('registerNow')}
             </Link>
           </p>
