@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv('/app/frontend/.env')
 
 # Get backend URL from environment
-BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'https://web-run.preview.emergentagent.com')
+BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'https://auth-flow-repair-25.preview.emergentagent.com')
 BASE_URL = f"{BACKEND_URL}/api"
 
 class ComprehensiveAPITester:
