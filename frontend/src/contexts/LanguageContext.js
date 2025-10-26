@@ -101,9 +101,19 @@ export const translations = {
     dontHaveAccount: 'Chưa có tài khoản?',
     registerNow: 'Đăng ký ngay',
     
-    // Patient
+    // Patient Dashboard
+    greeting: 'Xin chào',
+    welcomeToMediSchedule: 'Chào mừng trở lại với MediSchedule',
     findDoctor: 'Tìm bác sĩ',
+    findDoctorDesc: 'Tìm kiếm bác sĩ theo chuyên khoa',
     appointments: 'Lịch hẹn',
+    appointmentsDesc: 'Xem và quản lý lịch hẹn của bạn',
+    history: 'Lịch sử',
+    historyDesc: 'Xem lại các lịch hẹn trước đây',
+    recentAppointments: 'Lịch hẹn gần đây',
+    viewAll: 'Xem tất cả',
+    noAppointmentsYet: 'Bạn chưa có lịch hẹn nào',
+    bookNow: 'Đặt lịch ngay',
     bookAppointment: 'Đặt lịch khám',
     
     // Doctor
