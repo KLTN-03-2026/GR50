@@ -128,176 +128,171 @@ export default function CreateAccounts() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        {/* Header */}
-        <div className="border-b pb-4 mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">{t('createNewAccount')}</h2>
-          <p className="text-gray-600 mt-1">{t('createAccountSubtitle')}</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Role Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              {t('selectRole')} <span className="text-red-500">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <RoleCard
-                icon={User}
-                title={t('patient')}
-                role="patient"
-                selected={selectedRole === 'patient'}
-                onClick={() => setSelectedRole('patient')}
-              />
-              <RoleCard
-                icon={Stethoscope}
-                title={t('doctor')}
-                role="doctor"
-                selected={selectedRole === 'doctor'}
-                onClick={() => setSelectedRole('doctor')}
-              />
+    <Layout>
+      <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            {/* Header */}
+            <div className="border-b pb-4 mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">{t('createNewAccount')}</h2>
+              <p className="text-gray-600 mt-1">{t('createAccountSubtitle')}</p>
             </div>
-          </div>
 
-          {/* Account Info */}
-          <div className="border-t pt-6">
-            <h3 className="font-semibold text-gray-700 mb-4">{t('accountInfo')}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('email')} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="email@example.com"
-                />
-              </div>
-
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Role Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('password')} <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  {t('selectRole')} <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  minLength={6}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('fullName')} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="full_name"
-                  value={formData.full_name}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('phone')}
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('dateOfBirth')}
-                </label>
-                <input
-                  type="date"
-                  name="date_of_birth"
-                  value={formData.date_of_birth}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('address')}
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Doctor Specific Fields */}
-          {selectedRole === 'doctor' && (
-            <div className="border-t pt-6">
-              <h3 className="font-semibold text-gray-700 mb-4">{t('doctorInfo')}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('specialty')} <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="specialty_id"
-                    value={formData.specialty_id}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">{t('selectSpecialty')}</option>
-                    {specialties.map(spec => (
-                      <option key={spec.id} value={spec.id}>{spec.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('experienceYears')}
-                  </label>
-                  <input
-                    type="number"
-                    name="experience_years"
-                    value={formData.experience_years}
-                    onChange={handleInputChange}
-                    min="0"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                <div className="grid grid-cols-2 gap-4">
+                  <RoleCard
+                    icon={User}
+                    title={t('patient')}
+                    role="patient"
+                    selected={selectedRole === 'patient'}
+                    onClick={() => setSelectedRole('patient')}
+                  />
+                  <RoleCard
+                    icon={Stethoscope}
+                    title={t('doctor')}
+                    role="doctor"
+                    selected={selectedRole === 'doctor'}
+                    onClick={() => setSelectedRole('doctor')}
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('consultationFee')}
-                  </label>
-                  <input
-                    type="number"
-                    name="consultation_fee"
-                    value={formData.consultation_fee}
-                    onChange={handleInputChange}
-                    min="0"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+              {/* Account Info */}
+              <div className="border-t pt-6">
+                <h3 className="font-semibold text-gray-700 mb-4">{t('accountInfo')}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('email')} <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="email@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('password')} <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('fullName')} <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      type="text"
+                      name="full_name"
+                      value={formData.full_name}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('phone')}
+                    </label>
+                    <Input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('dateOfBirth')}
+                    </label>
+                    <Input
+                      type="date"
+                      name="date_of_birth"
+                      value={formData.date_of_birth}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('address')}
+                    </label>
+                    <Input
+                      type="text"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Doctor Specific Fields */}
+              {selectedRole === 'doctor' && (
+                <div className="border-t pt-6">
+                  <h3 className="font-semibold text-gray-700 mb-4">{t('doctorInfo')}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t('specialty')} <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="specialty_id"
+                        value={formData.specialty_id}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      >
+                        <option value="">{t('selectSpecialty')}</option>
+                        {specialties.map(spec => (
+                          <option key={spec.id} value={spec.id}>{spec.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t('experienceYears')}
+                      </label>
+                      <Input
+                        type="number"
+                        name="experience_years"
+                        value={formData.experience_years}
+                        onChange={handleInputChange}
+                        min="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t('consultationFee')}
+                      </label>
+                      <Input
+                        type="number"
+                        name="consultation_fee"
+                        value={formData.consultation_fee}
+                        onChange={handleInputChange}
+                        min="0"
+                      />
+                    </div>
                 </div>
 
                 <div className="md:col-span-2">
