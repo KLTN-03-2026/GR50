@@ -7,9 +7,11 @@ import { API } from '@/App';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { Calendar, ArrowLeft } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
 
@@ -19,10 +21,10 @@ export default function ForgotPasswordPage() {
 
     try {
       await axios.post(`${API}/auth/forgot-password`, { email });
-      toast.success('Nếu email tồn tại, link reset mật khẩu sẽ được gửi');
+      toast.success(t('sendResetLink'));
       setTimeout(() => navigate('/login'), 2000);
     } catch (error) {
-      toast.error('Có lỗi xảy ra');
+      toast.error(t('loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -33,7 +35,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md">
         <Button data-testid="back-to-login-btn" variant="ghost" onClick={() => navigate('/login')} className="mb-6">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Về trang đăng nhập
+          {t('backToLogin')}
         </Button>
         
         <div className="bg-white rounded-3xl shadow-2xl p-8">
@@ -44,12 +46,12 @@ export default function ForgotPasswordPage() {
             <span className="text-3xl font-bold text-gray-800">MediSchedule</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-center mb-4 text-gray-900">Quên mật khẩu</h2>
-          <p className="text-center text-gray-600 mb-8">Nhập email của bạn để nhận link reset mật khẩu</p>
+          <h2 className="text-2xl font-bold text-center mb-4 text-gray-900">{t('resetPassword')}</h2>
+          <p className="text-center text-gray-600 mb-8">{t('enterEmailReset')}</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('email')}</Label>
               <Input
                 data-testid="email-input"
                 id="email"
@@ -62,14 +64,14 @@ export default function ForgotPasswordPage() {
             </div>
 
             <Button data-testid="submit-forgot-btn" type="submit" disabled={loading} className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600">
-              {loading ? 'Đang xử lý...' : 'Gửi link reset'}
+              {loading ? t('loading') : t('sendResetLink')}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-gray-600">
-            Nhớ lại mật khẩu?{' '}
+            {t('alreadyHaveAccount')}{' '}
             <Link to="/login" className="text-teal-600 hover:text-teal-700 font-semibold">
-              Đăng nhập
+              {t('login')}
             </Link>
           </p>
         </div>

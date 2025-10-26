@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AuthContext } from '@/App';
 import { Calendar, Users, MessageSquare, Shield } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { t } = useLanguage();
 
   React.useEffect(() => {
     if (user) {
@@ -29,10 +31,10 @@ export default function LandingPage() {
           </div>
           <div className="flex gap-3">
             <Button data-testid="login-btn" variant="outline" onClick={() => navigate('/login')} className="border-teal-500 text-teal-600 hover:bg-teal-50">
-              Đăng nhập
+              {t('login')}
             </Button>
             <Button data-testid="register-btn" onClick={() => navigate('/register')} className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600">
-              Đăng ký
+              {t('register')}
             </Button>
           </div>
         </div>
@@ -44,20 +46,20 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                Đặt lịch khám bệnh
+                {t('landingTitle').split('easier than ever')[0]}
                 <span className="block mt-2 bg-gradient-to-r from-teal-500 to-cyan-500 bg-clip-text text-transparent">
-                  Dễ dàng & Nhanh chóng
+                  {t('landingTitle').includes('easier') ? t('landingTitle').split('doctors ')[1] : 'Dễ dàng & Nhanh chóng'}
                 </span>
               </h1>
               <p className="text-lg text-gray-600">
-                Kết nối bạn với các bác sĩ chuyên khoa hàng đầu. Đặt lịch khám online hoặc trực tiếp chỉ trong vài phút.
+                {t('landingSubtitle')}
               </p>
               <div className="flex gap-4">
                 <Button data-testid="get-started-btn" size="lg" onClick={() => navigate('/register')} className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-lg px-8">
-                  Bắt đầu ngay
+                  {t('getStarted')}
                 </Button>
                 <Button data-testid="learn-more-btn" size="lg" variant="outline" className="border-teal-500 text-teal-600 hover:bg-teal-50 text-lg px-8">
-                  Tìm hiểu thêm
+                  {t('learnMore')}
                 </Button>
               </div>
             </div>
@@ -77,27 +79,27 @@ export default function LandingPage() {
       {/* Features */}
       <section className="py-20 px-6 bg-white/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-16 text-gray-900">Tính năng nổi bật</h2>
+          <h2 className="text-4xl font-bold text-center mb-16 text-gray-900">{t('whyChooseUs')}</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <FeatureCard
               icon={<Calendar className="w-8 h-8" />}
-              title="Đặt lịch dễ dàng"
-              description="Chọn thời gian phù hợp và đặt lịch khám chỉ trong vài bước đơn giản"
+              title={t('feature2')}
+              description={t('feature2Desc')}
             />
             <FeatureCard
               icon={<Users className="w-8 h-8" />}
-              title="Bác sĩ chuyên khoa"
-              description="Tìm kiếm và kết nối với các bác sĩ có chuyên môn phù hợp với bạn"
+              title={t('feature1')}
+              description={t('feature1Desc')}
             />
             <FeatureCard
               icon={<MessageSquare className="w-8 h-8" />}
-              title="Tư vấn online"
-              description="Chat trực tiếp với bác sĩ để được tư vấn nhanh chóng và tiện lợi"
+              title={t('getConsultation')}
+              description={t('getConsultationDesc')}
             />
             <FeatureCard
               icon={<Shield className="w-8 h-8" />}
-              title="Bảo mật thông tin"
-              description="Thông tin cá nhân và y tế của bạn được bảo vệ tuyệt đối"
+              title={t('feature3')}
+              description={t('feature3Desc')}
             />
           </div>
         </div>
@@ -107,13 +109,13 @@ export default function LandingPage() {
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <h2 className="text-4xl lg:text-5xl font-bold text-gray-900">
-            Sẵn sàng chăm sóc sức khỏe của bạn?
+            {t('readyToStart')}
           </h2>
           <p className="text-xl text-gray-600">
-            Đăng ký ngay hôm nay và trải nghiệm dịch vụ y tế hiện đại
+            {t('registerFree')}
           </p>
           <Button data-testid="cta-register-btn" size="lg" onClick={() => navigate('/register')} className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-lg px-12">
-            Đăng ký miễn phí
+            {t('register')}
           </Button>
         </div>
       </section>
