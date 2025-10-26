@@ -305,10 +305,35 @@ Quyền: Quản lý bác sĩ và bệnh nhân trong khoa, xem thống kê (khôn
 
 ### 🌍 Đổi ngôn ngữ
 
-- Click vào icon **🌐** ở sidebar
-- Chọn **Tiếng Việt** (VI) hoặc **English** (EN)
-- Giao diện sẽ tự động chuyển đổi
-- Ngôn ngữ được lưu vào localStorage
+**Hệ thống hỗ trợ đa ngôn ngữ hoàn chỉnh (Tiếng Việt ↔ English)**
+
+#### Các trang đã được dịch:
+- ✅ **Landing Page** - Trang chủ với hero section và features
+- ✅ **Login Page** - Đăng nhập
+- ✅ **Register Page** - Đăng ký (tất cả trường)
+- ✅ **Forgot Password** - Quên mật khẩu
+- ✅ **Patient Dashboard** - Bảng điều khiển bệnh nhân
+- ✅ **Doctor Dashboard** - Bảng điều khiển bác sĩ (sidebar)
+- ✅ **Admin Dashboard** - Bảng điều khiển admin
+- ✅ **Department Head Dashboard** - Bảng điều khiển trưởng khoa
+- ✅ **Navigation & Sidebar** - Điều hướng và menu
+- ✅ **Common Elements** - Buttons, Labels, Messages
+
+#### Cách đổi ngôn ngữ:
+1. **Trước khi đăng nhập**: Giao diện mặc định là Tiếng Việt
+2. **Sau khi đăng nhập**: 
+   - Click vào nút **VI** hoặc **EN** ở góc dưới bên trái sidebar
+   - Tất cả text sẽ chuyển đổi ngay lập tức
+   - Ngôn ngữ được lưu vào localStorage và giữ nguyên khi reload
+
+#### Nội dung được dịch:
+- 🔤 Tất cả menu và navigation items
+- 📝 Tất cả form labels và placeholders
+- 💬 Messages và notifications
+- 🔘 Buttons và action labels
+- 📊 Dashboard titles và descriptions
+- ⚠️ Error messages và validation
+- ✅ Success messages
 
 ## 🏗️ Cấu trúc Dự án
 
