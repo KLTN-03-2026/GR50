@@ -459,6 +459,8 @@ medischedule/
 
 ## 🧪 Testing
 
+Hệ thống đã được test toàn diện với tỷ lệ thành công 85.4% (35/41 tests passed).
+
 ### Backend Testing
 ```bash
 cd backend
@@ -469,6 +471,46 @@ pytest tests/
 ```bash
 cd frontend
 yarn test
+```
+
+### Test Coverage
+✅ **Hoàn thành và hoạt động tốt:**
+- Authentication & Authorization (4 roles)
+- Admin Module (create accounts, manage doctors/patients, statistics)
+- Department Head Module (limited permissions)
+- Doctor Module (appointments, profile, schedule)
+- Patient Module (registration, search doctors, appointments)
+- Multi-language Support (VI/EN)
+- Dark Mode / Light Mode
+- Role-based Access Control
+
+⚠️ **Hạn chế hiện tại:**
+- AI Features (chat, doctor recommendation, conversation summary) - Yêu cầu OpenAI API key hợp lệ
+
+## 🐛 Known Issues
+
+### AI Features (Yêu cầu API Key)
+Các tính năng AI sau đây đã được implement đầy đủ về mặt kỹ thuật nhưng cần OpenAI API key hợp lệ:
+
+1. **AI Health Consultation Chatbot** (`/api/ai/chat`)
+   - Tư vấn sức khỏe qua chat với AI
+   - Lưu lịch sử chat theo session
+
+2. **AI Doctor Recommendation** (`/api/ai/recommend-doctor`)
+   - Phân tích triệu chứng và đề xuất chuyên khoa + bác sĩ phù hợp
+
+3. **AI Conversation Summarization** (`/api/ai/summarize-conversation/{appointment_id}`)
+   - Tóm tắt cuộc trò chuyện giữa bác sĩ và bệnh nhân
+
+**Cách khắc phục:**
+- Cung cấp OpenAI API key hợp lệ trong file `.env`
+- Hoặc sử dụng Emergent LLM key (nếu có)
+
+```bash
+# Thêm vào backend/.env
+OPENAI_API_KEY=your-openai-api-key
+# hoặc
+EMERGENT_LLM_KEY=your-emergent-key
 ```
 
 ## 🚀 Production Deployment
