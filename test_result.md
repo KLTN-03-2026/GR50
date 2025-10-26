@@ -513,15 +513,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Department Head Create User Endpoint"
-    - "Department Head Get Doctors Endpoint"
-    - "Department Head Get Patients Endpoint"
-    - "Department Head Remove Patient Endpoint"
-    - "Department Head Stats Endpoint"
-    - "Department Head Dashboard"
-    - "Department Head Create Accounts UI"
-    - "Department Head Manage Doctors UI"
-    - "Department Head Manage Patients UI"
+    - "Enhanced Payment System - VietQR & Bank Transfer"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
