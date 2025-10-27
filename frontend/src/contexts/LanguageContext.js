@@ -405,7 +405,7 @@ export const translations = {
     optional: 'optional',
     
     // Landing Page
-    welcomeToMediSchedule: 'Welcome to MediSchedule',
+    welcomeToMediSchedule: 'Welcome to Medical Appointment System',
     landingTitle: 'Book appointments with doctors easier than ever',
     landingSubtitle: 'Connect with top specialists. Book online or in-person appointments in just a few minutes.',
     getStarted: 'Get Started',
@@ -417,7 +417,7 @@ export const translations = {
     bookOnlineDesc: 'Choose a convenient time and book instantly',
     getConsultation: 'Get Consultation',
     getConsultationDesc: 'Meet doctor in-person or via video call',
-    whyChooseUs: 'Why Choose MediSchedule?',
+    whyChooseUs: 'Why Choose Medical Appointment System?',
     feature1: 'Diverse Doctor Network',
     feature1Desc: 'Connect with hundreds of specialist doctors',
     feature2: 'Quick Booking',
