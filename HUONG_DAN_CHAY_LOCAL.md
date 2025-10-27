@@ -692,6 +692,26 @@ Thử lại với password: `12345678`
 
 ---
 
+### ❌ Lỗi: `No matching distribution found for emergentintegrations`
+
+**Nguyên nhân:** Đang dùng file `requirements.txt` thay vì `requirements-local.txt`
+
+**Giải pháp:**
+```bash
+cd backend
+source venv/bin/activate  # hoặc venv\Scripts\activate trên Windows
+
+# Dùng file requirements-local.txt
+pip install -r requirements-local.txt
+```
+
+**Giải thích:**
+- `emergentintegrations` là package riêng của Emergent platform
+- Không cần thiết khi chạy local
+- File `requirements-local.txt` đã loại bỏ package này
+
+---
+
 ### ❌ Lỗi: `Module not found` hoặc `ImportError`
 
 **Nguyên nhân:** Thiếu dependencies
