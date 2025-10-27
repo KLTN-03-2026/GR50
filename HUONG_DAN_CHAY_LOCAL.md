@@ -273,8 +273,8 @@ source venv/bin/activate
 
 # Bạn sẽ thấy (venv) xuất hiện trước dòng lệnh
 
-# Cài đặt các thư viện Python
-pip install -r requirements.txt
+# Cài đặt các thư viện Python (dành cho LOCAL - không có emergentintegrations)
+pip install -r requirements-local.txt
 
 # Chờ khoảng 2-5 phút để cài đặt xong
 ```
