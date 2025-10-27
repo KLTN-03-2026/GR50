@@ -457,8 +457,8 @@ source venv/bin/activate
 # Chạy backend server
 python server.py
 
-# Hoặc dùng uvicorn:
-uvicorn server:app --reload --host 0.0.0.0 --port 8001
+# Hoặc dùng uvicorn (nếu python server.py không hoạt động):
+python -m uvicorn server:app --reload --host 0.0.0.0 --port 8001
 ```
 
 **Kết quả thành công:**
