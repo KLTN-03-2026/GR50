@@ -94,7 +94,7 @@ export default function PaymentProcess() {
     const description = `HD${paymentId.slice(-8)}`;
     
     // VietQR format: https://img.vietqr.io/image/[BANK]-[ACCOUNT]-[TEMPLATE].jpg?amount=[AMOUNT]&addInfo=[DESCRIPTION]
-    return `https://img.vietqr.io/image/${bankCode}-${bankAccount}-compact.jpg?amount=${amount}&addInfo=${description}&accountName=MEDISCHEDULE`;
+    return `https://img.vietqr.io/image/${bankCode}-${bankAccount}-compact.jpg?amount=${amount}&addInfo=${description}&accountName=DAT_LICH_KHAM_BENH`;
   };
 
   if (loading) {
