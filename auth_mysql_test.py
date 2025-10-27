@@ -217,7 +217,7 @@ class AuthenticationTester:
                 self.log_result("Duplicate Email Registration", True, 
                               f"Correctly returned 400 error: {error_detail}")
         else:
-            error_msg = response.text if response else "Connection failed"
+            error_msg = f"Status: {response.status_code}, Body: {response.text}" if response else "Connection failed"
             self.log_result("Duplicate Email Registration", False, 
                           "Should return 400 error for duplicate email", error_msg)
     
