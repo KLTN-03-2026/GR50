@@ -580,15 +580,21 @@ frontend:
   
   - task: "Authentication System - Login & Registration"
     implemented: true
-    working: true
+    working: "NA"
     file: "backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
+    stuck_count: 1
+    priority: "critical"
+    needs_retesting: true
     status_history:
       - working: true
         agent: "testing"
         comment: "✅ AUTHENTICATION SYSTEM FULLY WORKING: Completed comprehensive testing of login and registration functionality. All 5 main test cases PASSED: 1) ✅ Patient registration with valid data - successfully creates new patient accounts with proper validation 2) ✅ Patient login with existing credentials (patient1@test.com/12345678) - returns valid JWT token and user data 3) ✅ Admin login (admin@medischedule.com/12345678) - successful authentication with admin permissions 4) ✅ Wrong password rejection - correctly returns 401 error with Vietnamese error message 5) ✅ Duplicate email rejection - properly prevents registration with existing email (400 error). Additional features working: Login with username ✓, Field validation ✓, Password strength validation ✓. Backend URL: https://access-problem-3.preview.emergentagent.com/api. Authentication endpoints are production-ready and secure."
+      - working: false
+        agent: "user"
+        comment: "USER REPORTED ISSUE: Cannot login or register. Seeing 401 Unauthorized errors for login attempts and bcrypt errors for registration (password cannot be longer than 72 bytes, error reading bcrypt version). Multiple failed authentication attempts visible in logs."
+      - working: "NA"
+        agent: "main"
+        comment: "ROOT CAUSE FOUND: Previous agent converted app from MongoDB to MySQL but MySQL service is not running in this container environment. Backend was failing to connect to MySQL database. SOLUTION IMPLEMENTED: 1) Reverted server.py back to MongoDB version (server_mongodb_backup.py) 2) Fixed .env to include MONGO_URL and DB_NAME for MongoDB 3) Recreated all sample data using create_sample_data.py script 4) MongoDB connection now successful. Test accounts created: patient1@test.com/12345678, doctor1@test.com/12345678, admin@medischedule.com/12345678, departmenthead@test.com/12345678. Backend restarted and connected to MongoDB successfully. Needs retesting to verify login/register working."
 
 metadata:
   created_by: "main_agent"
