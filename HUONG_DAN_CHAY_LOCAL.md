@@ -334,10 +334,15 @@ MONGO_URL=mongodb://localhost:27017
 JWT_SECRET_KEY=your-super-secret-key-change-this-in-production-12345
 
 # OpenAI API (Tùy chọn - nếu muốn dùng AI features)
+# Để trống nếu không dùng AI features
 # OPENAI_API_KEY=sk-your-openai-api-key-here
 
 # Environment
 ENVIRONMENT=development
+
+# Lưu ý:
+# - Nếu không có OPENAI_API_KEY, các tính năng AI sẽ không hoạt động
+# - Các tính năng khác (đăng nhập, đặt lịch, quản lý) vẫn hoạt động bình thường
 ```
 
 **Lưu file** (Ctrl+S hoặc Cmd+S)
