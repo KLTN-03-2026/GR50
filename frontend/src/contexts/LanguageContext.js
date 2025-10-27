@@ -435,7 +435,7 @@ export const translations = {
     
     // Patient Dashboard
     greeting: 'Hello',
-    welcomeToMediSchedule: 'Welcome back to MediSchedule',
+    welcomeToMediSchedule: 'Welcome back to Medical Appointment System',
     findDoctor: 'Find Doctor',
     findDoctorDesc: 'Search for doctors by specialty',
     appointments: 'Appointments',
