@@ -656,3 +656,250 @@ async def forgot_password(request: ForgotPasswordRequest, db: AsyncSession = Dep
     # For now, just return success message
     return {"message": "If email exists, reset link will be sent"}
 
+# ========================================
+# Specialty Routes
+# ========================================
+
+@api_router.get("/specialties", response_model=List[Specialty])
+async def get_specialties(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DBSpecialty))
+    specialties = result.scalars().all()
+    return [db_to_dict(s) for s in specialties]
+
+@api_router.post("/specialties", response_model=Specialty)
+async def create_specialty(
+    specialty_data: SpecialtyCreate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user["role"] != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Check if specialty already exists
+    result = await db.execute(select(DBSpecialty).where(DBSpecialty.name == specialty_data.name))
+    existing = result.scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=400, detail="Chuyên khoa đã tồn tại")
+    
+    specialty_id = str(uuid.uuid4())
+    db_specialty = DBSpecialty(
+        id=specialty_id,
+        name=specialty_data.name,
+        description=specialty_data.description
+    )
+    db.add(db_specialty)
+    await db.commit()
+    await db.refresh(db_specialty)
+    
+    return db_to_dict(db_specialty)
+
+# ========================================
+# Doctor Routes
+# ========================================
+
+@api_router.get("/doctors")
+async def get_doctors(specialty_id: Optional[str] = None, db: AsyncSession = Depends(get_db)):
+    # Build query
+    query = select(DBDoctor, DBUser, DBSpecialty).join(
+        DBUser, DBDoctor.user_id == DBUser.id
+    ).outerjoin(
+        DBSpecialty, DBDoctor.specialty_id == DBSpecialty.id
+    ).where(DBDoctor.status == "approved")
+    
+    if specialty_id:
+        query = query.where(DBDoctor.specialty_id == specialty_id)
+    
+    result = await db.execute(query)
+    rows = result.all()
+    
+    doctors = []
+    for doctor, user, specialty in rows:
+        doctor_dict = db_to_dict(doctor)
+        doctor_dict["full_name"] = user.full_name
+        doctor_dict["email"] = user.email
+        if specialty:
+            doctor_dict["specialty_name"] = specialty.name
+        doctors.append(doctor_dict)
+    
+    return doctors
+
+@api_router.get("/doctors/{doctor_id}")
+async def get_doctor(doctor_id: str, db: AsyncSession = Depends(get_db)):
+    # Get doctor with user and specialty info
+    result = await db.execute(
+        select(DBDoctor, DBUser, DBSpecialty).join(
+            DBUser, DBDoctor.user_id == DBUser.id
+        ).outerjoin(
+            DBSpecialty, DBDoctor.specialty_id == DBSpecialty.id
+        ).where(DBDoctor.user_id == doctor_id)
+    )
+    row = result.first()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    
+    doctor, user, specialty = row
+    doctor_dict = db_to_dict(doctor)
+    doctor_dict["full_name"] = user.full_name
+    doctor_dict["email"] = user.email
+    if specialty:
+        doctor_dict["specialty_name"] = specialty.name
+    
+    return doctor_dict
+
+@api_router.put("/doctors/profile")
+async def update_doctor_profile(
+    profile_data: DoctorProfileUpdate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user["role"] != UserRole.DOCTOR:
+        raise HTTPException(status_code=403, detail="Doctor access required")
+    
+    update_data = {k: v for k, v in profile_data.model_dump().items() if v is not None}
+    
+    if update_data:
+        update_data["updated_at"] = datetime.now(timezone.utc)
+        await db.execute(
+            update(DBDoctor).where(DBDoctor.user_id == current_user["id"]).values(**update_data)
+        )
+        await db.commit()
+    
+    # Get updated doctor
+    result = await db.execute(
+        select(DBDoctor).where(DBDoctor.user_id == current_user["id"])
+    )
+    doctor = result.scalar_one()
+    return db_to_dict(doctor)
+
+@api_router.put("/doctors/schedule")
+async def update_doctor_schedule(
+    schedule_data: DoctorScheduleUpdate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user["role"] != UserRole.DOCTOR:
+        raise HTTPException(status_code=403, detail="Doctor access required")
+    
+    # Note: available_slots is not in current MySQL schema
+    # This endpoint may need schema update
+    # For now, just return success
+    return {"message": "Schedule updated (feature pending schema update)"}
+
+# ========================================
+# Appointment Routes
+# ========================================
+
+@api_router.post("/appointments", response_model=Appointment)
+async def create_appointment(
+    appointment_data: AppointmentCreate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user["role"] != UserRole.PATIENT:
+        raise HTTPException(status_code=403, detail="Patient access required")
+    
+    # Get doctor name
+    result = await db.execute(select(DBUser).where(DBUser.id == appointment_data.doctor_id))
+    doctor_user = result.scalar_one_or_none()
+    if not doctor_user:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    
+    # Create appointment
+    appointment_id = str(uuid.uuid4())
+    db_appointment = DBAppointment(
+        id=appointment_id,
+        patient_id=current_user["id"],
+        doctor_id=appointment_data.doctor_id,
+        appointment_date=datetime.fromisoformat(appointment_data.appointment_date).date(),
+        appointment_time=datetime.fromisoformat(f"2000-01-01 {appointment_data.appointment_time}").time(),
+        symptoms=appointment_data.symptoms,
+        status=AppointmentStatus.PENDING
+    )
+    db.add(db_appointment)
+    await db.commit()
+    await db.refresh(db_appointment)
+    
+    # Prepare response
+    appointment_dict = db_to_dict(db_appointment)
+    appointment_dict["patient_name"] = current_user["full_name"]
+    appointment_dict["doctor_name"] = doctor_user.full_name
+    
+    return appointment_dict
+
+@api_router.get("/appointments/my")
+async def get_my_appointments(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user["role"] == UserRole.PATIENT:
+        # Get appointments for patient with doctor info
+        result = await db.execute(
+            select(DBAppointment, DBUser).join(
+                DBUser, DBAppointment.doctor_id == DBUser.id
+            ).where(DBAppointment.patient_id == current_user["id"]).order_by(desc(DBAppointment.appointment_date))
+        )
+        rows = result.all()
+        
+        appointments = []
+        for appointment, doctor_user in rows:
+            apt_dict = db_to_dict(appointment)
+            apt_dict["patient_name"] = current_user["full_name"]
+            apt_dict["doctor_name"] = doctor_user.full_name
+            appointments.append(apt_dict)
+        
+        return appointments
+    
+    elif current_user["role"] == UserRole.DOCTOR:
+        # Get appointments for doctor with patient info
+        result = await db.execute(
+            select(DBAppointment, DBUser).join(
+                DBUser, DBAppointment.patient_id == DBUser.id
+            ).where(DBAppointment.doctor_id == current_user["id"]).order_by(desc(DBAppointment.appointment_date))
+        )
+        rows = result.all()
+        
+        appointments = []
+        for appointment, patient_user in rows:
+            apt_dict = db_to_dict(appointment)
+            apt_dict["patient_name"] = patient_user.full_name
+            apt_dict["doctor_name"] = current_user["full_name"]
+            appointments.append(apt_dict)
+        
+        return appointments
+    
+    else:
+        raise HTTPException(status_code=403, detail="Invalid role")
+
+@api_router.put("/appointments/{appointment_id}/status")
+async def update_appointment_status(
+    appointment_id: str,
+    status_data: AppointmentStatusUpdate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user["role"] != UserRole.DOCTOR:
+        raise HTTPException(status_code=403, detail="Doctor access required")
+    
+    # Get appointment
+    result = await db.execute(select(DBAppointment).where(DBAppointment.id == appointment_id))
+    appointment = result.scalar_one_or_none()
+    
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    if appointment.doctor_id != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Not your appointment")
+    
+    # Update status
+    await db.execute(
+        update(DBAppointment).where(DBAppointment.id == appointment_id).values(
+            status=status_data.status,
+            updated_at=datetime.now(timezone.utc)
+        )
+    )
+    await db.commit()
+    
+    # Get updated appointment
+    result = await db.execute(select(DBAppointment).where(DBAppointment.id == appointment_id))
+    updated = result.scalar_one()
+    
+    return db_to_dict(updated)
+
