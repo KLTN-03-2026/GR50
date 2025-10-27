@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Chuyển đổi toàn bộ ứng dụng từ MongoDB sang MySQL"
+user_problem_statement: "Sửa lỗi authentication - không thể đăng nhập/đăng ký. Chuyển về MySQL để chạy localhost"
 
 conversion_status:
   status: "✅ COMPLETED"
