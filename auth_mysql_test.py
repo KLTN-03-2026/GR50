@@ -298,7 +298,8 @@ class AuthenticationTester:
         if response and response.status_code == 422:
             self.log_result("Password Length Validation", True, "Correctly rejected short password")
         else:
-            self.log_result("Password Length Validation", False, "Should reject short password")
+            error_msg = f"Status: {response.status_code}, Body: {response.text}" if response else "Connection failed"
+            self.log_result("Password Length Validation", False, "Should reject short password", error_msg)
         
         # Test invalid email format
         invalid_email_data = {
