@@ -315,7 +315,8 @@ class AuthenticationTester:
         if response and response.status_code == 422:
             self.log_result("Email Format Validation", True, "Correctly rejected invalid email format")
         else:
-            self.log_result("Email Format Validation", False, "Should reject invalid email format")
+            error_msg = f"Status: {response.status_code}, Body: {response.text}" if response else "Connection failed"
+            self.log_result("Email Format Validation", False, "Should reject invalid email format", error_msg)
     
     def test_database_connection(self):
         """Test database connection via health check"""
