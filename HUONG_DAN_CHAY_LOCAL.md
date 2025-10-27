@@ -282,8 +282,13 @@ pip install -r requirements-local.txt
 **Lưu ý:** Nếu gặp lỗi `pip install`, thử:
 ```bash
 python -m pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r requirements-local.txt
 ```
+
+**⚠️ Quan trọng về emergentintegrations:**
+- File `requirements.txt` có package `emergentintegrations` - đây là package riêng của Emergent platform
+- Khi chạy LOCAL, dùng file `requirements-local.txt` (đã loại bỏ emergentintegrations)
+- Nếu muốn dùng AI features, cần có OpenAI API key riêng
 
 ---
 
