@@ -72,7 +72,7 @@ export default function Layout({ children }) {
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
               <Calendar className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-gray-800 dark:text-white">MediSchedule</span>
+            <span className="text-2xl font-bold text-gray-800 dark:text-white">Đặt Lịch Khám Bệnh</span>
           </Link>
 
           <nav className="space-y-2">
