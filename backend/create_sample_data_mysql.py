@@ -21,8 +21,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 pwd_context = CryptContext(
     schemes=["bcrypt"],
-    deprecated="auto",
-    bcrypt__truncate_error=True
+    deprecated="auto"
 )
 
 async def create_sample_data():
