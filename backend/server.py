@@ -98,8 +98,7 @@ app.add_middleware(
 # Security settings
 pwd_context = CryptContext(
     schemes=["bcrypt"],
-    deprecated="auto",
-    bcrypt__truncate_error=True
+    deprecated="auto"
 )
 security = HTTPBearer()
 
