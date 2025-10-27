@@ -346,7 +346,7 @@ export default function PaymentProcess() {
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Chủ tài khoản:</span>
-                            <span className="font-semibold text-gray-900">MEDISCHEDULE</span>
+                            <span className="font-semibold text-gray-900">DAT LICH KHAM BENH</span>
                           </div>
                           <div className="flex justify-between items-center border-t pt-3">
                             <span className="text-sm text-gray-600">Số tiền:</span>
