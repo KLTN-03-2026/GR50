@@ -1341,3 +1341,441 @@ async def admin_create_user(
     
     return {"message": "User created successfully", "user": db_to_dict(db_user)}
 
+# ========================================
+# Health Check
+# ========================================
+
+@api_router.get("/health")
+async def health_check():
+    return {"status": "healthy", "database": "mysql"}
+
+# ========================================
+# Department Head Routes
+# ========================================
+
+@api_router.post("/department-head/create-user")
+async def department_head_create_user(
+    user_data: UserCreate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user["role"] != UserRole.DEPARTMENT_HEAD:
+        raise HTTPException(status_code=403, detail="Department Head access required")
+    
+    # Department Head can only create patient and doctor accounts
+    if user_data.role not in [UserRole.PATIENT, UserRole.DOCTOR]:
+        raise HTTPException(status_code=403, detail="You can only create patient or doctor accounts")
+    
+    # Check if email exists
+    result = await db.execute(select(DBUser).where(DBUser.email == user_data.email))
+    existing_user = result.scalar_one_or_none()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email đã được đăng ký")
+    
+    # Hash password
+    hashed_password = hash_password(user_data.password)
+    
+    # Create user
+    user_id = str(uuid.uuid4())
+    db_user = DBUser(
+        id=user_id,
+        email=user_data.email,
+        username=user_data.username,
+        password=hashed_password,
+        full_name=user_data.full_name,
+        phone=user_data.phone,
+        date_of_birth=datetime.fromisoformat(user_data.date_of_birth).date() if user_data.date_of_birth else None,
+        address=user_data.address,
+        role=user_data.role
+    )
+    db.add(db_user)
+    
+    # Create role-specific profiles
+    if user_data.role == UserRole.DOCTOR:
+        doctor_id = str(uuid.uuid4())
+        db_doctor = DBDoctor(
+            id=doctor_id,
+            user_id=user_id,
+            specialty_id=user_data.specialty_id,
+            experience_years=user_data.experience_years or 0,
+            consultation_fee=user_data.consultation_fee or 0.0,
+            bio=user_data.bio,
+            status='approved'  # Department Head-created doctors are auto-approved
+        )
+        db.add(db_doctor)
+    elif user_data.role == UserRole.PATIENT:
+        patient_id = str(uuid.uuid4())
+        db_patient = DBPatient(
+            id=patient_id,
+            user_id=user_id
+        )
+        db.add(db_patient)
+    
+    await db.commit()
+    await db.refresh(db_user)
+    
+    return {"message": "User created successfully", "user": db_to_dict(db_user)}
+
+@api_router.get("/department-head/doctors")
+async def department_head_get_doctors(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user["role"] != UserRole.DEPARTMENT_HEAD:
+        raise HTTPException(status_code=403, detail="Department Head access required")
+    
+    # Get all doctors with user and specialty info
+    result = await db.execute(
+        select(DBDoctor, DBUser, DBSpecialty).join(
+            DBUser, DBDoctor.user_id == DBUser.id
+        ).outerjoin(
+            DBSpecialty, DBDoctor.specialty_id == DBSpecialty.id
+        )
+    )
+    rows = result.all()
+    
+    doctors = []
+    for doctor, user, specialty in rows:
+        doctor_dict = db_to_dict(doctor)
+        doctor_dict["user_info"] = {
+            "full_name": user.full_name,
+            "email": user.email,
+            "phone": user.phone
+        }
+        doctor_dict["full_name"] = user.full_name
+        doctor_dict["email"] = user.email
+        if specialty:
+            doctor_dict["specialty_name"] = specialty.name
+        doctors.append(doctor_dict)
+    
+    return doctors
+
+@api_router.get("/department-head/patients")
+async def department_head_get_patients(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user["role"] != UserRole.DEPARTMENT_HEAD:
+        raise HTTPException(status_code=403, detail="Department Head access required")
+    
+    # Get all patients
+    result = await db.execute(select(DBUser).where(DBUser.role == UserRole.PATIENT))
+    patients = result.scalars().all()
+    
+    return [db_to_dict(p) for p in patients]
+
+@api_router.delete("/department-head/remove-patient/{patient_id}")
+async def department_head_remove_patient(
+    patient_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user["role"] != UserRole.DEPARTMENT_HEAD:
+        raise HTTPException(status_code=403, detail="Department Head access required")
+    
+    # Get patient user
+    result = await db.execute(select(DBUser).where(and_(DBUser.id == patient_id, DBUser.role == UserRole.PATIENT)))
+    patient = result.scalar_one_or_none()
+    
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    # Delete patient (cascade will handle related records)
+    await db.delete(patient)
+    await db.commit()
+    
+    return {"message": "Patient removed successfully"}
+
+@api_router.get("/department-head/stats")
+async def department_head_get_stats(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user["role"] != UserRole.DEPARTMENT_HEAD:
+        raise HTTPException(status_code=403, detail="Department Head access required")
+    
+    # Get statistics
+    total_doctors_result = await db.execute(select(func.count()).select_from(DBUser).where(DBUser.role == UserRole.DOCTOR))
+    total_doctors = total_doctors_result.scalar()
+    
+    approved_doctors_result = await db.execute(select(func.count()).select_from(DBDoctor).where(DBDoctor.status == "approved"))
+    approved_doctors = approved_doctors_result.scalar()
+    
+    pending_doctors_result = await db.execute(select(func.count()).select_from(DBDoctor).where(DBDoctor.status == "pending"))
+    pending_doctors = pending_doctors_result.scalar()
+    
+    total_patients_result = await db.execute(select(func.count()).select_from(DBUser).where(DBUser.role == UserRole.PATIENT))
+    total_patients = total_patients_result.scalar()
+    
+    total_appointments_result = await db.execute(select(func.count()).select_from(DBAppointment))
+    total_appointments = total_appointments_result.scalar()
+    
+    completed_appointments_result = await db.execute(select(func.count()).select_from(DBAppointment).where(DBAppointment.status == AppointmentStatus.COMPLETED))
+    completed_appointments = completed_appointments_result.scalar()
+    
+    return {
+        "total_doctors": total_doctors,
+        "approved_doctors": approved_doctors,
+        "pending_doctors": pending_doctors,
+        "total_patients": total_patients,
+        "total_appointments": total_appointments,
+        "completed_appointments": completed_appointments
+    }
+
+# ========================================
+# AI Routes
+# ========================================
+
+@api_router.post("/ai/chat", response_model=AIChatResponse)
+async def ai_chat(
+    chat_request: AIChatRequest,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """AI health consultation chatbot"""
+    if current_user["role"] != UserRole.PATIENT:
+        raise HTTPException(status_code=403, detail="Only patients can use AI chat")
+    
+    try:
+        # Import OpenAI
+        from openai import OpenAI
+        
+        # Get API key
+        api_key = os.environ.get("EMERGENT_LLM_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
+        
+        client = OpenAI(api_key=api_key)
+        
+        # Generate session ID if not provided
+        session_id = chat_request.session_id or str(uuid.uuid4())
+        
+        # Get chat history for this session
+        result = await db.execute(
+            select(DBAIChatHistory).where(
+                and_(
+                    DBAIChatHistory.user_id == current_user["id"],
+                    DBAIChatHistory.session_id == session_id
+                )
+            ).order_by(DBAIChatHistory.created_at)
+        )
+        history = result.scalars().all()
+        
+        # Build messages array
+        messages = [
+            {"role": "system", "content": "You are a helpful medical assistant. Provide health advice and information, but always recommend consulting a doctor for serious concerns."}
+        ]
+        
+        for msg in history:
+            messages.append({"role": msg.role, "content": msg.content})
+        
+        messages.append({"role": "user", "content": chat_request.message})
+        
+        # Call OpenAI API
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            max_tokens=500
+        )
+        
+        ai_response = response.choices[0].message.content
+        
+        # Save user message
+        user_msg = DBAIChatHistory(
+            id=str(uuid.uuid4()),
+            user_id=current_user["id"],
+            session_id=session_id,
+            role="user",
+            content=chat_request.message
+        )
+        db.add(user_msg)
+        
+        # Save AI response
+        ai_msg = DBAIChatHistory(
+            id=str(uuid.uuid4()),
+            user_id=current_user["id"],
+            session_id=session_id,
+            role="assistant",
+            content=ai_response
+        )
+        db.add(ai_msg)
+        
+        await db.commit()
+        
+        return {"response": ai_response, "session_id": session_id}
+    
+    except Exception as e:
+        logger.error(f"AI chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
+
+@api_router.post("/ai/recommend-doctor")
+async def ai_recommend_doctor(
+    recommendation_request: DoctorRecommendationRequest,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """AI-powered doctor recommendation based on symptoms"""
+    if current_user["role"] != UserRole.PATIENT:
+        raise HTTPException(status_code=403, detail="Only patients can get doctor recommendations")
+    
+    try:
+        # Import OpenAI
+        from openai import OpenAI
+        
+        # Get API key
+        api_key = os.environ.get("EMERGENT_LLM_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
+        
+        client = OpenAI(api_key=api_key)
+        
+        # Get all specialties
+        result = await db.execute(select(DBSpecialty))
+        specialties = result.scalars().all()
+        specialty_list = "\n".join([f"- {s.name}: {s.description}" for s in specialties])
+        
+        # Call OpenAI to analyze symptoms
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": f"You are a medical triage assistant. Based on patient symptoms, recommend the most appropriate medical specialty. Available specialties:\n{specialty_list}\n\nRespond with just the specialty name."},
+                {"role": "user", "content": f"Patient symptoms: {recommendation_request.symptoms}"}
+            ],
+            max_tokens=50
+        )
+        
+        recommended_specialty = response.choices[0].message.content.strip()
+        
+        # Find matching specialty
+        result = await db.execute(
+            select(DBSpecialty).where(DBSpecialty.name.like(f"%{recommended_specialty}%"))
+        )
+        specialty = result.scalar_one_or_none()
+        
+        if specialty:
+            # Get doctors in this specialty
+            result = await db.execute(
+                select(DBDoctor, DBUser).join(
+                    DBUser, DBDoctor.user_id == DBUser.id
+                ).where(
+                    and_(
+                        DBDoctor.specialty_id == specialty.id,
+                        DBDoctor.status == "approved"
+                    )
+                )
+            )
+            rows = result.all()
+            
+            doctors = []
+            for doctor, user in rows:
+                doctor_dict = db_to_dict(doctor)
+                doctor_dict["full_name"] = user.full_name
+                doctor_dict["specialty_name"] = specialty.name
+                doctors.append(doctor_dict)
+            
+            return {
+                "recommended_specialty": specialty.name,
+                "specialty_id": specialty.id,
+                "doctors": doctors,
+                "reason": f"Based on your symptoms, we recommend seeing a {specialty.name} specialist."
+            }
+        else:
+            return {
+                "recommended_specialty": "General Practitioner",
+                "specialty_id": None,
+                "doctors": [],
+                "reason": "We recommend consulting a general practitioner for initial assessment."
+            }
+    
+    except Exception as e:
+        logger.error(f"AI recommendation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
+
+@api_router.post("/ai/summarize-conversation/{appointment_id}")
+async def ai_summarize_conversation(
+    appointment_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """AI-powered conversation summarization"""
+    # Verify appointment exists and user has access
+    result = await db.execute(select(DBAppointment).where(DBAppointment.id == appointment_id))
+    appointment = result.scalar_one_or_none()
+    
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    if current_user["id"] not in [appointment.patient_id, appointment.doctor_id]:
+        raise HTTPException(status_code=403, detail="You don't have access to this appointment")
+    
+    try:
+        # Get chat messages
+        result = await db.execute(
+            select(DBChatMessage, DBUser).join(
+                DBUser, DBChatMessage.sender_id == DBUser.id
+            ).where(DBChatMessage.appointment_id == appointment_id).order_by(DBChatMessage.created_at)
+        )
+        rows = result.all()
+        
+        if not rows:
+            raise HTTPException(status_code=404, detail="No conversation found")
+        
+        # Build conversation text
+        conversation = "\n".join([f"{sender.full_name}: {message.message}" for message, sender in rows])
+        
+        # Import OpenAI
+        from openai import OpenAI
+        
+        # Get API key
+        api_key = os.environ.get("EMERGENT_LLM_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
+        
+        client = OpenAI(api_key=api_key)
+        
+        # Call OpenAI to summarize
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a medical assistant. Summarize the following doctor-patient conversation, highlighting key symptoms, diagnosis, and treatment recommendations."},
+                {"role": "user", "content": conversation}
+            ],
+            max_tokens=300
+        )
+        
+        summary = response.choices[0].message.content
+        
+        return {"summary": summary}
+    
+    except Exception as e:
+        logger.error(f"AI summarization error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
+
+@api_router.get("/ai/chat-history")
+async def get_ai_chat_history(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get AI chat history for current user"""
+    if current_user["role"] != UserRole.PATIENT:
+        raise HTTPException(status_code=403, detail="Only patients can access chat history")
+    
+    # Get all chat history grouped by session
+    result = await db.execute(
+        select(DBAIChatHistory).where(
+            DBAIChatHistory.user_id == current_user["id"]
+        ).order_by(DBAIChatHistory.created_at)
+    )
+    history = result.scalars().all()
+    
+    # Group by session
+    sessions = {}
+    for msg in history:
+        if msg.session_id not in sessions:
+            sessions[msg.session_id] = []
+        sessions[msg.session_id].append(db_to_dict(msg))
+    
+    return {
+        "sessions": sessions,
+        "total_messages": len(history)
+    }
+
+# Include router in app
+app.include_router(api_router, prefix=API_PREFIX)
+
+# Root endpoint
+@app.get("/")
+async def root():
+    return {"message": "Healthcare API with MySQL", "docs": f"{API_PREFIX}/docs"}
+
