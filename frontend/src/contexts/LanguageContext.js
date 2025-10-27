@@ -148,7 +148,7 @@ export const translations = {
     
     // Patient Dashboard
     greeting: 'Xin chào',
-    welcomeToMediSchedule: 'Chào mừng trở lại với MediSchedule',
+    welcomeToMediSchedule: 'Chào mừng trở lại với Đặt Lịch Khám Bệnh',
     findDoctor: 'Tìm bác sĩ',
     findDoctorDesc: 'Tìm kiếm bác sĩ theo chuyên khoa',
     appointments: 'Lịch hẹn',
