@@ -604,12 +604,14 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Enhanced Payment System - VietQR & Bank Transfer"
+    - "Authentication System - Login & Registration"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
+  - agent: "main"
+    message: "🔧 CRITICAL FIX COMPLETED - Authentication System Restored: User reported login/register failures with 401 and bcrypt errors. Investigation revealed MySQL was not running in container but backend was configured for MySQL. ACTIONS TAKEN: 1) ✅ Switched server.py back to MongoDB version (MySQL → MongoDB) 2) ✅ Updated .env with MONGO_URL=mongodb://localhost:27017 and DB_NAME=healthcare 3) ✅ Recreated sample data - all test accounts created successfully 4) ✅ Backend restarted and connected to MongoDB successfully. TEST ACCOUNTS READY: patient1@test.com/12345678, doctor1@test.com/12345678, admin@medischedule.com/12345678, departmenthead@test.com/12345678. Backend logs show 'Successfully connected to MongoDB'. Ready for comprehensive authentication testing - please test login and registration endpoints."
   - agent: "main"
     message: "Completed Department Head feature implementation. Backend: Created 5 new endpoints (/api/department-head/create-user, /doctors, /patients, /remove-patient/{id}, /stats). Department Head can ONLY create doctor and patient accounts (validation prevents admin/department_head creation). Frontend: Created 4 new pages (Dashboard, CreateAccounts, Doctors, Patients) with separate UI from Admin. Updated routing, navigation, and added 48 translations (VI/EN). Department Head has independent interface focused on doctor and patient management only. Ready for testing."
   - agent: "main"
