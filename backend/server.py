@@ -229,3 +229,226 @@ async def get_current_user(
             detail="Internal server error during authentication"
         )
 
+# Models
+class UserRole:
+    PATIENT = "patient"
+    DOCTOR = "doctor"
+    DEPARTMENT_HEAD = "department_head"
+    ADMIN = "admin"
+
+    @classmethod
+    def is_valid(cls, role: str) -> bool:
+        return role in {cls.PATIENT, cls.DOCTOR, cls.DEPARTMENT_HEAD, cls.ADMIN}
+
+class AdminPermissions(BaseModel):
+    can_manage_doctors: bool = True
+    can_manage_patients: bool = True
+    can_manage_appointments: bool = True
+    can_view_stats: bool = True
+    can_manage_specialties: bool = True
+    can_create_admins: bool = False  # Only root admin should have this
+
+class User(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    email: str
+    username: str
+    full_name: str
+    phone: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    address: Optional[str] = None
+    role: str = UserRole.PATIENT
+    admin_permissions: Optional[dict] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UserCreate(BaseModel):
+    email: str
+    username: str
+    password: str
+    full_name: str
+    phone: str
+    date_of_birth: Optional[str] = None
+    address: Optional[str] = None
+    role: str = UserRole.PATIENT
+    specialty_id: Optional[str] = None  # For doctor registration
+    experience_years: Optional[int] = None
+    consultation_fee: Optional[float] = None
+    bio: Optional[str] = None
+    admin_permissions: Optional[dict] = None
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v):
+        if '@' not in v or '.' not in v.split('@')[1]:
+            raise ValueError('Invalid email format')
+        return v.lower()
+    
+    @field_validator('username')
+    @classmethod
+    def validate_username(cls, v):
+        import re
+        if not v or len(v) < 3:
+            raise ValueError('Username phải có ít nhất 3 ký tự')
+        if not re.match(r'^[a-zA-Z0-9_]+$', v):
+            raise ValueError('Username chỉ được chứa chữ cái, số và dấu gạch dưới')
+        return v.lower()
+    
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v):
+        if len(v) < 8 or len(v) > 20:
+            raise ValueError('Mật khẩu phải có độ dài từ 8-20 ký tự')
+        if ' ' in v:
+            raise ValueError('Mật khẩu không được chứa khoảng trắng')
+        return v
+    
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v):
+        import re
+        if not v:
+            raise ValueError('Số điện thoại là bắt buộc')
+        # Remove spaces and dashes
+        phone = re.sub(r'[\s\-]', '', v)
+        if not re.match(r'^[0-9]{10,11}$', phone):
+            raise ValueError('Số điện thoại phải có 10-11 chữ số')
+        return phone
+
+class UserLogin(BaseModel):
+    login: str  # Có thể là email hoặc username
+    password: str
+    
+    @field_validator('login')
+    @classmethod
+    def validate_login(cls, v):
+        return v.lower().strip()
+
+class Specialty(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: Optional[str] = None
+
+class SpecialtyCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+class DoctorProfile(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    user_id: str
+    specialty_id: str
+    specialty_name: Optional[str] = None
+    bio: Optional[str] = None
+    experience_years: Optional[int] = None
+    consultation_fee: Optional[float] = None
+    available_slots: List[dict] = []  # [{"day": "monday", "start_time": "09:00", "end_time": "17:00"}]
+    status: str = "pending"  # pending, approved, rejected
+    is_department_head: bool = False  # Trưởng khoa flag
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class DoctorProfileUpdate(BaseModel):
+    specialty_id: Optional[str] = None
+    bio: Optional[str] = None
+    experience_years: Optional[int] = None
+    consultation_fee: Optional[float] = None
+
+class DoctorScheduleUpdate(BaseModel):
+    available_slots: List[dict]
+
+class AppointmentType:
+    IN_PERSON = "in_person"
+    ONLINE = "online"
+
+class AppointmentStatus:
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+
+class Appointment(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    patient_id: str
+    patient_name: Optional[str] = None
+    doctor_id: str
+    doctor_name: Optional[str] = None
+    appointment_date: str  # YYYY-MM-DD
+    appointment_time: str  # HH:MM
+    symptoms: Optional[str] = None
+    status: str = AppointmentStatus.PENDING
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class AppointmentCreate(BaseModel):
+    doctor_id: str
+    appointment_date: str
+    appointment_time: str
+    symptoms: Optional[str] = None
+
+class AppointmentStatusUpdate(BaseModel):
+    status: str
+
+class ChatMessage(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    appointment_id: str
+    sender_id: str
+    sender_name: Optional[str] = None
+    message: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ChatMessageCreate(BaseModel):
+    appointment_id: str
+    message: str
+
+class UserProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    address: Optional[str] = None
+    
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v):
+        if v is None:
+            return v
+        import re
+        # Remove spaces and dashes
+        phone = re.sub(r'[\s\-]', '', v)
+        if not re.match(r'^[0-9]{10,11}$', phone):
+            raise ValueError('Số điện thoại phải có 10-11 chữ số')
+        return phone
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
+    
+    @field_validator('new_password')
+    @classmethod
+    def validate_password(cls, v):
+        if len(v) < 8 or len(v) > 20:
+            raise ValueError('Mật khẩu phải có độ dài từ 8-20 ký tự')
+        if ' ' in v:
+            raise ValueError('Mật khẩu không được chứa khoảng trắng')
+        return v
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v):
+        if '@' not in v or '.' not in v.split('@')[1]:
+            raise ValueError('Invalid email format')
+        return v.lower()
+
+class AIChatRequest(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+
+class AIChatResponse(BaseModel):
+    response: str
+    session_id: str
+
+class DoctorRecommendationRequest(BaseModel):
+    symptoms: str
+
