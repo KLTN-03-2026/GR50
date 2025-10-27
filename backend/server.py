@@ -34,6 +34,42 @@ MONGO_SERVER_SELECTION_TIMEOUT = int(os.environ.get('MONGO_SERVER_SELECTION_TIME
 # Application Settings
 API_PREFIX = "/api"
 
+# Database connection
+client: Optional[AsyncIOMotorClient] = None
+db: Any = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    global client, db
+    try:
+        logger.info(f"Connecting to MongoDB at {MONGO_URL}...")
+        client = AsyncIOMotorClient(
+            MONGO_URL,
+            serverSelectionTimeoutMS=MONGO_SERVER_SELECTION_TIMEOUT,
+            connectTimeoutMS=MONGO_CONNECT_TIMEOUT
+        )
+        db = client[DB_NAME]
+        await client.admin.command('ping')
+        logger.info("Successfully connected to MongoDB")
+        
+        await db.users.create_index("email", unique=True)
+        await db.users.create_index("username", unique=True)
+        await db.users.create_index("id", unique=True)
+    except Exception as e:
+        logger.error(f"Failed to connect to MongoDB: {e}")
+        if os.environ.get("ENVIRONMENT", "development") == "production":
+            raise
+        logger.warning("Running in development mode without MongoDB")
+    
+    yield
+    
+    # Shutdown
+    if client:
+        logger.info("Closing MongoDB connection...")
+        client.close()
+        logger.info("MongoDB connection closed")
+
 # Create the main app with metadata
 app = FastAPI(
     title="Healthcare API",
@@ -41,7 +77,8 @@ app = FastAPI(
     version="1.0.0",
     docs_url=f"{API_PREFIX}/docs",
     redoc_url=f"{API_PREFIX}/redoc",
-    openapi_url=f"{API_PREFIX}/openapi.json"
+    openapi_url=f"{API_PREFIX}/openapi.json",
+    lifespan=lifespan
 )
 
 # Create a router with versioned API prefix
