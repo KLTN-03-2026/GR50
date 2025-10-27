@@ -13,6 +13,8 @@ MYSQL_DATABASE = os.getenv('MYSQL_DATABASE', 'medischedule')
 
 def create_database():
     """Create MySQL database and tables"""
+    conn = None
+    cursor = None
     try:
         # Connect to MySQL server (without database)
         conn = mysql.connector.connect(
