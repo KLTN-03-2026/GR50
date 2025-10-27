@@ -1779,3 +1779,33 @@ app.include_router(api_router, prefix=API_PREFIX)
 async def root():
     return {"message": "Healthcare API with MySQL", "docs": f"{API_PREFIX}/docs"}
 
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring"""
+    return {
+        "status": "healthy",
+        "database": "mysql",
+        "version": "1.0.0",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+# Run server directly with python server.py
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8001))
+    host = os.environ.get("HOST", "0.0.0.0")
+    
+    logger.info(f"Starting MediSchedule Backend Server...")
+    logger.info(f"Host: {host}")
+    logger.info(f"Port: {port}")
+    logger.info(f"API Docs: http://localhost:{port}{API_PREFIX}/docs")
+    logger.info(f"Health Check: http://localhost:{port}/health")
+    
+    uvicorn.run(
+        "server:app",
+        host=host,
+        port=port,
+        reload=True,
+        log_level="info"
+    )
