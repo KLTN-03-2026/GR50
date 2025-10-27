@@ -102,10 +102,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Database connection
-client: Optional[AsyncIOMotorClient] = None
-db: Any = None
-
 async def get_database() -> Any:
     if db is None:
         raise HTTPException(
@@ -113,41 +109,6 @@ async def get_database() -> Any:
             detail="Database connection not established"
         )
     return db
-
-@app.on_event("startup")
-async def startup_db_client():
-    global client, db
-    try:
-        logger.info(f"Connecting to MongoDB at {MONGO_URL}...")
-        # Configure MongoDB client with timeouts
-        client = AsyncIOMotorClient(
-            MONGO_URL,
-            serverSelectionTimeoutMS=MONGO_SERVER_SELECTION_TIMEOUT,
-            connectTimeoutMS=MONGO_CONNECT_TIMEOUT
-        )
-        db = client[DB_NAME]
-        # Verify the connection
-        await client.admin.command('ping')
-        logger.info("Successfully connected to MongoDB")
-        
-        # Create indexes if they don't exist
-        await db.users.create_index("email", unique=True)
-        await db.users.create_index("username", unique=True)
-        await db.users.create_index("id", unique=True)
-    except Exception as e:
-        logger.error(f"Failed to connect to MongoDB: {e}")
-        # In development, we might want to continue without MongoDB
-        if os.environ.get("ENVIRONMENT", "development") == "production":
-            raise
-        logger.warning("Running in development mode without MongoDB")
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    global client
-    if client:
-        logger.info("Closing MongoDB connection...")
-        client.close()
-        logger.info("MongoDB connection closed")
 
 # Security settings
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
