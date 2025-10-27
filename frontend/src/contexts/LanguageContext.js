@@ -118,7 +118,7 @@ export const translations = {
     optional: 'không bắt buộc',
     
     // Landing Page
-    welcomeToMediSchedule: 'Chào mừng đến với MediSchedule',
+    welcomeToMediSchedule: 'Chào mừng đến với Đặt Lịch Khám Bệnh',
     landingTitle: 'Đặt lịch khám với bác sĩ dễ dàng hơn bao giờ hết',
     landingSubtitle: 'Kết nối bạn với các bác sĩ chuyên khoa hàng đầu. Đặt lịch khám online hoặc trực tiếp chỉ trong vài phút.',
     getStarted: 'Bắt đầu ngay',
@@ -130,7 +130,7 @@ export const translations = {
     bookOnlineDesc: 'Chọn thời gian phù hợp và đặt lịch ngay lập tức',
     getConsultation: 'Nhận tư vấn',
     getConsultationDesc: 'Gặp bác sĩ trực tiếp hoặc qua video call',
-    whyChooseUs: 'Tại sao chọn MediSchedule?',
+    whyChooseUs: 'Tại sao chọn Đặt Lịch Khám Bệnh?',
     feature1: 'Hệ thống bác sĩ đa dạng',
     feature1Desc: 'Kết nối với hàng trăm bác sĩ chuyên khoa',
     feature2: 'Đặt lịch nhanh chóng',
