@@ -452,3 +452,207 @@ class AIChatResponse(BaseModel):
 class DoctorRecommendationRequest(BaseModel):
     symptoms: str
 
+# ========================================
+# Auth Routes
+# ========================================
+
+@api_router.post("/auth/register")
+async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
+    # Check if email exists
+    result = await db.execute(select(DBUser).where(DBUser.email == user_data.email))
+    existing_user = result.scalar_one_or_none()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email đã được đăng ký")
+    
+    # Check if username exists
+    result = await db.execute(select(DBUser).where(DBUser.username == user_data.username))
+    existing_username = result.scalar_one_or_none()
+    if existing_username:
+        raise HTTPException(status_code=400, detail="Tên đăng nhập đã được sử dụng")
+    
+    # Hash password
+    hashed_password = hash_password(user_data.password)
+    
+    # Create user
+    user_id = str(uuid.uuid4())
+    db_user = DBUser(
+        id=user_id,
+        email=user_data.email,
+        username=user_data.username,
+        password=hashed_password,
+        full_name=user_data.full_name,
+        phone=user_data.phone,
+        date_of_birth=datetime.fromisoformat(user_data.date_of_birth).date() if user_data.date_of_birth else None,
+        address=user_data.address,
+        role=user_data.role
+    )
+    db.add(db_user)
+    
+    # If registering as doctor or department_head, create doctor profile
+    if user_data.role in [UserRole.DOCTOR, UserRole.DEPARTMENT_HEAD]:
+        doctor_id = str(uuid.uuid4())
+        db_doctor = DBDoctor(
+            id=doctor_id,
+            user_id=user_id,
+            specialty_id=user_data.specialty_id,
+            experience_years=user_data.experience_years or 0,
+            consultation_fee=user_data.consultation_fee or 0.0,
+            bio=user_data.bio,
+            status='pending'
+        )
+        db.add(db_doctor)
+    
+    # If registering as patient, create patient profile
+    elif user_data.role == UserRole.PATIENT:
+        patient_id = str(uuid.uuid4())
+        db_patient = DBPatient(
+            id=patient_id,
+            user_id=user_id
+        )
+        db.add(db_patient)
+    
+    await db.commit()
+    await db.refresh(db_user)
+    
+    # Get user dict for response
+    user_dict = db_to_dict(db_user)
+    
+    # Create access token
+    access_token = create_access_token(data={"sub": user_id, "role": user_data.role})
+    
+    return {
+        "token": access_token,
+        "user": user_dict
+    }
+
+@api_router.post("/auth/login")
+async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
+    # Find user by username or email
+    result = await db.execute(
+        select(DBUser).where(
+            or_(DBUser.username == login_data.login, DBUser.email == login_data.login)
+        )
+    )
+    user = result.scalar_one_or_none()
+    
+    if not user or not verify_password(login_data.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email/Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng kiểm tra lại!"
+        )
+    
+    # Load admin permissions if user is admin
+    admin_permissions = None
+    if user.role == UserRole.ADMIN:
+        result = await db.execute(
+            select(DBAdminPermission).where(DBAdminPermission.user_id == user.id)
+        )
+        perm = result.scalar_one_or_none()
+        if perm:
+            admin_permissions = db_to_dict(perm)
+            del admin_permissions['user_id']
+    
+    # Create access token
+    access_token = create_access_token(data={"sub": user.id, "role": user.role})
+    
+    # Prepare user dict
+    user_dict = db_to_dict(user)
+    if admin_permissions:
+        user_dict['admin_permissions'] = admin_permissions
+    
+    return {
+        "token": access_token,
+        "user": user_dict
+    }
+
+@api_router.get("/auth/me")
+async def get_me(current_user: dict = Depends(get_current_user)):
+    return current_user
+
+# ========================================
+# Profile Routes
+# ========================================
+
+@api_router.put("/profile/update")
+async def update_profile(
+    profile_data: UserProfileUpdate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Update user profile information - works for all roles"""
+    user_id = current_user["id"]
+    
+    # Prepare update data
+    update_data = {}
+    if profile_data.full_name is not None:
+        update_data["full_name"] = profile_data.full_name
+    if profile_data.phone is not None:
+        update_data["phone"] = profile_data.phone
+    if profile_data.date_of_birth is not None:
+        update_data["date_of_birth"] = datetime.fromisoformat(profile_data.date_of_birth).date()
+    if profile_data.address is not None:
+        update_data["address"] = profile_data.address
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Không có thông tin nào để cập nhật")
+    
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
+    # Update user
+    await db.execute(
+        update(DBUser).where(DBUser.id == user_id).values(**update_data)
+    )
+    await db.commit()
+    
+    # Get updated user
+    result = await db.execute(select(DBUser).where(DBUser.id == user_id))
+    updated_user = result.scalar_one()
+    
+    return {
+        "message": "Cập nhật thông tin thành công",
+        "user": db_to_dict(updated_user)
+    }
+
+@api_router.post("/profile/change-password")
+async def change_password(
+    password_data: PasswordChangeRequest,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Change user password - works for all roles"""
+    user_id = current_user["id"]
+    
+    # Get user from database
+    result = await db.execute(select(DBUser).where(DBUser.id == user_id))
+    user = result.scalar_one()
+    
+    # Verify current password
+    if not verify_password(password_data.current_password, user.password):
+        raise HTTPException(status_code=400, detail="Mật khẩu hiện tại không đúng")
+    
+    # Hash and update new password
+    hashed_password = hash_password(password_data.new_password)
+    await db.execute(
+        update(DBUser).where(DBUser.id == user_id).values(
+            password=hashed_password,
+            updated_at=datetime.now(timezone.utc)
+        )
+    )
+    await db.commit()
+    
+    return {"message": "Đổi mật khẩu thành công"}
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(request: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+    # Check if user exists
+    result = await db.execute(select(DBUser).where(DBUser.email == request.email))
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        # Return success even if user not found (security best practice)
+        return {"message": "If email exists, reset link will be sent"}
+    
+    # TODO: Implement email sending logic
+    # For now, just return success message
+    return {"message": "If email exists, reset link will be sent"}
+
