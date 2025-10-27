@@ -903,3 +903,441 @@ async def update_appointment_status(
     
     return db_to_dict(updated)
 
+# ========================================
+# Chat Routes
+# ========================================
+
+@api_router.post("/chat/send")
+async def send_message(
+    message_data: ChatMessageCreate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    # Verify appointment exists and user is part of it
+    result = await db.execute(select(DBAppointment).where(DBAppointment.id == message_data.appointment_id))
+    appointment = result.scalar_one_or_none()
+    
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    if current_user["id"] not in [appointment.patient_id, appointment.doctor_id]:
+        raise HTTPException(status_code=403, detail="Not your appointment")
+    
+    # Create message
+    message_id = str(uuid.uuid4())
+    db_message = DBChatMessage(
+        id=message_id,
+        appointment_id=message_data.appointment_id,
+        sender_id=current_user["id"],
+        message=message_data.message
+    )
+    db.add(db_message)
+    await db.commit()
+    await db.refresh(db_message)
+    
+    message_dict = db_to_dict(db_message)
+    message_dict["sender_name"] = current_user["full_name"]
+    
+    return message_dict
+
+@api_router.get("/chat/{appointment_id}")
+async def get_chat_messages(
+    appointment_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    # Verify appointment exists and user is part of it
+    result = await db.execute(select(DBAppointment).where(DBAppointment.id == appointment_id))
+    appointment = result.scalar_one_or_none()
+    
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    if current_user["id"] not in [appointment.patient_id, appointment.doctor_id]:
+        raise HTTPException(status_code=403, detail="Not your appointment")
+    
+    # Get messages with sender info
+    result = await db.execute(
+        select(DBChatMessage, DBUser).join(
+            DBUser, DBChatMessage.sender_id == DBUser.id
+        ).where(DBChatMessage.appointment_id == appointment_id).order_by(DBChatMessage.created_at)
+    )
+    rows = result.all()
+    
+    messages = []
+    for message, sender in rows:
+        msg_dict = db_to_dict(message)
+        msg_dict["sender_name"] = sender.full_name
+        messages.append(msg_dict)
+    
+    return messages
+
+# ========================================
+# Admin Routes
+# ========================================
+
+@api_router.get("/admin/doctors")
+async def admin_get_doctors(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user["role"] != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get all doctors with user and specialty info
+    result = await db.execute(
+        select(DBDoctor, DBUser, DBSpecialty).join(
+            DBUser, DBDoctor.user_id == DBUser.id
+        ).outerjoin(
+            DBSpecialty, DBDoctor.specialty_id == DBSpecialty.id
+        )
+    )
+    rows = result.all()
+    
+    doctors = []
+    for doctor, user, specialty in rows:
+        doctor_dict = db_to_dict(doctor)
+        doctor_dict["full_name"] = user.full_name
+        doctor_dict["email"] = user.email
+        if specialty:
+            doctor_dict["specialty_name"] = specialty.name
+        doctors.append(doctor_dict)
+    
+    return doctors
+
+@api_router.put("/admin/doctors/{doctor_id}/approve")
+async def admin_approve_doctor(
+    doctor_id: str,
+    status: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user["role"] != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Update doctor status
+    await db.execute(
+        update(DBDoctor).where(DBDoctor.user_id == doctor_id).values(
+            status=status,
+            approved_by=current_user["id"],
+            updated_at=datetime.now(timezone.utc)
+        )
+    )
+    await db.commit()
+    
+    # Get updated doctor
+    result = await db.execute(select(DBDoctor).where(DBDoctor.user_id == doctor_id))
+    doctor = result.scalar_one()
+    
+    return db_to_dict(doctor)
+
+@api_router.get("/admin/patients")
+async def admin_get_patients(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user["role"] != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get all patients
+    result = await db.execute(select(DBUser).where(DBUser.role == UserRole.PATIENT))
+    patients = result.scalars().all()
+    
+    return [db_to_dict(p) for p in patients]
+
+@api_router.get("/admin/stats")
+async def admin_get_stats(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user["role"] != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get statistics
+    total_patients_result = await db.execute(select(func.count()).select_from(DBUser).where(DBUser.role == UserRole.PATIENT))
+    total_patients = total_patients_result.scalar()
+    
+    total_doctors_result = await db.execute(select(func.count()).select_from(DBUser).where(DBUser.role == UserRole.DOCTOR))
+    total_doctors = total_doctors_result.scalar()
+    
+    total_appointments_result = await db.execute(select(func.count()).select_from(DBAppointment))
+    total_appointments = total_appointments_result.scalar()
+    
+    pending_appointments_result = await db.execute(select(func.count()).select_from(DBAppointment).where(DBAppointment.status == AppointmentStatus.PENDING))
+    pending_appointments = pending_appointments_result.scalar()
+    
+    confirmed_appointments_result = await db.execute(select(func.count()).select_from(DBAppointment).where(DBAppointment.status == AppointmentStatus.CONFIRMED))
+    confirmed_appointments = confirmed_appointments_result.scalar()
+    
+    completed_appointments_result = await db.execute(select(func.count()).select_from(DBAppointment).where(DBAppointment.status == AppointmentStatus.COMPLETED))
+    completed_appointments = completed_appointments_result.scalar()
+    
+    cancelled_appointments_result = await db.execute(select(func.count()).select_from(DBAppointment).where(DBAppointment.status == AppointmentStatus.CANCELLED))
+    cancelled_appointments = cancelled_appointments_result.scalar()
+    
+    pending_doctors_result = await db.execute(select(func.count()).select_from(DBDoctor).where(DBDoctor.status == "pending"))
+    pending_doctors = pending_doctors_result.scalar()
+    
+    approved_doctors_result = await db.execute(select(func.count()).select_from(DBDoctor).where(DBDoctor.status == "approved"))
+    approved_doctors = approved_doctors_result.scalar()
+    
+    return {
+        "total_patients": total_patients,
+        "total_doctors": total_doctors,
+        "total_appointments": total_appointments,
+        "pending_appointments": pending_appointments,
+        "confirmed_appointments": confirmed_appointments,
+        "completed_appointments": completed_appointments,
+        "cancelled_appointments": cancelled_appointments,
+        "online_consultations": 0,  # Not tracked in current schema
+        "in_person_consultations": 0,  # Not tracked in current schema
+        "pending_doctors": pending_doctors,
+        "approved_doctors": approved_doctors
+    }
+
+# Admin - Create Admin Account with Permissions
+@api_router.post("/admin/create-admin")
+async def create_admin_account(
+    user_data: UserCreate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user["role"] != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Check if current admin has permission to create admins
+    current_permissions = current_user.get("admin_permissions") or {}
+    if not current_permissions.get("can_create_admins", False):
+        raise HTTPException(status_code=403, detail="You don't have permission to create admin accounts")
+    
+    # Force role to be admin
+    user_data.role = UserRole.ADMIN
+    
+    # Check if user exists
+    result = await db.execute(select(DBUser).where(DBUser.email == user_data.email))
+    existing_user = result.scalar_one_or_none()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Hash password
+    hashed_password = hash_password(user_data.password)
+    
+    # Set default permissions if not provided
+    if not user_data.admin_permissions:
+        user_data.admin_permissions = {
+            "can_manage_doctors": True,
+            "can_manage_patients": True,
+            "can_manage_appointments": True,
+            "can_view_stats": True,
+            "can_manage_specialties": True,
+            "can_create_admins": False
+        }
+    
+    # Create admin user
+    user_id = str(uuid.uuid4())
+    db_user = DBUser(
+        id=user_id,
+        email=user_data.email,
+        username=user_data.username,
+        password=hashed_password,
+        full_name=user_data.full_name,
+        phone=user_data.phone,
+        date_of_birth=datetime.fromisoformat(user_data.date_of_birth).date() if user_data.date_of_birth else None,
+        address=user_data.address,
+        role=UserRole.ADMIN
+    )
+    db.add(db_user)
+    
+    # Create admin permissions
+    db_permissions = DBAdminPermission(
+        user_id=user_id,
+        can_manage_doctors=user_data.admin_permissions.get("can_manage_doctors", True),
+        can_manage_patients=user_data.admin_permissions.get("can_manage_patients", True),
+        can_manage_appointments=user_data.admin_permissions.get("can_manage_appointments", True),
+        can_view_stats=user_data.admin_permissions.get("can_view_stats", True),
+        can_manage_specialties=user_data.admin_permissions.get("can_manage_specialties", True),
+        can_create_admins=user_data.admin_permissions.get("can_create_admins", False)
+    )
+    db.add(db_permissions)
+    
+    await db.commit()
+    await db.refresh(db_user)
+    
+    user_dict = db_to_dict(db_user)
+    user_dict['admin_permissions'] = user_data.admin_permissions
+    
+    return {"message": "Admin created successfully", "user": user_dict}
+
+@api_router.get("/admin/admins")
+async def get_all_admins(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user["role"] != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get all admin users with their permissions
+    result = await db.execute(
+        select(DBUser, DBAdminPermission).outerjoin(
+            DBAdminPermission, DBUser.id == DBAdminPermission.user_id
+        ).where(DBUser.role == UserRole.ADMIN)
+    )
+    rows = result.all()
+    
+    admins = []
+    for user, permissions in rows:
+        admin_dict = db_to_dict(user)
+        if permissions:
+            perms = db_to_dict(permissions)
+            del perms['user_id']
+            admin_dict['admin_permissions'] = perms
+        admins.append(admin_dict)
+    
+    return admins
+
+@api_router.put("/admin/update-permissions")
+async def update_admin_permissions(
+    admin_id: str,
+    permissions: AdminPermissions,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user["role"] != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    current_permissions = current_user.get("admin_permissions") or {}
+    if not current_permissions.get("can_create_admins", False):
+        raise HTTPException(status_code=403, detail="You don't have permission to modify admin permissions")
+    
+    # Update permissions
+    result = await db.execute(select(DBAdminPermission).where(DBAdminPermission.user_id == admin_id))
+    existing_perms = result.scalar_one_or_none()
+    
+    if existing_perms:
+        await db.execute(
+            update(DBAdminPermission).where(DBAdminPermission.user_id == admin_id).values(
+                can_manage_doctors=permissions.can_manage_doctors,
+                can_manage_patients=permissions.can_manage_patients,
+                can_manage_appointments=permissions.can_manage_appointments,
+                can_view_stats=permissions.can_view_stats,
+                can_manage_specialties=permissions.can_manage_specialties,
+                can_create_admins=permissions.can_create_admins
+            )
+        )
+    else:
+        db_permissions = DBAdminPermission(
+            user_id=admin_id,
+            can_manage_doctors=permissions.can_manage_doctors,
+            can_manage_patients=permissions.can_manage_patients,
+            can_manage_appointments=permissions.can_manage_appointments,
+            can_view_stats=permissions.can_view_stats,
+            can_manage_specialties=permissions.can_manage_specialties,
+            can_create_admins=permissions.can_create_admins
+        )
+        db.add(db_permissions)
+    
+    await db.commit()
+    
+    return {"message": "Permissions updated successfully"}
+
+@api_router.delete("/admin/delete-admin/{admin_id}")
+async def delete_admin(
+    admin_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user["role"] != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    current_permissions = current_user.get("admin_permissions") or {}
+    if not current_permissions.get("can_create_admins", False):
+        raise HTTPException(status_code=403, detail="You don't have permission to delete admins")
+    
+    if admin_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    
+    # Delete admin
+    result = await db.execute(select(DBUser).where(DBUser.id == admin_id))
+    admin = result.scalar_one_or_none()
+    
+    if not admin or admin.role != UserRole.ADMIN:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    
+    await db.delete(admin)
+    await db.commit()
+    
+    return {"message": "Admin deleted successfully"}
+
+@api_router.delete("/admin/delete-user/{user_id}")
+async def admin_delete_user(
+    user_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user["role"] != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get user
+    result = await db.execute(select(DBUser).where(DBUser.id == user_id))
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Cannot delete self
+    if user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    
+    # Delete user (cascade will handle related records)
+    await db.delete(user)
+    await db.commit()
+    
+    return {"message": "User deleted successfully"}
+
+@api_router.post("/admin/create-user")
+async def admin_create_user(
+    user_data: UserCreate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user["role"] != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Check if email exists
+    result = await db.execute(select(DBUser).where(DBUser.email == user_data.email))
+    existing_user = result.scalar_one_or_none()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email đã được đăng ký")
+    
+    # Hash password
+    hashed_password = hash_password(user_data.password)
+    
+    # Create user
+    user_id = str(uuid.uuid4())
+    db_user = DBUser(
+        id=user_id,
+        email=user_data.email,
+        username=user_data.username,
+        password=hashed_password,
+        full_name=user_data.full_name,
+        phone=user_data.phone,
+        date_of_birth=datetime.fromisoformat(user_data.date_of_birth).date() if user_data.date_of_birth else None,
+        address=user_data.address,
+        role=user_data.role
+    )
+    db.add(db_user)
+    
+    # Create role-specific profiles
+    if user_data.role in [UserRole.DOCTOR, UserRole.DEPARTMENT_HEAD]:
+        doctor_id = str(uuid.uuid4())
+        db_doctor = DBDoctor(
+            id=doctor_id,
+            user_id=user_id,
+            specialty_id=user_data.specialty_id,
+            experience_years=user_data.experience_years or 0,
+            consultation_fee=user_data.consultation_fee or 0.0,
+            bio=user_data.bio,
+            status='approved'  # Admin-created doctors are auto-approved
+        )
+        db.add(db_doctor)
+    elif user_data.role == UserRole.PATIENT:
+        patient_id = str(uuid.uuid4())
+        db_patient = DBPatient(
+            id=patient_id,
+            user_id=user_id
+        )
+        db.add(db_patient)
+    
+    await db.commit()
+    await db.refresh(db_user)
+    
+    return {"message": "User created successfully", "user": db_to_dict(db_user)}
+
