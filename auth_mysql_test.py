@@ -186,7 +186,7 @@ class AuthenticationTester:
                 self.log_result("Wrong Password Login", True, 
                               f"Correctly returned 401 error: {error_detail}")
         else:
-            error_msg = response.text if response else "Connection failed"
+            error_msg = f"Status: {response.status_code}, Body: {response.text}" if response else "Connection failed"
             self.log_result("Wrong Password Login", False, 
                           "Should return 401 error for wrong password", error_msg)
     
