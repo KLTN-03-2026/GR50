@@ -291,7 +291,7 @@ export default function PaymentProcess() {
                           />
                           <div style={{display: 'none'}}>
                             <QRCodeSVG 
-                              value={`VietQR|970422|1017592879600097|${payment.amount}|HD${paymentId.slice(-8)}|MEDISCHEDULE`}
+                              value={`VietQR|970422|1017592879600097|${payment.amount}|HD${paymentId.slice(-8)}|DAT_LICH_KHAM_BENH`}
                               size={256}
                               level="H"
                               includeMargin={true}
