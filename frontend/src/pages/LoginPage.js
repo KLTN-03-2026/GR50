@@ -75,7 +75,7 @@ export default function LoginPage() {
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
               <Calendar className="w-7 h-7 text-white" />
             </div>
-            <span className="text-3xl font-bold text-gray-800 dark:text-white">MediSchedule</span>
+            <span className="text-3xl font-bold text-gray-800 dark:text-white">Đặt Lịch Khám Bệnh</span>
           </div>
 
           <h2 className="text-2xl font-bold text-center mb-8 text-gray-900 dark:text-white">{t('login')}</h2>
