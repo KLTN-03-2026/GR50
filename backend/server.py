@@ -1855,13 +1855,12 @@ class PaymentProcess(BaseModel):
 @api_router.post("/payments/create")
 async def create_payment(
     payment_data: PaymentCreate,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Create payment for appointment"""
     try:
-        user_data = decode_token(credentials.credentials)
-        user_id = user_data.get("user_id")
+        user_id = current_user.get("id")
         
         # Get appointment details from MySQL
         result = await db.execute(
