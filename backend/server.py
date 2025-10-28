@@ -1925,29 +1925,41 @@ async def create_payment(
 
 @api_router.get("/payments/my")
 async def get_my_payments(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
 ):
     """Get patient's payment history"""
     try:
         user_data = decode_token(credentials.credentials)
         user_id = user_data.get("user_id")
         
-        # Get all payments for this patient from MongoDB
-        cursor = payments_collection.find({"patient_id": user_id}).sort("created_at", -1)
-        payments = await cursor.to_list(length=100)
+        # Get all payments for this patient from MySQL
+        result = await db.execute(
+            select(DBPayment)
+            .where(DBPayment.patient_id == user_id)
+            .order_by(desc(DBPayment.created_at))
+        )
+        payments = result.scalars().all()
         
-        # Remove MongoDB _id from each payment
+        # Convert to dict list
+        payment_list = []
         for payment in payments:
-            payment.pop("_id", None)
-            # Convert datetime to ISO string for JSON serialization
-            if isinstance(payment.get("created_at"), datetime):
-                payment["created_at"] = payment["created_at"].isoformat()
-            if isinstance(payment.get("updated_at"), datetime):
-                payment["updated_at"] = payment["updated_at"].isoformat()
-            if isinstance(payment.get("completed_at"), datetime):
-                payment["completed_at"] = payment["completed_at"].isoformat()
+            payment_dict = {
+                "id": payment.id,
+                "appointment_id": payment.appointment_id,
+                "patient_id": payment.patient_id,
+                "doctor_id": payment.doctor_id,
+                "amount": float(payment.amount) if payment.amount else 0.0,
+                "payment_method": payment.payment_method,
+                "status": payment.status,
+                "transaction_id": payment.transaction_id,
+                "created_at": payment.created_at.isoformat() if payment.created_at else None,
+                "updated_at": payment.updated_at.isoformat() if payment.updated_at else None,
+                "completed_at": payment.completed_at.isoformat() if payment.completed_at else None
+            }
+            payment_list.append(payment_dict)
         
-        return payments
+        return payment_list
         
     except Exception as e:
         logger.error(f"Error fetching payments: {e}")
