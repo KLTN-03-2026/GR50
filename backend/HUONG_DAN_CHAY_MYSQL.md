@@ -1,9 +1,9 @@
 # HƯỚNG DẪN CHẠY ỨNG DỤNG VỚI MYSQL
 
 ## ✅ ĐÃ HOÀN THÀNH
-- ✅ Convert toàn bộ 49 endpoints từ MongoDB sang MySQL
+- ✅ Ứng dụng sử dụng MySQL 100% (đã loại bỏ hoàn toàn MongoDB)
 - ✅ Server.py hoàn chỉnh với SQLAlchemy (1781 dòng)
-- ✅ Database models đầy đủ
+- ✅ Database models đầy đủ với 8 tables
 - ✅ Scripts tạo admin và sample data
 
 ## 📋 CHUẨN BỊ
