@@ -58,7 +58,8 @@ Patient:        patient1@test.com / 12345678
 ## 🛠 Tech Stack
 
 - **Frontend**: React 18 + Tailwind CSS + Shadcn/ui
-- **Backend**: FastAPI + MongoDB (Motor)
+- **Backend**: FastAPI + MySQL (SQLAlchemy + aiomysql)
+- **Database**: MySQL/MariaDB 10.11
 - **Auth**: JWT + Bcrypt
 - **Deployment**: Kubernetes (Emergent Platform)
 
@@ -66,19 +67,32 @@ Patient:        patient1@test.com / 12345678
 
 ## 🚀 Khởi động nhanh
 
-### Production (Đã chạy)
+### ✅ Production (Đã chạy sẵn)
 ```bash
+# Kiểm tra services
 sudo supervisorctl status
-# Tất cả services đang chạy ✅
+
+# Restart nếu cần
+sudo supervisorctl restart all
 ```
+
+### 📖 Hướng dẫn localhost chi tiết
+Xem file **[README_LOCALHOST.md](./README_LOCALHOST.md)** để:
+- Cấu hình MySQL
+- Test authentication
+- Troubleshooting
+- Database queries
 
 ### Development
 ```bash
 # Backend
 cd backend && uvicorn server:app --reload --port 8001
 
-# Frontend
+# Frontend  
 cd frontend && yarn start
+
+# MySQL
+mysql -u root -p190705 medischedule
 ```
 
 ---
