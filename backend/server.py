@@ -1803,9 +1803,6 @@ async def get_ai_chat_history(
         "total_messages": len(history)
     }
 
-# Include router in app
-app.include_router(api_router, prefix=API_PREFIX)
-
 # ========================================
 # Payment Schemas
 # ========================================
