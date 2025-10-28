@@ -1962,35 +1962,41 @@ async def get_my_payments(
 @api_router.get("/payments/{payment_id}")
 async def get_payment(
     payment_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
 ):
     """Get payment details"""
     try:
         user_data = decode_token(credentials.credentials)
         user_id = user_data.get("user_id")
         
-        # Get payment from MongoDB
-        payment = await payments_collection.find_one({"id": payment_id})
+        # Get payment from MySQL
+        result = await db.execute(
+            select(DBPayment).where(DBPayment.id == payment_id)
+        )
+        payment = result.scalar_one_or_none()
         
         if not payment:
             raise HTTPException(status_code=404, detail="Thanh toán không tồn tại")
         
         # Verify user is the patient or doctor
-        if payment["patient_id"] != user_id and payment["doctor_id"] != user_id:
+        if payment.patient_id != user_id and payment.doctor_id != user_id:
             raise HTTPException(status_code=403, detail="Bạn không có quyền xem thanh toán này")
         
-        # Remove MongoDB _id from response
-        payment.pop("_id", None)
-        
-        # Convert datetime to ISO string
-        if isinstance(payment.get("created_at"), datetime):
-            payment["created_at"] = payment["created_at"].isoformat()
-        if isinstance(payment.get("updated_at"), datetime):
-            payment["updated_at"] = payment["updated_at"].isoformat()
-        if isinstance(payment.get("completed_at"), datetime):
-            payment["completed_at"] = payment["completed_at"].isoformat()
-        
-        return payment
+        # Return payment data
+        return {
+            "id": payment.id,
+            "appointment_id": payment.appointment_id,
+            "patient_id": payment.patient_id,
+            "doctor_id": payment.doctor_id,
+            "amount": float(payment.amount),
+            "payment_method": payment.payment_method,
+            "status": payment.status,
+            "transaction_id": payment.transaction_id,
+            "created_at": payment.created_at.isoformat() if payment.created_at else None,
+            "updated_at": payment.updated_at.isoformat() if payment.updated_at else None,
+            "completed_at": payment.completed_at.isoformat() if payment.completed_at else None
+        }
         
     except HTTPException:
         raise
