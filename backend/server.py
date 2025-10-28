@@ -1777,10 +1777,353 @@ async def get_ai_chat_history(
 # Include router in app
 app.include_router(api_router, prefix=API_PREFIX)
 
+# ========================================
+# MongoDB Connection for Payments
+# ========================================
+from motor.motor_asyncio import AsyncIOMotorClient
+
+# MongoDB setup for payments (using Motor driver)
+mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
+db_name = os.environ.get("DB_NAME", "healthcare")
+mongo_client = AsyncIOMotorClient(mongo_url)
+mongo_db = mongo_client[db_name]
+payments_collection = mongo_db["payments"]
+
+
+# ========================================
+# Payment Schemas
+# ========================================
+class PaymentCreate(BaseModel):
+    appointment_id: str
+    payment_method: str = "mock_card"
+
+class PaymentProcess(BaseModel):
+    payment_method: str
+    card_number: Optional[str] = None
+    card_holder: Optional[str] = None
+    expiry: Optional[str] = None
+    cvv: Optional[str] = None
+    bank_account_number: Optional[str] = None
+    bank_account_name: Optional[str] = None
+    bank_name: Optional[str] = None
+    success: bool = True
+
+
+# ========================================
+# Payment API Endpoints
+# ========================================
+
+@api_router.post("/payments/create")
+async def create_payment(
+    payment_data: PaymentCreate,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
+):
+    """Create payment for appointment"""
+    try:
+        user_data = decode_token(credentials.credentials)
+        user_id = user_data.get("user_id")
+        
+        # Get appointment details from MySQL
+        result = await db.execute(
+            select(DBAppointment).where(DBAppointment.id == payment_data.appointment_id)
+        )
+        appointment = result.scalar_one_or_none()
+        
+        if not appointment:
+            raise HTTPException(status_code=404, detail="Cuộc hẹn không tồn tại")
+        
+        # Verify user is the patient
+        if appointment.patient_id != user_id:
+            raise HTTPException(status_code=403, detail="Bạn không có quyền tạo thanh toán cho cuộc hẹn này")
+        
+        # Check if payment already exists
+        existing_payment = await payments_collection.find_one({"appointment_id": payment_data.appointment_id})
+        if existing_payment:
+            raise HTTPException(status_code=400, detail="Thanh toán đã tồn tại cho cuộc hẹn này")
+        
+        # Get doctor info for consultation fee
+        result = await db.execute(
+            select(DBDoctor, DBUser)
+            .join(DBUser, DBDoctor.user_id == DBUser.id)
+            .where(DBDoctor.user_id == appointment.doctor_id)
+        )
+        doctor_data = result.first()
+        
+        if not doctor_data:
+            raise HTTPException(status_code=404, detail="Bác sĩ không tồn tại")
+        
+        doctor, doctor_user = doctor_data
+        amount = float(doctor.consultation_fee) if doctor.consultation_fee else 200000.0
+        
+        # Get patient info
+        result = await db.execute(
+            select(DBUser).where(DBUser.id == user_id)
+        )
+        patient_user = result.scalar_one_or_none()
+        
+        # Create payment in MongoDB
+        payment = {
+            "id": str(uuid.uuid4()),
+            "appointment_id": payment_data.appointment_id,
+            "patient_id": user_id,
+            "patient_name": patient_user.full_name if patient_user else "Unknown",
+            "doctor_id": appointment.doctor_id,
+            "doctor_name": doctor_user.full_name,
+            "amount": amount,
+            "payment_method": payment_data.payment_method,
+            "status": "pending",
+            "transaction_id": None,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "completed_at": None
+        }
+        
+        await payments_collection.insert_one(payment)
+        
+        # Remove MongoDB _id from response
+        payment.pop("_id", None)
+        
+        return payment
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating payment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/payments/my")
+async def get_my_payments(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get patient's payment history"""
+    try:
+        user_data = decode_token(credentials.credentials)
+        user_id = user_data.get("user_id")
+        
+        # Get all payments for this patient from MongoDB
+        cursor = payments_collection.find({"patient_id": user_id}).sort("created_at", -1)
+        payments = await cursor.to_list(length=100)
+        
+        # Remove MongoDB _id from each payment
+        for payment in payments:
+            payment.pop("_id", None)
+            # Convert datetime to ISO string for JSON serialization
+            if isinstance(payment.get("created_at"), datetime):
+                payment["created_at"] = payment["created_at"].isoformat()
+            if isinstance(payment.get("updated_at"), datetime):
+                payment["updated_at"] = payment["updated_at"].isoformat()
+            if isinstance(payment.get("completed_at"), datetime):
+                payment["completed_at"] = payment["completed_at"].isoformat()
+        
+        return payments
+        
+    except Exception as e:
+        logger.error(f"Error fetching payments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/payments/{payment_id}")
+async def get_payment(
+    payment_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get payment details"""
+    try:
+        user_data = decode_token(credentials.credentials)
+        user_id = user_data.get("user_id")
+        
+        # Get payment from MongoDB
+        payment = await payments_collection.find_one({"id": payment_id})
+        
+        if not payment:
+            raise HTTPException(status_code=404, detail="Thanh toán không tồn tại")
+        
+        # Verify user is the patient or doctor
+        if payment["patient_id"] != user_id and payment["doctor_id"] != user_id:
+            raise HTTPException(status_code=403, detail="Bạn không có quyền xem thanh toán này")
+        
+        # Remove MongoDB _id from response
+        payment.pop("_id", None)
+        
+        # Convert datetime to ISO string
+        if isinstance(payment.get("created_at"), datetime):
+            payment["created_at"] = payment["created_at"].isoformat()
+        if isinstance(payment.get("updated_at"), datetime):
+            payment["updated_at"] = payment["updated_at"].isoformat()
+        if isinstance(payment.get("completed_at"), datetime):
+            payment["completed_at"] = payment["completed_at"].isoformat()
+        
+        return payment
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching payment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/payments/{payment_id}/process")
+async def process_payment(
+    payment_id: str,
+    payment_process: PaymentProcess,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Process payment (mark as completed)"""
+    try:
+        user_data = decode_token(credentials.credentials)
+        user_id = user_data.get("user_id")
+        
+        # Get payment from MongoDB
+        payment = await payments_collection.find_one({"id": payment_id})
+        
+        if not payment:
+            raise HTTPException(status_code=404, detail="Thanh toán không tồn tại")
+        
+        # Verify user is the patient
+        if payment["patient_id"] != user_id:
+            raise HTTPException(status_code=403, detail="Bạn không có quyền xử lý thanh toán này")
+        
+        # Check if already processed
+        if payment["status"] != "pending":
+            raise HTTPException(status_code=400, detail="Thanh toán đã được xử lý")
+        
+        # In demo mode, always succeed
+        transaction_id = f"TXN{uuid.uuid4().hex[:12].upper()}"
+        
+        # Update payment status
+        update_data = {
+            "status": "completed" if payment_process.success else "failed",
+            "payment_method": payment_process.payment_method,
+            "transaction_id": transaction_id,
+            "completed_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
+        }
+        
+        await payments_collection.update_one(
+            {"id": payment_id},
+            {"$set": update_data}
+        )
+        
+        # Get updated payment
+        updated_payment = await payments_collection.find_one({"id": payment_id})
+        updated_payment.pop("_id", None)
+        
+        # Convert datetime to ISO string
+        if isinstance(updated_payment.get("created_at"), datetime):
+            updated_payment["created_at"] = updated_payment["created_at"].isoformat()
+        if isinstance(updated_payment.get("updated_at"), datetime):
+            updated_payment["updated_at"] = updated_payment["updated_at"].isoformat()
+        if isinstance(updated_payment.get("completed_at"), datetime):
+            updated_payment["completed_at"] = updated_payment["completed_at"].isoformat()
+        
+        return updated_payment
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error processing payment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/payments/{payment_id}/refund")
+async def refund_payment(
+    payment_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Refund payment"""
+    try:
+        user_data = decode_token(credentials.credentials)
+        user_id = user_data.get("user_id")
+        
+        # Get payment from MongoDB
+        payment = await payments_collection.find_one({"id": payment_id})
+        
+        if not payment:
+            raise HTTPException(status_code=404, detail="Thanh toán không tồn tại")
+        
+        # Verify user is the patient
+        if payment["patient_id"] != user_id:
+            raise HTTPException(status_code=403, detail="Bạn không có quyền hoàn tiền thanh toán này")
+        
+        # Check if payment is completed
+        if payment["status"] != "completed":
+            raise HTTPException(status_code=400, detail="Chỉ có thể hoàn tiền cho thanh toán đã hoàn thành")
+        
+        # Update payment status to refunded
+        await payments_collection.update_one(
+            {"id": payment_id},
+            {"$set": {
+                "status": "refunded",
+                "updated_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        return {"message": "Hoàn tiền thành công"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error refunding payment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/admin/payments")
+async def admin_get_all_payments(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Admin: Get all payments"""
+    try:
+        user_data = decode_token(credentials.credentials)
+        role = user_data.get("role")
+        
+        # Check if user is admin
+        if role != "admin":
+            raise HTTPException(status_code=403, detail="Chỉ admin mới có quyền xem tất cả thanh toán")
+        
+        # Get all payments from MongoDB
+        cursor = payments_collection.find({}).sort("created_at", -1)
+        payments = await cursor.to_list(length=1000)
+        
+        # Calculate stats
+        total_payments = len(payments)
+        completed_payments = sum(1 for p in payments if p["status"] == "completed")
+        pending_payments = sum(1 for p in payments if p["status"] == "pending")
+        total_revenue = sum(p["amount"] for p in payments if p["status"] == "completed")
+        
+        # Remove MongoDB _id from each payment
+        for payment in payments:
+            payment.pop("_id", None)
+            # Convert datetime to ISO string
+            if isinstance(payment.get("created_at"), datetime):
+                payment["created_at"] = payment["created_at"].isoformat()
+            if isinstance(payment.get("updated_at"), datetime):
+                payment["updated_at"] = payment["updated_at"].isoformat()
+            if isinstance(payment.get("completed_at"), datetime):
+                payment["completed_at"] = payment["completed_at"].isoformat()
+        
+        return {
+            "payments": payments,
+            "stats": {
+                "total_payments": total_payments,
+                "completed_payments": completed_payments,
+                "pending_payments": pending_payments,
+                "total_revenue": total_revenue
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching all payments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Root endpoint
 @app.get("/")
 async def root():
-    return {"message": "Healthcare API with MySQL", "docs": f"{API_PREFIX}/docs"}
+    return {"message": "Healthcare API with MySQL + MongoDB (Payments)", "docs": f"{API_PREFIX}/docs"}
 
 # Health check endpoint
 @app.get("/health")
