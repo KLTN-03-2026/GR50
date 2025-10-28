@@ -180,3 +180,22 @@ class AdminPermission(Base):
     
     # Relationships
     user = relationship("User", back_populates="admin_permissions")
+
+
+class Payment(Base):
+    __tablename__ = 'payments'
+    
+    id = Column(String(36), primary_key=True)
+    appointment_id = Column(String(36), ForeignKey('appointments.id', ondelete='CASCADE'), unique=True, nullable=False)
+    patient_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    doctor_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    amount = Column(DECIMAL(10, 2), nullable=False)
+    payment_method = Column(Enum('mock_card', 'mock_wallet', 'mock_bank'), default='mock_card')
+    status = Column(Enum('pending', 'processing', 'completed', 'failed', 'refunded'), default='pending')
+    transaction_id = Column(String(100))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = Column(DateTime)
+    
+    # Relationships
+    appointment = relationship("Appointment", back_populates="payment")
