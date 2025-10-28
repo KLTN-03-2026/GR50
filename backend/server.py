@@ -2072,35 +2072,36 @@ async def process_payment(
 @api_router.post("/payments/{payment_id}/refund")
 async def refund_payment(
     payment_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
 ):
     """Refund payment"""
     try:
         user_data = decode_token(credentials.credentials)
         user_id = user_data.get("user_id")
         
-        # Get payment from MongoDB
-        payment = await payments_collection.find_one({"id": payment_id})
+        # Get payment from MySQL
+        result = await db.execute(
+            select(DBPayment).where(DBPayment.id == payment_id)
+        )
+        payment = result.scalar_one_or_none()
         
         if not payment:
             raise HTTPException(status_code=404, detail="Thanh toán không tồn tại")
         
         # Verify user is the patient
-        if payment["patient_id"] != user_id:
+        if payment.patient_id != user_id:
             raise HTTPException(status_code=403, detail="Bạn không có quyền hoàn tiền thanh toán này")
         
         # Check if payment is completed
-        if payment["status"] != "completed":
+        if payment.status != "completed":
             raise HTTPException(status_code=400, detail="Chỉ có thể hoàn tiền cho thanh toán đã hoàn thành")
         
         # Update payment status to refunded
-        await payments_collection.update_one(
-            {"id": payment_id},
-            {"$set": {
-                "status": "refunded",
-                "updated_at": datetime.now(timezone.utc)
-            }}
-        )
+        payment.status = 'refunded'
+        payment.updated_at = datetime.now(timezone.utc)
+        
+        await db.commit()
         
         return {"message": "Hoàn tiền thành công"}
         
@@ -2113,7 +2114,8 @@ async def refund_payment(
 
 @api_router.get("/admin/payments")
 async def admin_get_all_payments(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
 ):
     """Admin: Get all payments"""
     try:
@@ -2124,29 +2126,38 @@ async def admin_get_all_payments(
         if role != "admin":
             raise HTTPException(status_code=403, detail="Chỉ admin mới có quyền xem tất cả thanh toán")
         
-        # Get all payments from MongoDB
-        cursor = payments_collection.find({}).sort("created_at", -1)
-        payments = await cursor.to_list(length=1000)
+        # Get all payments from MySQL
+        result = await db.execute(
+            select(DBPayment).order_by(desc(DBPayment.created_at))
+        )
+        payments = result.scalars().all()
         
         # Calculate stats
         total_payments = len(payments)
-        completed_payments = sum(1 for p in payments if p["status"] == "completed")
-        pending_payments = sum(1 for p in payments if p["status"] == "pending")
-        total_revenue = sum(p["amount"] for p in payments if p["status"] == "completed")
+        completed_payments = sum(1 for p in payments if p.status == "completed")
+        pending_payments = sum(1 for p in payments if p.status == "pending")
+        total_revenue = sum(float(p.amount) for p in payments if p.status == "completed")
         
-        # Remove MongoDB _id from each payment
+        # Convert to dict list
+        payment_list = []
         for payment in payments:
-            payment.pop("_id", None)
-            # Convert datetime to ISO string
-            if isinstance(payment.get("created_at"), datetime):
-                payment["created_at"] = payment["created_at"].isoformat()
-            if isinstance(payment.get("updated_at"), datetime):
-                payment["updated_at"] = payment["updated_at"].isoformat()
-            if isinstance(payment.get("completed_at"), datetime):
-                payment["completed_at"] = payment["completed_at"].isoformat()
+            payment_dict = {
+                "id": payment.id,
+                "appointment_id": payment.appointment_id,
+                "patient_id": payment.patient_id,
+                "doctor_id": payment.doctor_id,
+                "amount": float(payment.amount),
+                "payment_method": payment.payment_method,
+                "status": payment.status,
+                "transaction_id": payment.transaction_id,
+                "created_at": payment.created_at.isoformat() if payment.created_at else None,
+                "updated_at": payment.updated_at.isoformat() if payment.updated_at else None,
+                "completed_at": payment.completed_at.isoformat() if payment.completed_at else None
+            }
+            payment_list.append(payment_dict)
         
         return {
-            "payments": payments,
+            "payments": payment_list,
             "stats": {
                 "total_payments": total_payments,
                 "completed_payments": completed_payments,
