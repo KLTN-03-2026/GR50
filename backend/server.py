@@ -1867,8 +1867,11 @@ async def create_payment(
         if appointment.patient_id != user_id:
             raise HTTPException(status_code=403, detail="Bạn không có quyền tạo thanh toán cho cuộc hẹn này")
         
-        # Check if payment already exists
-        existing_payment = await payments_collection.find_one({"appointment_id": payment_data.appointment_id})
+        # Check if payment already exists in MySQL
+        result = await db.execute(
+            select(DBPayment).where(DBPayment.appointment_id == payment_data.appointment_id)
+        )
+        existing_payment = result.scalar_one_or_none()
         if existing_payment:
             raise HTTPException(status_code=400, detail="Thanh toán đã tồn tại cho cuộc hẹn này")
         
@@ -1886,35 +1889,39 @@ async def create_payment(
         doctor, doctor_user = doctor_data
         amount = float(doctor.consultation_fee) if doctor.consultation_fee else 200000.0
         
-        # Get patient info
-        result = await db.execute(
-            select(DBUser).where(DBUser.id == user_id)
+        # Create payment in MySQL
+        new_payment = DBPayment(
+            id=str(uuid.uuid4()),
+            appointment_id=payment_data.appointment_id,
+            patient_id=user_id,
+            doctor_id=appointment.doctor_id,
+            amount=Decimal(str(amount)),
+            payment_method=payment_data.payment_method,
+            status='pending',
+            transaction_id=None,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            completed_at=None
         )
-        patient_user = result.scalar_one_or_none()
         
-        # Create payment in MongoDB
-        payment = {
-            "id": str(uuid.uuid4()),
-            "appointment_id": payment_data.appointment_id,
-            "patient_id": user_id,
-            "patient_name": patient_user.full_name if patient_user else "Unknown",
-            "doctor_id": appointment.doctor_id,
-            "doctor_name": doctor_user.full_name,
-            "amount": amount,
-            "payment_method": payment_data.payment_method,
-            "status": "pending",
-            "transaction_id": None,
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc),
-            "completed_at": None
+        db.add(new_payment)
+        await db.commit()
+        await db.refresh(new_payment)
+        
+        # Return payment data
+        return {
+            "id": new_payment.id,
+            "appointment_id": new_payment.appointment_id,
+            "patient_id": new_payment.patient_id,
+            "doctor_id": new_payment.doctor_id,
+            "amount": float(new_payment.amount),
+            "payment_method": new_payment.payment_method,
+            "status": new_payment.status,
+            "transaction_id": new_payment.transaction_id,
+            "created_at": new_payment.created_at.isoformat() if new_payment.created_at else None,
+            "updated_at": new_payment.updated_at.isoformat() if new_payment.updated_at else None,
+            "completed_at": new_payment.completed_at.isoformat() if new_payment.completed_at else None
         }
-        
-        await payments_collection.insert_one(payment)
-        
-        # Remove MongoDB _id from response
-        payment.pop("_id", None)
-        
-        return payment
         
     except HTTPException:
         raise
