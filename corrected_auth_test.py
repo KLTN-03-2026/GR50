@@ -195,7 +195,7 @@ class AuthenticationTester:
         login_data = {"login": "patient1@test.com", "password": "wrongpassword123"}
         response = self.make_request("POST", "/auth/login", login_data)
         
-        if response and response.status_code == 401:
+        if response is not None and response.status_code == 401:
             try:
                 error_data = response.json()
                 error_message = error_data.get("detail", "")
@@ -226,7 +226,7 @@ class AuthenticationTester:
         
         response = self.make_request("POST", "/auth/register", duplicate_data)
         
-        if response and response.status_code == 400:
+        if response is not None and response.status_code == 400:
             try:
                 error_data = response.json()
                 error_message = error_data.get("detail", "")
