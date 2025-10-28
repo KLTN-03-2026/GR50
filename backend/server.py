@@ -1808,19 +1808,6 @@ async def get_ai_chat_history(
 app.include_router(api_router, prefix=API_PREFIX)
 
 # ========================================
-# MongoDB Connection for Payments
-# ========================================
-from motor.motor_asyncio import AsyncIOMotorClient
-
-# MongoDB setup for payments (using Motor driver)
-mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
-db_name = os.environ.get("DB_NAME", "healthcare")
-mongo_client = AsyncIOMotorClient(mongo_url)
-mongo_db = mongo_client[db_name]
-payments_collection = mongo_db["payments"]
-
-
-# ========================================
 # Payment Schemas
 # ========================================
 class PaymentCreate(BaseModel):
