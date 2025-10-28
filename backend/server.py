@@ -24,7 +24,7 @@ from database import (
     User as DBUser, Patient as DBPatient, Doctor as DBDoctor,
     Specialty as DBSpecialty, Appointment as DBAppointment,
     ChatMessage as DBChatMessage, AIChatHistory as DBAIChatHistory,
-    AdminPermission as DBAdminPermission
+    AdminPermission as DBAdminPermission, Payment as DBPayment
 )
 
 # Setup logging
