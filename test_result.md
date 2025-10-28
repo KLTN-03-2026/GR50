@@ -608,6 +608,7 @@ metadata:
 test_plan:
   current_focus:
     - "Authentication System - Login & Registration"
+    - "MySQL Connection and Database"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
