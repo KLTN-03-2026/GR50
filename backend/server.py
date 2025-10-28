@@ -2030,13 +2030,12 @@ async def get_payment(
 async def process_payment(
     payment_id: str,
     payment_process: PaymentProcess,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Process payment (mark as completed)"""
     try:
-        user_data = decode_token(credentials.credentials)
-        user_id = user_data.get("user_id")
+        user_id = current_user.get("id")
         
         # Get payment from MySQL
         result = await db.execute(
