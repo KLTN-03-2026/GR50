@@ -265,44 +265,57 @@ class User(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserCreate(BaseModel):
-    email: str
-    username: str
-    password: str
-    full_name: str
-    phone: str
-    date_of_birth: Optional[str] = None
-    address: Optional[str] = None
-    role: str = UserRole.PATIENT
-    specialty_id: Optional[str] = None  # For doctor registration
-    experience_years: Optional[int] = None
-    consultation_fee: Optional[float] = None
-    bio: Optional[str] = None
-    admin_permissions: Optional[dict] = None
+    email: str = Field(..., description="Email address (required)")
+    username: str = Field(..., description="Username (required, min 3 chars)")
+    password: str = Field(..., description="Password (required, 8-20 chars)")
+    full_name: str = Field(..., description="Full name (required)")
+    phone: str = Field(..., description="Phone number (required, 10-11 digits)")
+    date_of_birth: Optional[str] = Field(None, description="Date of birth (optional, format: YYYY-MM-DD)")
+    address: Optional[str] = Field(None, description="Address (optional)")
+    role: str = Field(default=UserRole.PATIENT, description="User role")
+    specialty_id: Optional[str] = Field(None, description="Specialty ID (required for doctors)")
+    experience_years: Optional[int] = Field(None, description="Years of experience (for doctors)")
+    consultation_fee: Optional[float] = Field(None, description="Consultation fee (for doctors)")
+    bio: Optional[str] = Field(None, description="Biography (for doctors)")
+    admin_permissions: Optional[dict] = Field(None, description="Admin permissions (for admins)")
     
     @field_validator('email')
     @classmethod
     def validate_email(cls, v):
-        if '@' not in v or '.' not in v.split('@')[1]:
-            raise ValueError('Invalid email format')
-        return v.lower()
+        if not v:
+            raise ValueError('❌ Email là bắt buộc')
+        if '@' not in v:
+            raise ValueError('❌ Email phải chứa ký tự @')
+        email_parts = v.split('@')
+        if len(email_parts) != 2:
+            raise ValueError('❌ Định dạng email không hợp lệ')
+        if '.' not in email_parts[1]:
+            raise ValueError('❌ Email phải có tên miền hợp lệ (ví dụ: gmail.com)')
+        return v.lower().strip()
     
     @field_validator('username')
     @classmethod
     def validate_username(cls, v):
         import re
-        if not v or len(v) < 3:
-            raise ValueError('Username phải có ít nhất 3 ký tự')
+        if not v:
+            raise ValueError('❌ Username là bắt buộc')
+        if len(v) < 3:
+            raise ValueError(f'❌ Username phải có ít nhất 3 ký tự (hiện tại: {len(v)} ký tự)')
         if not re.match(r'^[a-zA-Z0-9_]+$', v):
-            raise ValueError('Username chỉ được chứa chữ cái, số và dấu gạch dưới')
-        return v.lower()
+            raise ValueError('❌ Username chỉ được chứa chữ cái (a-z, A-Z), số (0-9) và dấu gạch dưới (_)')
+        return v.lower().strip()
     
     @field_validator('password')
     @classmethod
     def validate_password(cls, v):
-        if len(v) < 8 or len(v) > 20:
-            raise ValueError('Mật khẩu phải có độ dài từ 8-20 ký tự')
+        if not v:
+            raise ValueError('❌ Mật khẩu là bắt buộc')
+        if len(v) < 8:
+            raise ValueError(f'❌ Mật khẩu quá ngắn: cần ít nhất 8 ký tự (hiện tại: {len(v)} ký tự)')
+        if len(v) > 20:
+            raise ValueError(f'❌ Mật khẩu quá dài: tối đa 20 ký tự (hiện tại: {len(v)} ký tự)')
         if ' ' in v:
-            raise ValueError('Mật khẩu không được chứa khoảng trắng')
+            raise ValueError('❌ Mật khẩu không được chứa khoảng trắng')
         return v
     
     @field_validator('phone')
@@ -310,12 +323,25 @@ class UserCreate(BaseModel):
     def validate_phone(cls, v):
         import re
         if not v:
-            raise ValueError('Số điện thoại là bắt buộc')
+            raise ValueError('❌ Số điện thoại là bắt buộc')
         # Remove spaces and dashes
         phone = re.sub(r'[\s\-]', '', v)
-        if not re.match(r'^[0-9]{10,11}$', phone):
-            raise ValueError('Số điện thoại phải có 10-11 chữ số')
+        if not phone.isdigit():
+            raise ValueError('❌ Số điện thoại chỉ được chứa chữ số')
+        if len(phone) < 10:
+            raise ValueError(f'❌ Số điện thoại quá ngắn: cần 10-11 chữ số (hiện tại: {len(phone)} chữ số)')
+        if len(phone) > 11:
+            raise ValueError(f'❌ Số điện thoại quá dài: tối đa 11 chữ số (hiện tại: {len(phone)} chữ số)')
         return phone
+    
+    @field_validator('full_name')
+    @classmethod
+    def validate_full_name(cls, v):
+        if not v or not v.strip():
+            raise ValueError('❌ Họ và tên là bắt buộc')
+        if len(v.strip()) < 2:
+            raise ValueError('❌ Họ và tên phải có ít nhất 2 ký tự')
+        return v.strip()
 
 class UserLogin(BaseModel):
     login: str  # Có thể là email hoặc username
