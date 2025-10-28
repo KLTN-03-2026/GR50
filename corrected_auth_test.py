@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv('/app/frontend/.env')
 
 # Get backend URL from environment
-BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'https://payment-ui-issue.preview.emergentagent.com')
+BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'https://error-fix-21.preview.emergentagent.com')
 BASE_URL = f"{BACKEND_URL}/api"
 
 class AuthenticationTester:

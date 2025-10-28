@@ -24,7 +24,7 @@ from database import (
     User as DBUser, Patient as DBPatient, Doctor as DBDoctor,
     Specialty as DBSpecialty, Appointment as DBAppointment,
     ChatMessage as DBChatMessage, AIChatHistory as DBAIChatHistory,
-    AdminPermission as DBAdminPermission
+    AdminPermission as DBAdminPermission, Payment as DBPayment
 )
 
 # Setup logging
@@ -827,28 +827,27 @@ async def create_appointment(
     await db.commit()
     await db.refresh(db_appointment)
     
-    # Automatically create payment for appointment in MongoDB
+    # Automatically create payment for appointment in MySQL
     try:
         amount = float(doctor.consultation_fee) if doctor.consultation_fee else 200000.0
         
-        payment = {
-            "id": str(uuid.uuid4()),
-            "appointment_id": appointment_id,
-            "patient_id": current_user["id"],
-            "patient_name": current_user["full_name"],
-            "doctor_id": appointment_data.doctor_id,
-            "doctor_name": doctor_user.full_name,
-            "amount": amount,
-            "payment_method": "mock_card",
-            "status": "pending",
-            "transaction_id": None,
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc),
-            "completed_at": None
-        }
+        new_payment = DBPayment(
+            id=str(uuid.uuid4()),
+            appointment_id=appointment_id,
+            patient_id=current_user["id"],
+            doctor_id=appointment_data.doctor_id,
+            amount=Decimal(str(amount)),
+            payment_method='mock_card',
+            status='pending',
+            transaction_id=None,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            completed_at=None
+        )
         
-        await payments_collection.insert_one(payment)
-        logger.info(f"Auto-created payment {payment['id']} for appointment {appointment_id}")
+        db.add(new_payment)
+        await db.commit()
+        logger.info(f"Auto-created payment {new_payment.id} for appointment {appointment_id}")
     except Exception as e:
         logger.error(f"Failed to create payment for appointment: {e}")
         # Don't fail the appointment creation if payment creation fails
@@ -1808,19 +1807,6 @@ async def get_ai_chat_history(
 app.include_router(api_router, prefix=API_PREFIX)
 
 # ========================================
-# MongoDB Connection for Payments
-# ========================================
-from motor.motor_asyncio import AsyncIOMotorClient
-
-# MongoDB setup for payments (using Motor driver)
-mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
-db_name = os.environ.get("DB_NAME", "healthcare")
-mongo_client = AsyncIOMotorClient(mongo_url)
-mongo_db = mongo_client[db_name]
-payments_collection = mongo_db["payments"]
-
-
-# ========================================
 # Payment Schemas
 # ========================================
 class PaymentCreate(BaseModel):
@@ -1867,8 +1853,11 @@ async def create_payment(
         if appointment.patient_id != user_id:
             raise HTTPException(status_code=403, detail="Bạn không có quyền tạo thanh toán cho cuộc hẹn này")
         
-        # Check if payment already exists
-        existing_payment = await payments_collection.find_one({"appointment_id": payment_data.appointment_id})
+        # Check if payment already exists in MySQL
+        result = await db.execute(
+            select(DBPayment).where(DBPayment.appointment_id == payment_data.appointment_id)
+        )
+        existing_payment = result.scalar_one_or_none()
         if existing_payment:
             raise HTTPException(status_code=400, detail="Thanh toán đã tồn tại cho cuộc hẹn này")
         
@@ -1886,35 +1875,39 @@ async def create_payment(
         doctor, doctor_user = doctor_data
         amount = float(doctor.consultation_fee) if doctor.consultation_fee else 200000.0
         
-        # Get patient info
-        result = await db.execute(
-            select(DBUser).where(DBUser.id == user_id)
+        # Create payment in MySQL
+        new_payment = DBPayment(
+            id=str(uuid.uuid4()),
+            appointment_id=payment_data.appointment_id,
+            patient_id=user_id,
+            doctor_id=appointment.doctor_id,
+            amount=Decimal(str(amount)),
+            payment_method=payment_data.payment_method,
+            status='pending',
+            transaction_id=None,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            completed_at=None
         )
-        patient_user = result.scalar_one_or_none()
         
-        # Create payment in MongoDB
-        payment = {
-            "id": str(uuid.uuid4()),
-            "appointment_id": payment_data.appointment_id,
-            "patient_id": user_id,
-            "patient_name": patient_user.full_name if patient_user else "Unknown",
-            "doctor_id": appointment.doctor_id,
-            "doctor_name": doctor_user.full_name,
-            "amount": amount,
-            "payment_method": payment_data.payment_method,
-            "status": "pending",
-            "transaction_id": None,
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc),
-            "completed_at": None
+        db.add(new_payment)
+        await db.commit()
+        await db.refresh(new_payment)
+        
+        # Return payment data
+        return {
+            "id": new_payment.id,
+            "appointment_id": new_payment.appointment_id,
+            "patient_id": new_payment.patient_id,
+            "doctor_id": new_payment.doctor_id,
+            "amount": float(new_payment.amount),
+            "payment_method": new_payment.payment_method,
+            "status": new_payment.status,
+            "transaction_id": new_payment.transaction_id,
+            "created_at": new_payment.created_at.isoformat() if new_payment.created_at else None,
+            "updated_at": new_payment.updated_at.isoformat() if new_payment.updated_at else None,
+            "completed_at": new_payment.completed_at.isoformat() if new_payment.completed_at else None
         }
-        
-        await payments_collection.insert_one(payment)
-        
-        # Remove MongoDB _id from response
-        payment.pop("_id", None)
-        
-        return payment
         
     except HTTPException:
         raise
@@ -1925,29 +1918,41 @@ async def create_payment(
 
 @api_router.get("/payments/my")
 async def get_my_payments(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
 ):
     """Get patient's payment history"""
     try:
         user_data = decode_token(credentials.credentials)
         user_id = user_data.get("user_id")
         
-        # Get all payments for this patient from MongoDB
-        cursor = payments_collection.find({"patient_id": user_id}).sort("created_at", -1)
-        payments = await cursor.to_list(length=100)
+        # Get all payments for this patient from MySQL
+        result = await db.execute(
+            select(DBPayment)
+            .where(DBPayment.patient_id == user_id)
+            .order_by(desc(DBPayment.created_at))
+        )
+        payments = result.scalars().all()
         
-        # Remove MongoDB _id from each payment
+        # Convert to dict list
+        payment_list = []
         for payment in payments:
-            payment.pop("_id", None)
-            # Convert datetime to ISO string for JSON serialization
-            if isinstance(payment.get("created_at"), datetime):
-                payment["created_at"] = payment["created_at"].isoformat()
-            if isinstance(payment.get("updated_at"), datetime):
-                payment["updated_at"] = payment["updated_at"].isoformat()
-            if isinstance(payment.get("completed_at"), datetime):
-                payment["completed_at"] = payment["completed_at"].isoformat()
+            payment_dict = {
+                "id": payment.id,
+                "appointment_id": payment.appointment_id,
+                "patient_id": payment.patient_id,
+                "doctor_id": payment.doctor_id,
+                "amount": float(payment.amount) if payment.amount else 0.0,
+                "payment_method": payment.payment_method,
+                "status": payment.status,
+                "transaction_id": payment.transaction_id,
+                "created_at": payment.created_at.isoformat() if payment.created_at else None,
+                "updated_at": payment.updated_at.isoformat() if payment.updated_at else None,
+                "completed_at": payment.completed_at.isoformat() if payment.completed_at else None
+            }
+            payment_list.append(payment_dict)
         
-        return payments
+        return payment_list
         
     except Exception as e:
         logger.error(f"Error fetching payments: {e}")
@@ -1957,35 +1962,41 @@ async def get_my_payments(
 @api_router.get("/payments/{payment_id}")
 async def get_payment(
     payment_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
 ):
     """Get payment details"""
     try:
         user_data = decode_token(credentials.credentials)
         user_id = user_data.get("user_id")
         
-        # Get payment from MongoDB
-        payment = await payments_collection.find_one({"id": payment_id})
+        # Get payment from MySQL
+        result = await db.execute(
+            select(DBPayment).where(DBPayment.id == payment_id)
+        )
+        payment = result.scalar_one_or_none()
         
         if not payment:
             raise HTTPException(status_code=404, detail="Thanh toán không tồn tại")
         
         # Verify user is the patient or doctor
-        if payment["patient_id"] != user_id and payment["doctor_id"] != user_id:
+        if payment.patient_id != user_id and payment.doctor_id != user_id:
             raise HTTPException(status_code=403, detail="Bạn không có quyền xem thanh toán này")
         
-        # Remove MongoDB _id from response
-        payment.pop("_id", None)
-        
-        # Convert datetime to ISO string
-        if isinstance(payment.get("created_at"), datetime):
-            payment["created_at"] = payment["created_at"].isoformat()
-        if isinstance(payment.get("updated_at"), datetime):
-            payment["updated_at"] = payment["updated_at"].isoformat()
-        if isinstance(payment.get("completed_at"), datetime):
-            payment["completed_at"] = payment["completed_at"].isoformat()
-        
-        return payment
+        # Return payment data
+        return {
+            "id": payment.id,
+            "appointment_id": payment.appointment_id,
+            "patient_id": payment.patient_id,
+            "doctor_id": payment.doctor_id,
+            "amount": float(payment.amount),
+            "payment_method": payment.payment_method,
+            "status": payment.status,
+            "transaction_id": payment.transaction_id,
+            "created_at": payment.created_at.isoformat() if payment.created_at else None,
+            "updated_at": payment.updated_at.isoformat() if payment.updated_at else None,
+            "completed_at": payment.completed_at.isoformat() if payment.completed_at else None
+        }
         
     except HTTPException:
         raise
@@ -1998,57 +2009,58 @@ async def get_payment(
 async def process_payment(
     payment_id: str,
     payment_process: PaymentProcess,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
 ):
     """Process payment (mark as completed)"""
     try:
         user_data = decode_token(credentials.credentials)
         user_id = user_data.get("user_id")
         
-        # Get payment from MongoDB
-        payment = await payments_collection.find_one({"id": payment_id})
+        # Get payment from MySQL
+        result = await db.execute(
+            select(DBPayment).where(DBPayment.id == payment_id)
+        )
+        payment = result.scalar_one_or_none()
         
         if not payment:
             raise HTTPException(status_code=404, detail="Thanh toán không tồn tại")
         
         # Verify user is the patient
-        if payment["patient_id"] != user_id:
+        if payment.patient_id != user_id:
             raise HTTPException(status_code=403, detail="Bạn không có quyền xử lý thanh toán này")
         
         # Check if already processed
-        if payment["status"] != "pending":
+        if payment.status != "pending":
             raise HTTPException(status_code=400, detail="Thanh toán đã được xử lý")
         
         # In demo mode, always succeed
         transaction_id = f"TXN{uuid.uuid4().hex[:12].upper()}"
         
         # Update payment status
-        update_data = {
-            "status": "completed" if payment_process.success else "failed",
-            "payment_method": payment_process.payment_method,
-            "transaction_id": transaction_id,
-            "completed_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc)
+        payment.status = "completed" if payment_process.success else "failed"
+        payment.payment_method = payment_process.payment_method
+        payment.transaction_id = transaction_id
+        payment.completed_at = datetime.now(timezone.utc)
+        payment.updated_at = datetime.now(timezone.utc)
+        
+        await db.commit()
+        await db.refresh(payment)
+        
+        # Return updated payment
+        return {
+            "id": payment.id,
+            "appointment_id": payment.appointment_id,
+            "patient_id": payment.patient_id,
+            "doctor_id": payment.doctor_id,
+            "amount": float(payment.amount),
+            "payment_method": payment.payment_method,
+            "status": payment.status,
+            "transaction_id": payment.transaction_id,
+            "created_at": payment.created_at.isoformat() if payment.created_at else None,
+            "updated_at": payment.updated_at.isoformat() if payment.updated_at else None,
+            "completed_at": payment.completed_at.isoformat() if payment.completed_at else None
         }
-        
-        await payments_collection.update_one(
-            {"id": payment_id},
-            {"$set": update_data}
-        )
-        
-        # Get updated payment
-        updated_payment = await payments_collection.find_one({"id": payment_id})
-        updated_payment.pop("_id", None)
-        
-        # Convert datetime to ISO string
-        if isinstance(updated_payment.get("created_at"), datetime):
-            updated_payment["created_at"] = updated_payment["created_at"].isoformat()
-        if isinstance(updated_payment.get("updated_at"), datetime):
-            updated_payment["updated_at"] = updated_payment["updated_at"].isoformat()
-        if isinstance(updated_payment.get("completed_at"), datetime):
-            updated_payment["completed_at"] = updated_payment["completed_at"].isoformat()
-        
-        return updated_payment
         
     except HTTPException:
         raise
@@ -2060,35 +2072,36 @@ async def process_payment(
 @api_router.post("/payments/{payment_id}/refund")
 async def refund_payment(
     payment_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
 ):
     """Refund payment"""
     try:
         user_data = decode_token(credentials.credentials)
         user_id = user_data.get("user_id")
         
-        # Get payment from MongoDB
-        payment = await payments_collection.find_one({"id": payment_id})
+        # Get payment from MySQL
+        result = await db.execute(
+            select(DBPayment).where(DBPayment.id == payment_id)
+        )
+        payment = result.scalar_one_or_none()
         
         if not payment:
             raise HTTPException(status_code=404, detail="Thanh toán không tồn tại")
         
         # Verify user is the patient
-        if payment["patient_id"] != user_id:
+        if payment.patient_id != user_id:
             raise HTTPException(status_code=403, detail="Bạn không có quyền hoàn tiền thanh toán này")
         
         # Check if payment is completed
-        if payment["status"] != "completed":
+        if payment.status != "completed":
             raise HTTPException(status_code=400, detail="Chỉ có thể hoàn tiền cho thanh toán đã hoàn thành")
         
         # Update payment status to refunded
-        await payments_collection.update_one(
-            {"id": payment_id},
-            {"$set": {
-                "status": "refunded",
-                "updated_at": datetime.now(timezone.utc)
-            }}
-        )
+        payment.status = 'refunded'
+        payment.updated_at = datetime.now(timezone.utc)
+        
+        await db.commit()
         
         return {"message": "Hoàn tiền thành công"}
         
@@ -2101,7 +2114,8 @@ async def refund_payment(
 
 @api_router.get("/admin/payments")
 async def admin_get_all_payments(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
 ):
     """Admin: Get all payments"""
     try:
@@ -2112,29 +2126,38 @@ async def admin_get_all_payments(
         if role != "admin":
             raise HTTPException(status_code=403, detail="Chỉ admin mới có quyền xem tất cả thanh toán")
         
-        # Get all payments from MongoDB
-        cursor = payments_collection.find({}).sort("created_at", -1)
-        payments = await cursor.to_list(length=1000)
+        # Get all payments from MySQL
+        result = await db.execute(
+            select(DBPayment).order_by(desc(DBPayment.created_at))
+        )
+        payments = result.scalars().all()
         
         # Calculate stats
         total_payments = len(payments)
-        completed_payments = sum(1 for p in payments if p["status"] == "completed")
-        pending_payments = sum(1 for p in payments if p["status"] == "pending")
-        total_revenue = sum(p["amount"] for p in payments if p["status"] == "completed")
+        completed_payments = sum(1 for p in payments if p.status == "completed")
+        pending_payments = sum(1 for p in payments if p.status == "pending")
+        total_revenue = sum(float(p.amount) for p in payments if p.status == "completed")
         
-        # Remove MongoDB _id from each payment
+        # Convert to dict list
+        payment_list = []
         for payment in payments:
-            payment.pop("_id", None)
-            # Convert datetime to ISO string
-            if isinstance(payment.get("created_at"), datetime):
-                payment["created_at"] = payment["created_at"].isoformat()
-            if isinstance(payment.get("updated_at"), datetime):
-                payment["updated_at"] = payment["updated_at"].isoformat()
-            if isinstance(payment.get("completed_at"), datetime):
-                payment["completed_at"] = payment["completed_at"].isoformat()
+            payment_dict = {
+                "id": payment.id,
+                "appointment_id": payment.appointment_id,
+                "patient_id": payment.patient_id,
+                "doctor_id": payment.doctor_id,
+                "amount": float(payment.amount),
+                "payment_method": payment.payment_method,
+                "status": payment.status,
+                "transaction_id": payment.transaction_id,
+                "created_at": payment.created_at.isoformat() if payment.created_at else None,
+                "updated_at": payment.updated_at.isoformat() if payment.updated_at else None,
+                "completed_at": payment.completed_at.isoformat() if payment.completed_at else None
+            }
+            payment_list.append(payment_dict)
         
         return {
-            "payments": payments,
+            "payments": payment_list,
             "stats": {
                 "total_payments": total_payments,
                 "completed_payments": completed_payments,

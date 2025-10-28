@@ -1,15 +1,15 @@
-# 🏥 MediSchedule - Healthcare Management System (MySQL Version)
+# 🏥 MediSchedule - Healthcare Management System
 
 ## 📊 TRẠNG THÁI DỰ ÁN
 
-✅ **HOÀN TẤT CHUYỂN ĐỔI TỪ MONGODB SANG MYSQL**
+✅ **ỨNG DỤNG SỬ DỤNG MYSQL 100%**
 
-- ✅ **1781 dòng code** server.py đã convert hoàn chỉnh
-- ✅ **42+ API endpoints** hoạt động với MySQL
+- ✅ **1781 dòng code** server.py với SQLAlchemy
+- ✅ **42+ API endpoints** hoạt động với MySQL  
 - ✅ **SQLAlchemy 2.0** async ORM
 - ✅ **Foreign keys & relationships** đầy đủ
 - ✅ **Scripts setup** admin và sample data
-- ✅ **Frontend** không cần thay đổi (same API contracts)
+- ✅ **Không còn MongoDB** - đã loại bỏ hoàn toàn
 
 ## 🚀 QUICK START
 

@@ -1,9 +1,9 @@
 # HƯỚNG DẪN CHẠY ỨNG DỤNG VỚI MYSQL
 
 ## ✅ ĐÃ HOÀN THÀNH
-- ✅ Convert toàn bộ 49 endpoints từ MongoDB sang MySQL
+- ✅ Ứng dụng sử dụng MySQL 100% (đã loại bỏ hoàn toàn MongoDB)
 - ✅ Server.py hoàn chỉnh với SQLAlchemy (1781 dòng)
-- ✅ Database models đầy đủ
+- ✅ Database models đầy đủ với 8 tables
 - ✅ Scripts tạo admin và sample data
 
 ## 📋 CHUẨN BỊ
@@ -329,18 +329,18 @@ medischedule/
 └── admin_permissions     # Admin permissions
 ```
 
-## 🔄 SO SÁNH MONGODB vs MYSQL
+## 🔄 KIẾN TRÚC MYSQL
 
-| Feature | MongoDB | MySQL |
-|---------|---------|-------|
-| Driver | Motor | aiomysql |
-| ORM | None (dict) | SQLAlchemy |
-| Queries | find_one(), find() | select(), where() |
-| Insert | insert_one() | add(), commit() |
-| Update | update_one() | update(), commit() |
-| Delete | delete_one() | delete(), commit() |
-| Relations | Manual joins | Foreign keys + joins |
-| Performance | Fast for unstructured | Fast for structured |
+| Feature | MySQL Implementation |
+|---------|---------------------|
+| Driver | aiomysql |
+| ORM | SQLAlchemy 2.0 |
+| Queries | select(), where() |
+| Insert | add(), commit() |
+| Update | update(), commit() |
+| Delete | delete(), commit() |
+| Relations | Foreign keys + joins |
+| Performance | Optimized for structured data |
 
 ## 🎉 HOÀN THÀNH!
 
