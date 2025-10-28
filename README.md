@@ -4,7 +4,8 @@
 
 ![Status](https://img.shields.io/badge/status-production--ready-success)
 ![Features](https://img.shields.io/badge/features-13%2F13-brightgreen)
-![Tech](https://img.shields.io/badge/tech-FastAPI%2BReact-blue)
+![Tech](https://img.shields.io/badge/tech-FastAPI%2BReact%2BMySQL-blue)
+![Database](https://img.shields.io/badge/database-MySQL-orange)
 
 ---
 
