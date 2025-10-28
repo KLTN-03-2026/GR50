@@ -1983,12 +1983,12 @@ async def get_my_payments(
 @api_router.get("/payments/{payment_id}")
 async def get_payment(
     payment_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Get payment details"""
     try:
-        user_data = decode_token(credentials.credentials)
+        user_id = current_user.get("id")
         user_id = user_data.get("user_id")
         
         # Get payment from MySQL
