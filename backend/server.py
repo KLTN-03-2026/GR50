@@ -1330,15 +1330,29 @@ async def admin_delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Cannot delete self
     if user_id == current_user["id"]:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
-    
-    # Delete user (cascade will handle related records)
+
+    # 💥 Xóa dữ liệu phụ thuộc trước
+    # Xóa hồ sơ bác sĩ
+    await db.execute(delete(DBDoctor).where(DBDoctor.user_id == user_id))
+    # Xóa hồ sơ bệnh nhân
+    await db.execute(delete(DBPatient).where(DBPatient.user_id == user_id))
+    # Xóa quyền admin (nếu có)
+    await db.execute(delete(DBAdminPermission).where(DBAdminPermission.user_id == user_id))
+    # Xóa lịch hẹn & thanh toán liên quan
+    await db.execute(delete(DBAppointment).where(
+        (DBAppointment.patient_id == user_id) | (DBAppointment.doctor_id == user_id)
+    ))
+    await db.execute(delete(DBPayment).where(
+        (DBPayment.patient_id == user_id) | (DBPayment.doctor_id == user_id)
+    ))
+
+    # Cuối cùng xóa user
     await db.delete(user)
     await db.commit()
-    
-    return {"message": "User deleted successfully"}
+
+    return {"message": "User and related data deleted successfully"}
 
 @api_router.post("/admin/create-user")
 async def admin_create_user(
@@ -1989,21 +2003,20 @@ async def get_payment(
     """Get payment details"""
     try:
         user_id = current_user.get("id")
-        user_id = user_data.get("user_id")
-        
+
         # Get payment from MySQL
         result = await db.execute(
             select(DBPayment).where(DBPayment.id == payment_id)
         )
         payment = result.scalar_one_or_none()
-        
+
         if not payment:
             raise HTTPException(status_code=404, detail="Thanh toán không tồn tại")
-        
+
         # Verify user is the patient or doctor
         if payment.patient_id != user_id and payment.doctor_id != user_id:
             raise HTTPException(status_code=403, detail="Bạn không có quyền xem thanh toán này")
-        
+
         # Return payment data
         return {
             "id": payment.id,
@@ -2018,7 +2031,7 @@ async def get_payment(
             "updated_at": payment.updated_at.isoformat() if payment.updated_at else None,
             "completed_at": payment.completed_at.isoformat() if payment.completed_at else None
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
