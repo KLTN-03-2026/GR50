@@ -2009,57 +2009,58 @@ async def get_payment(
 async def process_payment(
     payment_id: str,
     payment_process: PaymentProcess,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
 ):
     """Process payment (mark as completed)"""
     try:
         user_data = decode_token(credentials.credentials)
         user_id = user_data.get("user_id")
         
-        # Get payment from MongoDB
-        payment = await payments_collection.find_one({"id": payment_id})
+        # Get payment from MySQL
+        result = await db.execute(
+            select(DBPayment).where(DBPayment.id == payment_id)
+        )
+        payment = result.scalar_one_or_none()
         
         if not payment:
             raise HTTPException(status_code=404, detail="Thanh toán không tồn tại")
         
         # Verify user is the patient
-        if payment["patient_id"] != user_id:
+        if payment.patient_id != user_id:
             raise HTTPException(status_code=403, detail="Bạn không có quyền xử lý thanh toán này")
         
         # Check if already processed
-        if payment["status"] != "pending":
+        if payment.status != "pending":
             raise HTTPException(status_code=400, detail="Thanh toán đã được xử lý")
         
         # In demo mode, always succeed
         transaction_id = f"TXN{uuid.uuid4().hex[:12].upper()}"
         
         # Update payment status
-        update_data = {
-            "status": "completed" if payment_process.success else "failed",
-            "payment_method": payment_process.payment_method,
-            "transaction_id": transaction_id,
-            "completed_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc)
+        payment.status = "completed" if payment_process.success else "failed"
+        payment.payment_method = payment_process.payment_method
+        payment.transaction_id = transaction_id
+        payment.completed_at = datetime.now(timezone.utc)
+        payment.updated_at = datetime.now(timezone.utc)
+        
+        await db.commit()
+        await db.refresh(payment)
+        
+        # Return updated payment
+        return {
+            "id": payment.id,
+            "appointment_id": payment.appointment_id,
+            "patient_id": payment.patient_id,
+            "doctor_id": payment.doctor_id,
+            "amount": float(payment.amount),
+            "payment_method": payment.payment_method,
+            "status": payment.status,
+            "transaction_id": payment.transaction_id,
+            "created_at": payment.created_at.isoformat() if payment.created_at else None,
+            "updated_at": payment.updated_at.isoformat() if payment.updated_at else None,
+            "completed_at": payment.completed_at.isoformat() if payment.completed_at else None
         }
-        
-        await payments_collection.update_one(
-            {"id": payment_id},
-            {"$set": update_data}
-        )
-        
-        # Get updated payment
-        updated_payment = await payments_collection.find_one({"id": payment_id})
-        updated_payment.pop("_id", None)
-        
-        # Convert datetime to ISO string
-        if isinstance(updated_payment.get("created_at"), datetime):
-            updated_payment["created_at"] = updated_payment["created_at"].isoformat()
-        if isinstance(updated_payment.get("updated_at"), datetime):
-            updated_payment["updated_at"] = updated_payment["updated_at"].isoformat()
-        if isinstance(updated_payment.get("completed_at"), datetime):
-            updated_payment["completed_at"] = updated_payment["completed_at"].isoformat()
-        
-        return updated_payment
         
     except HTTPException:
         raise
