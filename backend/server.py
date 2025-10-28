@@ -2170,6 +2170,12 @@ async def admin_get_all_payments(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ========================================
+# Include API Router (MUST be after all endpoint definitions)
+# ========================================
+app.include_router(api_router, prefix=API_PREFIX)
+
+
 # Root endpoint
 @app.get("/")
 async def root():
