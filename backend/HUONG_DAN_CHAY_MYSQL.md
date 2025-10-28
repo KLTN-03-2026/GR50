@@ -329,18 +329,18 @@ medischedule/
 └── admin_permissions     # Admin permissions
 ```
 
-## 🔄 SO SÁNH MONGODB vs MYSQL
+## 🔄 KIẾN TRÚC MYSQL
 
-| Feature | MongoDB | MySQL |
-|---------|---------|-------|
-| Driver | Motor | aiomysql |
-| ORM | None (dict) | SQLAlchemy |
-| Queries | find_one(), find() | select(), where() |
-| Insert | insert_one() | add(), commit() |
-| Update | update_one() | update(), commit() |
-| Delete | delete_one() | delete(), commit() |
-| Relations | Manual joins | Foreign keys + joins |
-| Performance | Fast for unstructured | Fast for structured |
+| Feature | MySQL Implementation |
+|---------|---------------------|
+| Driver | aiomysql |
+| ORM | SQLAlchemy 2.0 |
+| Queries | select(), where() |
+| Insert | add(), commit() |
+| Update | update(), commit() |
+| Delete | delete(), commit() |
+| Relations | Foreign keys + joins |
+| Performance | Optimized for structured data |
 
 ## 🎉 HOÀN THÀNH!
 
