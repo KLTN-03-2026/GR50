@@ -136,6 +136,7 @@ class Appointment(Base):
     
     # Relationships
     chat_messages = relationship("ChatMessage", back_populates="appointment", cascade="all, delete-orphan")
+    payment = relationship("Payment", back_populates="appointment", uselist=False, cascade="all, delete-orphan")
 
 
 class ChatMessage(Base):
