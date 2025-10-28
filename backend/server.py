@@ -1940,13 +1940,12 @@ async def create_payment(
 
 @api_router.get("/payments/my")
 async def get_my_payments(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Get patient's payment history"""
     try:
-        user_data = decode_token(credentials.credentials)
-        user_id = user_data.get("user_id")
+        user_id = current_user.get("id")
         
         # Get all payments for this patient from MySQL
         result = await db.execute(
