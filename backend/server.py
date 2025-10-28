@@ -2092,13 +2092,12 @@ async def process_payment(
 @api_router.post("/payments/{payment_id}/refund")
 async def refund_payment(
     payment_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Refund payment"""
     try:
-        user_data = decode_token(credentials.credentials)
-        user_id = user_data.get("user_id")
+        user_id = current_user.get("id")
         
         # Get payment from MySQL
         result = await db.execute(
