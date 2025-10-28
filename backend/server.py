@@ -802,11 +802,15 @@ async def create_appointment(
     if current_user["role"] != UserRole.PATIENT:
         raise HTTPException(status_code=403, detail="Patient access required")
     
-    # Get doctor name
-    result = await db.execute(select(DBUser).where(DBUser.id == appointment_data.doctor_id))
-    doctor_user = result.scalar_one_or_none()
-    if not doctor_user:
+    # Get doctor name and consultation fee
+    result = await db.execute(
+        select(DBUser, DBDoctor).join(DBDoctor, DBUser.id == DBDoctor.user_id).where(DBUser.id == appointment_data.doctor_id)
+    )
+    row = result.first()
+    if not row:
         raise HTTPException(status_code=404, detail="Doctor not found")
+    
+    doctor_user, doctor = row
     
     # Create appointment
     appointment_id = str(uuid.uuid4())
@@ -822,6 +826,32 @@ async def create_appointment(
     db.add(db_appointment)
     await db.commit()
     await db.refresh(db_appointment)
+    
+    # Automatically create payment for appointment in MongoDB
+    try:
+        amount = float(doctor.consultation_fee) if doctor.consultation_fee else 200000.0
+        
+        payment = {
+            "id": str(uuid.uuid4()),
+            "appointment_id": appointment_id,
+            "patient_id": current_user["id"],
+            "patient_name": current_user["full_name"],
+            "doctor_id": appointment_data.doctor_id,
+            "doctor_name": doctor_user.full_name,
+            "amount": amount,
+            "payment_method": "mock_card",
+            "status": "pending",
+            "transaction_id": None,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "completed_at": None
+        }
+        
+        await payments_collection.insert_one(payment)
+        logger.info(f"Auto-created payment {payment['id']} for appointment {appointment_id}")
+    except Exception as e:
+        logger.error(f"Failed to create payment for appointment: {e}")
+        # Don't fail the appointment creation if payment creation fails
     
     # Prepare response
     appointment_dict = db_to_dict(db_appointment)
