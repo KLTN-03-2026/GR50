@@ -2133,13 +2133,12 @@ async def refund_payment(
 
 @api_router.get("/admin/payments")
 async def admin_get_all_payments(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Admin: Get all payments"""
     try:
-        user_data = decode_token(credentials.credentials)
-        role = user_data.get("role")
+        role = current_user.get("role")
         
         # Check if user is admin
         if role != "admin":
