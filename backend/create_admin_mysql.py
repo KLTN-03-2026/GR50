@@ -4,6 +4,7 @@ Create root admin account for MySQL database
 import asyncio
 import os
 import uuid
+import hashlib
 from pathlib import Path
 from dotenv import load_dotenv
 from passlib.context import CryptContext
@@ -14,11 +15,17 @@ from database import AsyncSessionLocal, User as DBUser, AdminPermission as DBAdm
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# Passlib CryptContext - sử dụng bcrypt (bạn có thể thêm schemes khác nếu muốn)
 pwd_context = CryptContext(
     schemes=["bcrypt"],
     deprecated="auto",
-    bcrypt__truncate_error=True
+    bcrypt__truncate_error=True  # giữ để passlib ghi log nếu có vấn đề truncate
 )
+
+def prepare_password_for_bcrypt(password: str) -> str:
+    if len(password.encode('utf-8')) > 72:
+        return hashlib.sha256(password.encode('utf-8')).hexdigest()
+    return password
 
 async def create_admin():
     async with AsyncSessionLocal() as db:
@@ -32,7 +39,10 @@ async def create_admin():
         
         # Create admin user
         admin_id = str(uuid.uuid4())
-        hashed_password = pwd_context.hash("12345678")
+
+        raw_password = "12345"  # thay đổi nếu cần
+        prepared = prepare_password_for_bcrypt(raw_password)
+        hashed_password = pwd_context.hash(prepare_password_for_bcrypt("12345678"))
         
         admin_user = DBUser(
             id=admin_id,
@@ -61,8 +71,18 @@ async def create_admin():
         
         print("✓ Admin created successfully!")
         print("Email: admin@medischedule.com")
-        print("Password: 12345678")
+        print(f"Password: {raw_password}")
         print("\n⚠️  IMPORTANT: Please change the password after first login!")
 
 if __name__ == "__main__":
-    asyncio.run(create_admin())
+    try:
+        asyncio.run(create_admin())
+    except RuntimeError as e:
+        if "Event loop is closed" in str(e):
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(create_admin())
+            loop.close()
+        else:
+            raise

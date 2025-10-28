@@ -86,7 +86,6 @@ CREATE TABLE doctors (
     INDEX idx_specialty_id (specialty_id),
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Appointments table
 CREATE TABLE appointments (
     id VARCHAR(36) PRIMARY KEY,
