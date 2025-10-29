@@ -1,22 +1,59 @@
+import sys, os
+from pathlib import Path
+
+# Đảm bảo Python hiểu thư mục backend là package
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+from fastapi import FastAPI
+from backend.routes import router
+
+app = FastAPI()
+app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
-import os
-import logging
-from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict, field_validator
-from typing import List, Optional, Dict, Any
-import uuid
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, update, delete, func, and_, or_, desc
+from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta, date, time as dt_time
 from passlib.context import CryptContext
 from jose import jwt
-from contextlib import asynccontextmanager
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func, and_, or_, desc
-from sqlalchemy.orm import selectinload, joinedload
+import logging
+import uuid
 from decimal import Decimal
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+from typing import List, Optional, Dict, Any
+from contextlib import asynccontextmanager
+
+# Import database & models
+from backend.database import get_db
+from backend.models import User, Appointment, Payment  # 👈 gộp tất cả models ở đây
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+
+app = FastAPI()
+
+@app.get("/api/payments")
+async def get_payments(db: Session = Depends(get_db)):
+    payments = db.query(DBPayment).all()
+    result = []
+    for p in payments:
+        result.append({
+            "id": p.payment_id,
+            "appointment_date": p.appointment.date if p.appointment else None,
+            "patient_name": p.patient.full_name if p.patient else None,
+            "doctor_name": p.doctor.full_name if p.doctor else None,
+            "amount": float(p.amount),
+            "payment_method": p.payment_method,
+            "status": p.status,
+            "created_at": p.created_at
+        })
+    return result
+import sys, os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import database models and session
 from database import (
@@ -219,7 +256,7 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication token has expired"
         )
-    except jwt.InvalidTokenError as e:
+    except Exception as e:
         logger.warning(f"Invalid token attempt: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
