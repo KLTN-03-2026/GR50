@@ -40,7 +40,7 @@ async def create_admin():
         # Create admin user
         admin_id = str(uuid.uuid4())
 
-        raw_password = "12345"  # thay đổi nếu cần
+        raw_password = "12345678"  # thay đổi nếu cần
         prepared = prepare_password_for_bcrypt(raw_password)
         hashed_password = pwd_context.hash(prepare_password_for_bcrypt("12345678"))
         

@@ -1,43 +1,69 @@
-import sys, os
+import sys, os, logging, uuid
+from datetime import datetime, date, time, timezone, timedelta
+from decimal import Decimal
+from typing import Optional, List, Dict, Any
 from pathlib import Path
-
-# Đảm bảo Python hiểu thư mục backend là package
-ROOT_DIR = Path(__file__).resolve().parents[1]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
-from fastapi import FastAPI
-from backend.routes import router
-
-app = FastAPI()
-app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from contextlib import asynccontextmanager
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+from fastapi import FastAPI, HTTPException, status, Depends, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func, and_, or_, desc
-from sqlalchemy.orm import Session
-from datetime import datetime, timezone, timedelta, date, time as dt_time
-from passlib.context import CryptContext
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt
-import logging
-import uuid
-from decimal import Decimal
-from pydantic import BaseModel, Field, ConfigDict, field_validator
-from typing import List, Optional, Dict, Any
-from contextlib import asynccontextmanager
+from passlib.context import CryptContext
+from pydantic import BaseModel, Field
+from dotenv import load_dotenv
+from sqlalchemy import select, update, delete, or_
+from sqlalchemy.ext.asyncio import AsyncSession
+from backend.database import Base
+from backend.database import engine, AsyncSessionLocal, get_db
+from backend.models import (
+    User as DBUser,
+    Patient as DBPatient,
+    Doctor as DBDoctor,
+    Specialty as DBSpecialty,
+    Appointment as DBAppointment,
+    ChatMessage as DBChatMessage,
+    AIChatHistory as DBAIChatHistory,
+    AdminPermission as DBAdminPermission,
+    Payment as DBPayment
+)
+from backend.routes import router as api_router
+app = FastAPI(
+    title="Healthcare API",
+    description="FastAPI backend for MediSchedule",
+    version="1.0.0",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("server")
 
-# Import database & models
-from backend.database import get_db
-from backend.models import User, Appointment, Payment  # 👈 gộp tất cả models ở đây
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+security = HTTPBearer()
+SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "dev-secret")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 
-app = FastAPI()
+def verify_password(plain: str, hashed: str) -> bool: # type: ignore
+    return pwd_context.verify(plain, hashed)
+
+def hash_password(password: str) -> str: # type: ignore
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict): # type: ignore
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 @app.get("/api/payments")
-async def get_payments(db: Session = Depends(get_db)):
+async def get_payments(db: AsyncSession = Depends(get_db)):
     payments = db.query(DBPayment).all()
     result = []
     for p in payments:
@@ -56,13 +82,19 @@ import sys, os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import database models and session
-from database import (
-    engine, AsyncSessionLocal, get_db, Base,
-    User as DBUser, Patient as DBPatient, Doctor as DBDoctor,
-    Specialty as DBSpecialty, Appointment as DBAppointment,
-    ChatMessage as DBChatMessage, AIChatHistory as DBAIChatHistory,
-    AdminPermission as DBAdminPermission, Payment as DBPayment
+from database import engine, AsyncSessionLocal, get_db, Base
+from backend.models import (
+    User as DBUser,
+    Patient as DBPatient,
+    Doctor as DBDoctor,
+    Specialty as DBSpecialty,
+    Appointment as DBAppointment,
+    ChatMessage as DBChatMessage,
+    AIChatHistory as DBAIChatHistory,
+    AdminPermission as DBAdminPermission,
+    Payment as DBPayment
 )
+
 
 # Setup logging
 logging.basicConfig(
@@ -163,8 +195,8 @@ class SuccessResponse(BaseModel):
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
 
 def create_access_token(data: dict) -> str:
     try:
@@ -201,11 +233,11 @@ async def error_handler(request: Request, call_next):
 def db_to_dict(db_obj) -> dict:
     """Convert SQLAlchemy model to dict"""
     if db_obj is None:
-        return None
+        return None # type: ignore
     result = {}
     for column in db_obj.__table__.columns:
         value = getattr(db_obj, column.name)
-        if isinstance(value, (datetime, date, dt_time)):
+        if isinstance(value, (datetime, date, time)):
             result[column.name] = value.isoformat()
         elif isinstance(value, Decimal):
             result[column.name] = float(value)
@@ -2282,3 +2314,4 @@ if __name__ == "__main__":
         reload=True,
         log_level="info"
     )
+app.include_router(api_router)
