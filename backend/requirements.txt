@@ -18,3 +18,4 @@ mysql-connector-python==8.2.0
 PyMySQL==1.1.0
 cryptography==41.0.7
 greenlet==3.0.3
+aiofiles>=23.2.1
