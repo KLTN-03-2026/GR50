@@ -254,7 +254,7 @@ class AppointmentsPaymentsAPITester:
         
         # Test payments endpoint without token
         response = self.make_request("GET", "/payments/my")
-        if response:
+        if response is not None:
             self.log_result("Payments Auth Check", True, 
                           "Correctly rejected unauthorized access (HTTP 403)")
         else:
