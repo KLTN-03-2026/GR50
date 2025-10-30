@@ -110,6 +110,7 @@ function App() {
             <Route path="/patient/dashboard" element={user?.role === "patient" ? <PatientDashboard /> : <Navigate to="/login" />} />
             <Route path="/patient/search-doctors" element={user?.role === "patient" ? <SearchDoctors /> : <Navigate to="/login" />} />
             <Route path="/patient/appointments" element={user?.role === "patient" ? <PatientAppointments /> : <Navigate to="/login" />} />
+            <Route path="/patient/chat" element={user?.role === "patient" ? <PatientChatList /> : <Navigate to="/login" />} />
             <Route path="/patient/chat/:appointmentId" element={user?.role === "patient" ? <PatientChat /> : <Navigate to="/login" />} />
             <Route path="/patient/payments" element={user?.role === "patient" ? <PatientPayments /> : <Navigate to="/login" />} />
             <Route path="/patient/payment/:paymentId" element={user?.role === "patient" ? <PaymentProcess /> : <Navigate to="/login" />} />
