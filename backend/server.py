@@ -2048,13 +2048,14 @@ async def get_my_payments(
     try:
         user_id = current_user.get("id")
         
-        # Get all payments for this patient from MySQL
+        # Get all payments for this patient from MySQL with doctor info
         result = await db.execute(
-            select(DBPayment)
+            select(DBPayment, DBUser)
+            .join(DBUser, DBPayment.doctor_id == DBUser.id)
             .where(DBPayment.patient_id == user_id)
             .order_by(desc(DBPayment.created_at))
         )
-        payments = result.scalars().all()
+        payment_rows = result.all()
         
         # Convert to dict list
         payment_list = []
