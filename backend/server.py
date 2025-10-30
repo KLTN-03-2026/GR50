@@ -7,9 +7,9 @@ from typing import Optional, List, Dict, Any
 from pathlib import Path
 from contextlib import asynccontextmanager
 from pydantic import BaseModel, Field, ConfigDict, field_validator
-from fastapi import FastAPI, HTTPException, status, Depends, Request, APIRouter
+from fastapi import FastAPI, HTTPException, status, Depends, Request, APIRouter, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt
 from passlib.context import CryptContext
