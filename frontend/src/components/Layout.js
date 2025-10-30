@@ -30,6 +30,7 @@ export default function Layout({ children }) {
   const doctorLinks = [
     { path: '/doctor/dashboard', icon: Home, label: t('home') },
     { path: '/doctor/appointments', icon: Calendar, label: t('appointments') },
+    { path: '/doctor/chat', icon: MessageSquare, label: t('chat') },
     { path: '/doctor/profile', icon: User, label: t('profile') },
     { path: '/doctor/schedule', icon: Clock, label: t('schedule') }
   ];
