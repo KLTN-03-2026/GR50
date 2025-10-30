@@ -118,13 +118,19 @@ class Appointment(Base):
 # ==============================
 class Payment(Base):
     __tablename__ = "payments"
+    __table_args__ = {"extend_existing": True}
 
-    id = Column(Integer, primary_key=True, index=True)
-    appointment_id = Column(Integer, ForeignKey("appointments.id"))
-    amount = Column(Float)
-    method = Column(String(50))
-    status = Column(String(50))
+    payment_id = Column(Integer, primary_key=True, autoincrement=True)
+    appointment_id = Column(String(36), ForeignKey("appointments.id"))
+    patient_id = Column(String(36), ForeignKey("users.id"))
+    doctor_id = Column(String(36), ForeignKey("users.id"))
+    amount = Column(DECIMAL(10, 2))
+    payment_method = Column(Enum('mock_card', 'mock_wallet', 'mock_bank'), default='mock_card')
+    status = Column(Enum('pending', 'processing', 'completed', 'failed', 'refunded'), default='pending')
+    transaction_id = Column(String(100))
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = Column(DateTime)
     appointment = relationship("Appointment", back_populates="payment")
     
 
