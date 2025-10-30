@@ -65,6 +65,7 @@ class AppointmentsPaymentsAPITester:
             print(f"   Response status: {response.status_code}")
             if response.status_code != 200:
                 print(f"   Response body: {response.text[:500]}")
+            print(f"   DEBUG: Returning response object: {response}")
             return response
         except requests.exceptions.RequestException as e:
             print(f"   Request failed: {str(e)}")
