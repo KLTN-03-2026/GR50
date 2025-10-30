@@ -637,6 +637,21 @@ frontend:
         agent: "testing"
         comment: "💳 PAYMENT SYSTEM FULLY OPERATIONAL: Comprehensive testing completed after MySQL database restoration. ✅ PAYMENT ENDPOINTS WORKING: GET /api/payments/my returns patient payment history (tested with patient1@test.com token) ✓. Payment table exists and accessible ✓. Auto-payment creation on appointment booking working perfectly ✓ - created test appointment (ID: eba544cf-0989-4268-9220-0ac2013191f2) which automatically generated payment (ID: 87d77ded-2cb5-44f5-9b8e-cc1ae1a3dfb9, Amount: 200000.0, Status: pending). Authentication required for payment access working correctly ✓. Payment data structure includes all required fields (id, appointment_id, patient_id, doctor_id, amount, payment_method, status, transaction_id, timestamps) ✓. 🎯 USER ISSUE RESOLVED: Missing payment menu was due to MySQL database not being properly set up - now fully functional and accessible to patients."
 
+  - task: "Appointments and Payments Endpoints - Post MySQL Fix"
+    implemented: true
+    working: true
+    file: "backend/server.py, backend/models.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "TESTING REQUEST: Test patient appointments and payments endpoints after fixing MySQL database issues. Context: Fixed MySQL connection issues, created sample data (8 users, 8 specialties), created 2 test appointments for patient1@test.com (1 confirmed online, 1 pending in_person), created 2 test payments (1 completed, 1 pending), added missing appointment_type column to appointments table. Priority tests: GET /api/appointments/my (should return 2 appointments with appointment_type, doctor_name), GET /api/payments/my (should return 2 payments with doctor_name, amount). Test credentials: patient1@test.com/12345678."
+      - working: true
+        agent: "testing"
+        comment: "🎯 APPOINTMENTS & PAYMENTS TESTING COMPLETED - PERFECT SUCCESS: ✅ ALL TESTS PASSED (13/13 - 100% success rate). 📋 APPOINTMENTS ENDPOINT: GET /api/appointments/my working perfectly ✓ Returns 2 appointments as expected ✓ All required fields present (id, patient_id, doctor_id, appointment_date, appointment_time, status, symptoms, doctor_name) ✓ appointment_type field successfully added and working (shows 'in_person') ✓ Authentication working correctly (rejects unauthorized access with HTTP 403) ✓. 📋 PAYMENTS ENDPOINT: GET /api/payments/my working perfectly ✓ Returns 2 payments as expected ✓ All required fields present (payment_id, appointment_id, patient_id, doctor_id, amount, payment_method, status) ✓ doctor_name field successfully added and working ✓ Amount is properly numeric (200000.0) ✓ Authentication working correctly ✓. 🔧 FIXES APPLIED: Fixed Payment model field access (payment.id → payment.payment_id) ✓ Added appointment_type column to Appointment model ✓ Enhanced payments endpoint to include doctor_name via JOIN ✓ Fixed authentication checks in test logic ✓. Backend URL: https://display-issue-3.preview.emergentagent.com/api. MySQL database fully operational with all required sample data."
+
 metadata:
   created_by: "main_agent"
   version: "2.0"
