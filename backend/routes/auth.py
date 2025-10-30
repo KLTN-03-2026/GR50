@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from passlib.context import CryptContext
-from backend.models import User
-from backend.database import get_db
+from models import User
+from database import get_db
 from datetime import datetime
 
 router = APIRouter()
