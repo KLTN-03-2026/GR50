@@ -9,10 +9,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 from passlib.context import CryptContext
 from sqlalchemy import select
-from database import (
-    AsyncSessionLocal,
-    User as DBUser, Patient as DBPatient, Doctor as DBDoctor,
-    Specialty as DBSpecialty, AdminPermission as DBAdminPermission
+from database import AsyncSessionLocal
+from models import (
+    User as DBUser, 
+    Patient as DBPatient, 
+    Doctor as DBDoctor,
+    Specialty as DBSpecialty, 
+    AdminPermission as DBAdminPermission
 )
 
 # Load environment variables
