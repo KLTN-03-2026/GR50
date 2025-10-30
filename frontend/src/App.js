@@ -120,6 +120,7 @@ function App() {
             <Route path="/doctor/profile" element={user?.role === "doctor" ? <DoctorProfile /> : <Navigate to="/login" />} />
             <Route path="/doctor/schedule" element={user?.role === "doctor" ? <DoctorSchedule /> : <Navigate to="/login" />} />
             <Route path="/doctor/appointments" element={user?.role === "doctor" ? <DoctorAppointments /> : <Navigate to="/login" />} />
+            <Route path="/doctor/chat" element={user?.role === "doctor" ? <DoctorChatList /> : <Navigate to="/login" />} />
             <Route path="/doctor/chat/:appointmentId" element={user?.role === "doctor" ? <DoctorChat /> : <Navigate to="/login" />} />
 
             {/* Admin Routes */}
