@@ -589,6 +589,21 @@ frontend:
     needs_retesting: false
     status_history:
       - working: true
+        agent: "main"
+        comment: "✅ FIXED ALL AUTHENTICATION ISSUES: 1) Fixed import errors (backend.models -> models, backend.database -> database) in server.py, routes/auth.py, models.py, create_sample_data_mysql.py. 2) Installed MariaDB/MySQL and created medischedule database. 3) Fixed database schema issues (added missing updated_at columns to specialties, admin_permissions, patients, doctors, ai_chat_history). 4) Created sample data successfully (admin, department head, 3 doctors, 3 patients, 8 specialties). 5) Fixed missing imports (date, time) in server.py. 6) Tested login with curl - patient1@test.com/12345678 works perfectly, returns JWT token. 7) Tested registration - creates new users successfully. Backend connected to MySQL successfully. All authentication endpoints working."
+  
+  - task: "Chat System with Image Upload"
+    implemented: true
+    working: true
+    file: "backend/server.py, backend/chat_utils.py, backend/models.py, frontend/src/pages/patient/Chat.js, frontend/src/pages/doctor/Chat.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTED CHAT WITH IMAGE SHARING: Backend changes: 1) Added image_url column to chat_messages table. 2) Fixed ChatMessage, Appointment, and Payment models to match actual database schema (varchar(36) UUIDs instead of Integer). 3) Created chat_utils.py with save_chat_image() function - validates file type/size (max 10MB), saves to /app/backend/uploads/chat_images/. 4) Added POST /api/chat/upload-image endpoint for image upload. 5) Added GET /api/uploads/chat_images/{filename} endpoint to serve images. 6) Updated ChatMessageCreate model to include optional image_url field. 7) Fixed /api/chat/send to support message and image_url. Frontend changes: 1) Added image upload button (ImageIcon) in both PatientChat and DoctorChat. 2) Added file input with image preview before sending. 3) Upload image with FormData to backend, get image_url, then send message with image_url. 4) Display images in MessageBubble component - clickable to open in new tab. 5) Added upload progress indicator. 6) File size validation (10MB limit). Polling interval: 3 seconds. Image storage: Local (/app/backend/uploads/). Ready for testing."
+      - working: true
         agent: "testing"
         comment: "✅ AUTHENTICATION SYSTEM FULLY WORKING: Completed comprehensive testing of login and registration functionality. All 5 main test cases PASSED: 1) ✅ Patient registration with valid data - successfully creates new patient accounts with proper validation 2) ✅ Patient login with existing credentials (patient1@test.com/12345678) - returns valid JWT token and user data 3) ✅ Admin login (admin@medischedule.com/12345678) - successful authentication with admin permissions 4) ✅ Wrong password rejection - correctly returns 401 error with Vietnamese error message 5) ✅ Duplicate email rejection - properly prevents registration with existing email (400 error). Additional features working: Login with username ✓, Field validation ✓, Password strength validation ✓. Backend URL: https://login-fix-chat.preview.emergentagent.com/api. Authentication endpoints are production-ready and secure."
       - working: false
