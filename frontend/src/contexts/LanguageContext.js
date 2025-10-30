@@ -153,6 +153,8 @@ export const translations = {
     findDoctorDesc: 'Tìm kiếm bác sĩ theo chuyên khoa',
     appointments: 'Lịch hẹn',
     appointmentsDesc: 'Xem và quản lý lịch hẹn của bạn',
+    chat: 'Tin nhắn',
+    chatDesc: 'Chat với bác sĩ',
     history: 'Lịch sử',
     historyDesc: 'Xem lại các lịch hẹn trước đây',
     recentAppointments: 'Lịch hẹn gần đây',
