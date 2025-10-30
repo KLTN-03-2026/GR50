@@ -28,6 +28,7 @@ import DoctorProfile from "@/pages/doctor/Profile";
 import DoctorSchedule from "@/pages/doctor/Schedule";
 import DoctorAppointments from "@/pages/doctor/Appointments";
 import DoctorChat from "@/pages/doctor/Chat";
+import DoctorChatList from "@/pages/doctor/ChatList";
 
 // Admin Pages
 import AdminDashboard from "@/pages/admin/Dashboard";
