@@ -442,6 +442,8 @@ export const translations = {
     findDoctorDesc: 'Search for doctors by specialty',
     appointments: 'Appointments',
     appointmentsDesc: 'View and manage your appointments',
+    chat: 'Messages',
+    chatDesc: 'Chat with doctors',
     history: 'History',
     historyDesc: 'View your past appointments',
     recentAppointments: 'Recent Appointments',
