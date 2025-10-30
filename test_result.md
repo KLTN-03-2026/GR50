@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Sửa lỗi và loại bỏ hoàn toàn MongoDB - chỉ dùng MySQL 100%"
+user_problem_statement: "sửa lỗi đăng nhập và đăng kí, thêm tính năng chat bệnh nhân và bác sĩ bình thường không có AI, có thể chia sẽ hình ảnh trong chat đó"
 
 cleanup_status:
   status: "✅ COMPLETED - MONGODB FULLY REMOVED"
