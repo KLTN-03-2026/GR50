@@ -1040,7 +1040,8 @@ async def send_message(
         id=message_id,
         appointment_id=message_data.appointment_id,
         sender_id=current_user["id"],
-        content=message_data.message
+        message=message_data.message,
+        image_url=getattr(message_data, 'image_url', None)
     )
     db.add(db_message)
     await db.commit()
