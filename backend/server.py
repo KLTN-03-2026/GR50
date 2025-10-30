@@ -1085,6 +1085,38 @@ async def get_chat_messages(
     
     return messages
 
+@api_router.post("/chat/upload-image")
+async def upload_chat_image(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload an image for chat"""
+    from chat_utils import save_chat_image
+    
+    try:
+        image_url = await save_chat_image(file)
+        return {
+            "success": True,
+            "image_url": image_url,
+            "message": "Image uploaded successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading image: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")
+
+# Serve uploaded images
+@api_router.get("/uploads/chat_images/{filename}")
+async def serve_chat_image(filename: str):
+    """Serve uploaded chat images"""
+    file_path = Path("/app/backend/uploads/chat_images") / filename
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Image not found")
+    
+    return FileResponse(file_path)
+
 # ========================================
 # Admin Routes
 # ========================================
