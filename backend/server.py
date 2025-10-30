@@ -481,6 +481,7 @@ class ChatMessage(BaseModel):
 class ChatMessageCreate(BaseModel):
     appointment_id: str
     message: str
+    image_url: Optional[str] = None
 
 class UserProfileUpdate(BaseModel):
     full_name: Optional[str] = None
