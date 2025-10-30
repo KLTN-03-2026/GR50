@@ -239,6 +239,7 @@ class AppointmentsPaymentsAPITester:
         
         # Test appointments endpoint without token
         response = self.make_request("GET", "/appointments/my")
+        print(f"   DEBUG: response={response}, status_code={response.status_code if response else None}")
         if response and response.status_code in [401, 403]:
             self.log_result("Appointments Auth Check", True, 
                           f"Correctly rejected unauthorized access (HTTP {response.status_code})")
