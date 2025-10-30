@@ -241,19 +241,19 @@ class AppointmentsPaymentsAPITester:
         response = self.make_request("GET", "/appointments/my")
         if response and response.status_code in [401, 403]:
             self.log_result("Appointments Auth Check", True, 
-                          "Correctly rejected unauthorized access to appointments")
+                          f"Correctly rejected unauthorized access (HTTP {response.status_code})")
         else:
             self.log_result("Appointments Auth Check", False, 
-                          "Should reject unauthorized access to appointments")
+                          f"Should reject unauthorized access, got HTTP {response.status_code if response else 'No response'}")
         
         # Test payments endpoint without token
         response = self.make_request("GET", "/payments/my")
         if response and response.status_code in [401, 403]:
             self.log_result("Payments Auth Check", True, 
-                          "Correctly rejected unauthorized access to payments")
+                          f"Correctly rejected unauthorized access (HTTP {response.status_code})")
         else:
             self.log_result("Payments Auth Check", False, 
-                          "Should reject unauthorized access to payments")
+                          f"Should reject unauthorized access, got HTTP {response.status_code if response else 'No response'}")
     
     def test_database_connection(self):
         """Test that the MySQL database is working"""
