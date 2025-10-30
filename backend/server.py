@@ -2095,7 +2095,7 @@ async def get_payment(
 
         # Get payment from MySQL
         result = await db.execute(
-            select(DBPayment).where(DBPayment.id == payment_id)
+            select(DBPayment).where(DBPayment.payment_id == payment_id)
         )
         payment = result.scalar_one_or_none()
 
@@ -2141,7 +2141,7 @@ async def process_payment(
         
         # Get payment from MySQL
         result = await db.execute(
-            select(DBPayment).where(DBPayment.id == payment_id)
+            select(DBPayment).where(DBPayment.payment_id == payment_id)
         )
         payment = result.scalar_one_or_none()
         
@@ -2203,7 +2203,7 @@ async def refund_payment(
         
         # Get payment from MySQL
         result = await db.execute(
-            select(DBPayment).where(DBPayment.id == payment_id)
+            select(DBPayment).where(DBPayment.payment_id == payment_id)
         )
         payment = result.scalar_one_or_none()
         
