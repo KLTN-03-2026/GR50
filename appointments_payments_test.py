@@ -239,9 +239,6 @@ class AppointmentsPaymentsAPITester:
         
         # Test appointments endpoint without token
         response = self.make_request("GET", "/appointments/my")
-        print(f"   DEBUG: After call, response = {response}")
-        print(f"   DEBUG: bool(response) = {bool(response)}")
-        print(f"   DEBUG: response is not None = {response is not None}")
         # The make_request method already prints the status code, so we know it's 403
         # Just check if we got a response with error status
         if response is not None:
