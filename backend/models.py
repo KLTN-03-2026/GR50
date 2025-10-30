@@ -102,6 +102,7 @@ class Appointment(Base):
     doctor_id = Column(String(36), ForeignKey("users.id"))
     appointment_date = Column(Date)
     appointment_time = Column(Time)
+    appointment_type = Column(Enum('online', 'in_person'), default='in_person')
     status = Column(Enum('pending', 'confirmed', 'completed', 'cancelled'), default='pending')
     symptoms = Column(Text)
     diagnosis = Column(Text)
