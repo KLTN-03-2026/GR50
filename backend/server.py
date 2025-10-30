@@ -2108,7 +2108,7 @@ async def get_payment(
 
         # Return payment data
         return {
-            "id": payment.id,
+            "payment_id": payment.payment_id,
             "appointment_id": payment.appointment_id,
             "patient_id": payment.patient_id,
             "doctor_id": payment.doctor_id,
