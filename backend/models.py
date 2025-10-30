@@ -95,13 +95,18 @@ class Specialty(Base):
 # ==============================
 class Appointment(Base):
     __tablename__ = "appointments"
+    __table_args__ = {"extend_existing": True}
 
-    id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"))
-    doctor_id = Column(Integer, ForeignKey("doctors.id"))
-    date = Column(Date)
-    time = Column(Time)
-    status = Column(String(50), default="pending")
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    patient_id = Column(String(36), ForeignKey("users.id"))
+    doctor_id = Column(String(36), ForeignKey("users.id"))
+    appointment_date = Column(Date)
+    appointment_time = Column(Time)
+    status = Column(Enum('pending', 'confirmed', 'completed', 'cancelled'), default='pending')
+    symptoms = Column(Text)
+    diagnosis = Column(Text)
+    prescription = Column(Text)
+    notes = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     payment = relationship("Payment", back_populates="appointment", uselist=False)
