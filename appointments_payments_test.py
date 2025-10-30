@@ -243,8 +243,9 @@ class AppointmentsPaymentsAPITester:
             self.log_result("Appointments Auth Check", True, 
                           f"Correctly rejected unauthorized access (HTTP {response.status_code})")
         else:
+            status_code = response.status_code if response else "No response"
             self.log_result("Appointments Auth Check", False, 
-                          f"Should reject unauthorized access, got HTTP {response.status_code if response else 'No response'}")
+                          f"Should reject unauthorized access, got HTTP {status_code}")
         
         # Test payments endpoint without token
         response = self.make_request("GET", "/payments/my")
@@ -252,8 +253,9 @@ class AppointmentsPaymentsAPITester:
             self.log_result("Payments Auth Check", True, 
                           f"Correctly rejected unauthorized access (HTTP {response.status_code})")
         else:
+            status_code = response.status_code if response else "No response"
             self.log_result("Payments Auth Check", False, 
-                          f"Should reject unauthorized access, got HTTP {response.status_code if response else 'No response'}")
+                          f"Should reject unauthorized access, got HTTP {status_code}")
     
     def test_database_connection(self):
         """Test that the MySQL database is working"""
