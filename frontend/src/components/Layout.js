@@ -23,7 +23,8 @@ export default function Layout({ children }) {
     { path: '/patient/dashboard', icon: Home, label: t('home') },
     { path: '/patient/search-doctors', icon: Users, label: t('findDoctor') },
     { path: '/patient/appointments', icon: Calendar, label: t('appointments') },
-    { path: '/patient/payments', icon: CreditCard, label: t('payments') }
+    { path: '/patient/payments', icon: CreditCard, label: t('payments') },
+    { path: '/patient/chat', icon: MessageSquare, label: t('chat') }
   ];
 
   const doctorLinks = [
