@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from sqlalchemy import select, update, delete, or_, and_, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import Base, engine, AsyncSessionLocal, get_db
-from backend.models import (
+from models import (
     User as DBUser,
     Patient as DBPatient,
     Doctor as DBDoctor,
