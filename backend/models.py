@@ -129,15 +129,17 @@ class Payment(Base):
 # ==============================
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
+    __table_args__ = {"extend_existing": True}
 
-    id = Column(Integer, primary_key=True, index=True)
-    appointment_id = Column(Integer, ForeignKey("appointments.id"))
-    sender_id = Column(Integer, ForeignKey("users.id"))
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    appointment_id = Column(String(36), ForeignKey("appointments.id"))
+    sender_id = Column(String(36), ForeignKey("users.id"))
     message = Column(Text)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    image_url = Column(String(500))
+    created_at = Column(DateTime, default=datetime.utcnow)
     appointment = relationship("Appointment", back_populates="chat_messages")
     sender = relationship("User", foreign_keys=[sender_id], back_populates="sent_messages")                                              
-    receiver_id = Column(Integer, ForeignKey("users.id"))
+    receiver_id = Column(String(36), ForeignKey("users.id"))
     receiver = relationship("User", foreign_keys=[receiver_id], back_populates="received_messages")
 
 # ==============================
