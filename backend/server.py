@@ -2059,12 +2059,13 @@ async def get_my_payments(
         
         # Convert to dict list
         payment_list = []
-        for payment in payments:
+        for payment, doctor_user in payment_rows:
             payment_dict = {
                 "payment_id": payment.payment_id,
                 "appointment_id": payment.appointment_id,
                 "patient_id": payment.patient_id,
                 "doctor_id": payment.doctor_id,
+                "doctor_name": doctor_user.full_name,
                 "amount": float(payment.amount) if payment.amount else 0.0,
                 "payment_method": payment.payment_method,
                 "status": payment.status,
