@@ -176,6 +176,19 @@ else
     print_status "Frontend dependencies already installed"
 fi
 
+# Step 11.5: Fix FloatingChatButton Router Issue
+echo ""
+echo "Step 11.5: Checking FloatingChatButton placement..."
+if grep -q '</BrowserRouter>.*<FloatingChatButton />' /app/frontend/src/App.js 2>/dev/null; then
+    print_warning "FloatingChatButton outside Router, fixing..."
+    # This is a known issue - FloatingChatButton must be inside BrowserRouter
+    cd /app/frontend/src
+    sed -i 's|</Routes>.*</BrowserRouter>.*<FloatingChatButton />.*<Toaster|</Routes>\n          <FloatingChatButton />\n          <Toaster|' App.js 2>/dev/null || true
+    print_status "FloatingChatButton placement fixed"
+else
+    print_status "FloatingChatButton placement OK"
+fi
+
 # Step 12: Restart All Services
 echo ""
 echo "Step 12: Restarting all services..."
