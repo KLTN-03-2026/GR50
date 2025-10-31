@@ -140,6 +140,7 @@ function App() {
             <Route path="/department-head/patients" element={user?.role === "department_head" ? <DepartmentHeadPatients /> : <Navigate to="/login" />} />
           </Routes>
         </BrowserRouter>
+        <FloatingChatButton />
         <Toaster position="top-right" />
       </div>
     </AuthContext.Provider>
