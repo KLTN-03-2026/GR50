@@ -219,7 +219,7 @@ function BookingDialog({ doctor, open, onClose, token }) {
       
       toast.success('Đặt lịch thành công! Vui lòng thanh toán để xác nhận.');
       onClose();
-      navigate('/patient/payments');
+      navigate('/patient/appointments');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Đặt lịch thất bại');
     } finally {
