@@ -67,7 +67,7 @@ export default function PaymentProcess() {
       if (response.data.status === 'completed') {
         toast.success('Thanh toán thành công!');
         setTimeout(() => {
-          navigate('/patient/payments');
+          navigate('/patient/appointments');
         }, 2000);
       } else {
         toast.error('Thanh toán thất bại!');
