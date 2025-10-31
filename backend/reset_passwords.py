@@ -18,9 +18,9 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 def reset_all_passwords():
-    """Reset all test account passwords to '123456'"""
+    """Reset all test account passwords to '1234567878'"""
     
-    new_password = "123456"
+    new_password = "12345678"
     hashed_password = hash_password(new_password)
     
     # List of test accounts to reset
@@ -63,10 +63,10 @@ def reset_all_passwords():
     print(f"\n✨ Hoàn thành! Đã reset {updated_count}/{len(test_accounts)} tài khoản")
     print(f"\n🔑 Tất cả tài khoản đã được đặt mật khẩu: {new_password}")
     print("\n📋 Danh sách tài khoản:")
-    print("   • Admin:           admin@medischedule.com / 123456")
-    print("   • Department Head: departmenthead@test.com / 123456")
-    print("   • Doctor:          doctor1@test.com / 123456")
-    print("   • Patient:         patient1@test.com / 123456")
+    print("   • Admin:           admin@medischedule.com / 12345678")
+    print("   • Department Head: departmenthead@test.com / 12345678")
+    print("   • Doctor:          doctor1@test.com / 12345678")
+    print("   • Patient:         patient1@test.com / 12345678")
 
 if __name__ == "__main__":
     reset_all_passwords()

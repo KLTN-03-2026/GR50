@@ -1,10 +1,8 @@
 """
-Create sample data for MySQL database
+Create sample data for MySQL database (INT-based IDs)
 """
 import asyncio
-import os
-import uuid
-from datetime import datetime, date, time
+from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 from passlib.context import CryptContext
@@ -22,16 +20,13 @@ from models import (
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto"
-)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def create_sample_data():
     async with AsyncSessionLocal() as db:
         print("Creating sample data...")
-        
-        # Create specialties
+
+        # === SPECIALTIES ===
         specialties = [
             {"name": "Tim mạch", "description": "Chuyên khoa tim mạch"},
             {"name": "Nội khoa", "description": "Chuyên khoa nội tổng quát"},
@@ -40,179 +35,116 @@ async def create_sample_data():
             {"name": "Sản phụ khoa", "description": "Chuyên khoa sản phụ khoa"},
             {"name": "Răng hàm mặt", "description": "Chuyên khoa răng hàm mặt"},
             {"name": "Da liễu", "description": "Chuyên khoa da liễu"},
-            {"name": "Mắt", "description": "Chuyên khoa mắt"}
+            {"name": "Mắt", "description": "Chuyên khoa mắt"},
         ]
-        
-        specialty_ids = []
+
         for spec in specialties:
             result = await db.execute(select(DBSpecialty).where(DBSpecialty.name == spec["name"]))
-            existing = result.scalar_one_or_none()
-            if not existing:
-                spec_id = str(uuid.uuid4())
-                db_specialty = DBSpecialty(
-                    id=spec_id,
-                    name=spec["name"],
-                    description=spec["description"]
-                )
-                db.add(db_specialty)
-                specialty_ids.append(spec_id)
+            if not result.scalar_one_or_none():
+                db.add(DBSpecialty(name=spec["name"], description=spec["description"]))
                 print(f"✓ Created specialty: {spec['name']}")
-            else:
-                specialty_ids.append(existing.id)
-                print(f"- Specialty already exists: {spec['name']}")
-        
         await db.commit()
-        
-        # Create admin if not exists
+
+        # === ADMIN ===
         result = await db.execute(select(DBUser).where(DBUser.email == "admin@medischedule.com"))
         admin = result.scalar_one_or_none()
         if not admin:
-            admin_id = str(uuid.uuid4())
             admin_user = DBUser(
-                id=admin_id,
                 email="admin@medischedule.com",
                 username="admin",
                 password=pwd_context.hash("12345678"),
                 full_name="System Administrator",
-                phone="0123456789",
-                role="admin"
+                role="admin",
+                user_id="a_01"
             )
             db.add(admin_user)
-            
-            admin_permissions = DBAdminPermission(
-                user_id=admin_id,
+            await db.flush()
+
+            db.add(DBAdminPermission(
+                user_id=admin_user.id,
                 can_manage_doctors=True,
                 can_manage_patients=True,
                 can_manage_appointments=True,
                 can_view_stats=True,
                 can_manage_specialties=True,
                 can_create_admins=True
-            )
-            db.add(admin_permissions)
+            ))
             print("✓ Created admin account")
         else:
             print("- Admin already exists")
-        
         await db.commit()
-        
-        # Create department head
+
+        # === DEPARTMENT HEAD ===
         result = await db.execute(select(DBUser).where(DBUser.email == "departmenthead@test.com"))
-        dept_head = result.scalar_one_or_none()
-        if not dept_head:
-            dept_head_id = str(uuid.uuid4())
-            dept_head_user = DBUser(
-                id=dept_head_id,
+        dept = result.scalar_one_or_none()
+        if not dept:
+            db.add(DBUser(
                 email="departmenthead@test.com",
                 username="deptheaduser",
                 password=pwd_context.hash("12345678"),
                 full_name="Department Head",
-                phone="0123456790",
-                role="department_head"
-            )
-            db.add(dept_head_user)
+                role="department_head",
+                user_id="dh_01"
+            ))
             print("✓ Created department head account")
-        else:
-            print("- Department head already exists")
-        
         await db.commit()
-        
-        # Create sample doctors
+
+        # === DOCTORS ===
         doctors_data = [
-            {"email": "doctor1@test.com", "username": "doctor1", "full_name": "Dr. Nguyễn Văn A", "phone": "0123456781", "specialty_idx": 0, "exp": 10, "fee": 200000},
-            {"email": "doctor2@test.com", "username": "doctor2", "full_name": "Dr. Trần Thị B", "phone": "0123456782", "specialty_idx": 1, "exp": 8, "fee": 180000},
-            {"email": "doctor3@test.com", "username": "doctor3", "full_name": "Dr. Lê Văn C", "phone": "0123456783", "specialty_idx": 2, "exp": 12, "fee": 250000},
+            {"email": "doctor1@test.com", "username": "doctor1", "full_name": "Dr. Nguyễn Văn A", "specialty_idx": 0, "exp": 10, "fee": 200000},
+            {"email": "doctor2@test.com", "username": "doctor2", "full_name": "Dr. Trần Thị B", "specialty_idx": 1, "exp": 8, "fee": 180000},
+            {"email": "doctor3@test.com", "username": "doctor3", "full_name": "Dr. Lê Văn C", "specialty_idx": 2, "exp": 12, "fee": 250000},
         ]
-        
-        for doc in doctors_data:
+
+        for idx, doc in enumerate(doctors_data, start=1):
             result = await db.execute(select(DBUser).where(DBUser.email == doc["email"]))
-            existing = result.scalar_one_or_none()
-            if not existing:
-                user_id = str(uuid.uuid4())
-                doctor_id = str(uuid.uuid4())
-                
+            if not result.scalar_one_or_none():
                 db_user = DBUser(
-                    id=user_id,
                     email=doc["email"],
                     username=doc["username"],
                     password=pwd_context.hash("12345678"),
                     full_name=doc["full_name"],
-                    phone=doc["phone"],
-                    role="doctor"
+                    role="doctor",
+                    user_id=f"d_{idx:02d}"
                 )
                 db.add(db_user)
-                
-                db_doctor = DBDoctor(
-                    id=doctor_id,
-                    user_id=user_id,
-                    specialty_id=specialty_ids[doc["specialty_idx"]] if doc["specialty_idx"] < len(specialty_ids) else None,
+                await db.flush()
+                db.add(DBDoctor(
+                    user_id=db_user.id,
+                    specialty_id=idx,
                     experience_years=doc["exp"],
                     consultation_fee=doc["fee"],
                     bio=f"Bác sĩ {doc['full_name']} với {doc['exp']} năm kinh nghiệm",
                     status="approved"
-                )
-                db.add(db_doctor)
+                ))
                 print(f"✓ Created doctor: {doc['full_name']}")
-            else:
-                print(f"- Doctor already exists: {doc['email']}")
-        
         await db.commit()
-        
-        # Create sample patients
+
+        # === PATIENTS ===
         patients_data = [
-            {"email": "patient1@test.com", "username": "patient1", "full_name": "Nguyễn Văn X", "phone": "0123456791"},
-            {"email": "patient2@test.com", "username": "patient2", "full_name": "Trần Thị Y", "phone": "0123456792"},
-            {"email": "patient3@test.com", "username": "patient3", "full_name": "Lê Văn Z", "phone": "0123456793"},
+            {"email": "patient1@test.com", "username": "patient1", "full_name": "Nguyễn Văn X"},
+            {"email": "patient2@test.com", "username": "patient2", "full_name": "Trần Thị Y"},
+            {"email": "patient3@test.com", "username": "patient3", "full_name": "Lê Văn Z"},
         ]
-        
-        for pat in patients_data:
+
+        for idx, pat in enumerate(patients_data, start=1):
             result = await db.execute(select(DBUser).where(DBUser.email == pat["email"]))
-            existing = result.scalar_one_or_none()
-            if not existing:
-                user_id = str(uuid.uuid4())
-                patient_id = str(uuid.uuid4())
-                
+            if not result.scalar_one_or_none():
                 db_user = DBUser(
-                    id=user_id,
                     email=pat["email"],
                     username=pat["username"],
                     password=pwd_context.hash("12345678"),
                     full_name=pat["full_name"],
-                    phone=pat["phone"],
-                    role="patient"
+                    role="patient",
+                    user_id=f"p_{idx:02d}"
                 )
                 db.add(db_user)
-                
-                db_patient = DBPatient(
-                    id=patient_id,
-                    user_id=user_id
-                )
-                db.add(db_patient)
+                await db.flush()
+                db.add(DBPatient(user_id=db_user.id))
                 print(f"✓ Created patient: {pat['full_name']}")
-            else:
-                print(f"- Patient already exists: {pat['email']}")
-        
         await db.commit()
-        
-        print("\n" + "="*50)
-        print("✅ Sample data created successfully!")
-        print("="*50)
-        print("\n📋 TEST ACCOUNTS:")
-        print("-" * 50)
-        print("Admin:")
-        print("  Email: admin@medischedule.com")
-        print("  Password: 12345678")
-        print("\nDepartment Head:")
-        print("  Email: departmenthead@test.com")
-        print("  Password: 12345678")
-        print("\nDoctors:")
-        print("  Email: doctor1@test.com | Password: 12345678")
-        print("  Email: doctor2@test.com | Password: 12345678")
-        print("  Email: doctor3@test.com | Password: 12345678")
-        print("\nPatients:")
-        print("  Email: patient1@test.com | Password: 12345678")
-        print("  Email: patient2@test.com | Password: 12345678")
-        print("  Email: patient3@test.com | Password: 12345678")
-        print("-" * 50)
+
+        print("\n✅ Sample data created successfully!\n")
 
 if __name__ == "__main__":
     asyncio.run(create_sample_data())

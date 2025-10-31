@@ -9,7 +9,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from passlib.context import CryptContext
 from sqlalchemy import select
-from database import AsyncSessionLocal, User as DBUser, AdminPermission as DBAdminPermission
+from database import AsyncSessionLocal
+from backend.models import User as DBUser, AdminPermission as DBAdminPermission
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
