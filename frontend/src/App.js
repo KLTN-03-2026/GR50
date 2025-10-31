@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import FloatingChatButton from "@/components/FloatingChatButton";
 
 // Pages
 import LandingPage from "@/pages/LandingPage";
