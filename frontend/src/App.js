@@ -96,56 +96,56 @@ function App() {
   }
 
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <AuthContext.Provider value={{ user, token, login, logout }}>
-          <div className="App">
-            <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+    <BrowserRouter>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AuthContext.Provider value={{ user, token, login, logout }}>
+            <div className="App">
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-            {/* Patient Routes */}
-            <Route path="/patient/dashboard" element={user?.role === "patient" ? <PatientDashboard /> : <Navigate to="/login" />} />
-            <Route path="/patient/search-doctors" element={user?.role === "patient" ? <SearchDoctors /> : <Navigate to="/login" />} />
-            <Route path="/patient/appointments" element={user?.role === "patient" ? <PatientAppointments /> : <Navigate to="/login" />} />
-            <Route path="/patient/chat" element={user?.role === "patient" ? <PatientChatList /> : <Navigate to="/login" />} />
-            <Route path="/patient/chat/:appointmentId" element={user?.role === "patient" ? <PatientChat /> : <Navigate to="/login" />} />
-            <Route path="/patient/payments" element={user?.role === "patient" ? <PatientPayments /> : <Navigate to="/login" />} />
-            <Route path="/patient/payment/:paymentId" element={user?.role === "patient" ? <PaymentProcess /> : <Navigate to="/login" />} />
+                {/* Patient Routes */}
+                <Route path="/patient/dashboard" element={user?.role === "patient" ? <PatientDashboard /> : <Navigate to="/login" />} />
+                <Route path="/patient/search-doctors" element={user?.role === "patient" ? <SearchDoctors /> : <Navigate to="/login" />} />
+                <Route path="/patient/appointments" element={user?.role === "patient" ? <PatientAppointments /> : <Navigate to="/login" />} />
+                <Route path="/patient/chat" element={user?.role === "patient" ? <PatientChatList /> : <Navigate to="/login" />} />
+                <Route path="/patient/chat/:appointmentId" element={user?.role === "patient" ? <PatientChat /> : <Navigate to="/login" />} />
+                <Route path="/patient/payments" element={user?.role === "patient" ? <PatientPayments /> : <Navigate to="/login" />} />
+                <Route path="/patient/payment/:paymentId" element={user?.role === "patient" ? <PaymentProcess /> : <Navigate to="/login" />} />
 
-            {/* Doctor Routes */}
-            <Route path="/doctor/dashboard" element={user?.role === "doctor" ? <DoctorDashboard /> : <Navigate to="/login" />} />
-            <Route path="/doctor/profile" element={user?.role === "doctor" ? <DoctorProfile /> : <Navigate to="/login" />} />
-            <Route path="/doctor/schedule" element={user?.role === "doctor" ? <DoctorSchedule /> : <Navigate to="/login" />} />
-            <Route path="/doctor/appointments" element={user?.role === "doctor" ? <DoctorAppointments /> : <Navigate to="/login" />} />
-            <Route path="/doctor/chat" element={user?.role === "doctor" ? <DoctorChatList /> : <Navigate to="/login" />} />
-            <Route path="/doctor/chat/:appointmentId" element={user?.role === "doctor" ? <DoctorChat /> : <Navigate to="/login" />} />
+                {/* Doctor Routes */}
+                <Route path="/doctor/dashboard" element={user?.role === "doctor" ? <DoctorDashboard /> : <Navigate to="/login" />} />
+                <Route path="/doctor/profile" element={user?.role === "doctor" ? <DoctorProfile /> : <Navigate to="/login" />} />
+                <Route path="/doctor/schedule" element={user?.role === "doctor" ? <DoctorSchedule /> : <Navigate to="/login" />} />
+                <Route path="/doctor/appointments" element={user?.role === "doctor" ? <DoctorAppointments /> : <Navigate to="/login" />} />
+                <Route path="/doctor/chat" element={user?.role === "doctor" ? <DoctorChatList /> : <Navigate to="/login" />} />
+                <Route path="/doctor/chat/:appointmentId" element={user?.role === "doctor" ? <DoctorChat /> : <Navigate to="/login" />} />
 
-            {/* Admin Routes */}
-            <Route path="/admin/dashboard" element={user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />} />
-            <Route path="/admin/doctors" element={user?.role === "admin" ? <AdminDoctors /> : <Navigate to="/login" />} />
-            <Route path="/admin/patients" element={user?.role === "admin" ? <AdminPatients /> : <Navigate to="/login" />} />
-            <Route path="/admin/stats" element={user?.role === "admin" ? <AdminStats /> : <Navigate to="/login" />} />
-            <Route path="/admin/admins" element={user?.role === "admin" ? <AdminsManagement /> : <Navigate to="/login" />} />
-            <Route path="/admin/create-accounts" element={user?.role === "admin" ? <CreateAccounts /> : <Navigate to="/login" />} />
-            <Route path="/admin/payments" element={user?.role === "admin" ? <AdminPayments /> : <Navigate to="/login" />} />
+                {/* Admin Routes */}
+                <Route path="/admin/dashboard" element={user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />} />
+                <Route path="/admin/doctors" element={user?.role === "admin" ? <AdminDoctors /> : <Navigate to="/login" />} />
+                <Route path="/admin/patients" element={user?.role === "admin" ? <AdminPatients /> : <Navigate to="/login" />} />
+                <Route path="/admin/stats" element={user?.role === "admin" ? <AdminStats /> : <Navigate to="/login" />} />
+                <Route path="/admin/admins" element={user?.role === "admin" ? <AdminsManagement /> : <Navigate to="/login" />} />
+                <Route path="/admin/create-accounts" element={user?.role === "admin" ? <CreateAccounts /> : <Navigate to="/login" />} />
+                <Route path="/admin/payments" element={user?.role === "admin" ? <AdminPayments /> : <Navigate to="/login" />} />
 
-            {/* Department Head Routes */}
-            <Route path="/department-head/dashboard" element={user?.role === "department_head" ? <DepartmentHeadDashboard /> : <Navigate to="/login" />} />
-            <Route path="/department-head/create-accounts" element={user?.role === "department_head" ? <DepartmentHeadCreateAccounts /> : <Navigate to="/login" />} />
-            <Route path="/department-head/doctors" element={user?.role === "department_head" ? <DepartmentHeadDoctors /> : <Navigate to="/login" />} />
-            <Route path="/department-head/patients" element={user?.role === "department_head" ? <DepartmentHeadPatients /> : <Navigate to="/login" />} />
-          </Routes>
-          <FloatingChatButton />
-          <Toaster position="top-right" />
-        </BrowserRouter>
-      </div>
-    </AuthContext.Provider>
-    </LanguageProvider>
-    </ThemeProvider>
+                {/* Department Head Routes */}
+                <Route path="/department-head/dashboard" element={user?.role === "department_head" ? <DepartmentHeadDashboard /> : <Navigate to="/login" />} />
+                <Route path="/department-head/create-accounts" element={user?.role === "department_head" ? <DepartmentHeadCreateAccounts /> : <Navigate to="/login" />} />
+                <Route path="/department-head/doctors" element={user?.role === "department_head" ? <DepartmentHeadDoctors /> : <Navigate to="/login" />} />
+                <Route path="/department-head/patients" element={user?.role === "department_head" ? <DepartmentHeadPatients /> : <Navigate to="/login" />} />
+              </Routes>
+              <FloatingChatButton />
+              <Toaster position="top-right" />
+            </div>
+          </AuthContext.Provider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   );
 }
 
