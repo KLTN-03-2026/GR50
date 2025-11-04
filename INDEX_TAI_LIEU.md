@@ -73,8 +73,8 @@
 - Không cần setup
 
 **Địa chỉ:**
-- Frontend: https://frontend-invisible.preview.emergentagent.com
-- Backend: https://frontend-invisible.preview.emergentagent.com/api
+- Frontend: https://front-fixes-1.preview.emergentagent.com
+- Backend: https://front-fixes-1.preview.emergentagent.com/api
 
 ---
 
@@ -91,7 +91,7 @@
 3. Dùng `CHECKLIST_CAI_DAT.md` để đảm bảo không bỏ sót
 
 ### Nếu bạn chỉ muốn TEST NHANH:
-1. Truy cập: https://frontend-invisible.preview.emergentagent.com
+1. Truy cập: https://front-fixes-1.preview.emergentagent.com
 2. Login: `patient1@test.com` / `12345678`
 3. Xong!
 

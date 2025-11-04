@@ -28,57 +28,7 @@ from models import (
     AdminPermission as DBAdminPermission,
     Payment as DBPayment
 )
-from routes import router as api_router
-app = FastAPI(
-    title="Healthcare API",
-    description="FastAPI backend for MediSchedule",
-    version="1.0.0",
-)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("server")
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-security = HTTPBearer()
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "dev-secret")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
-
-def verify_password(plain: str, hashed: str) -> bool: # type: ignore
-    return pwd_context.verify(plain, hashed)
-
-def hash_password(password: str) -> str: # type: ignore
-    return pwd_context.hash(password)
-
-def create_access_token(data: dict): # type: ignore
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-@app.get("/api/payments")
-async def get_payments(db: AsyncSession = Depends(get_db)):
-    payments = result = await db.execute(select(DBPayment))
-    payments = result.scalars().all()
-    result = []
-    for p in payments:
-        result.append({
-            "id": p.payment_id,
-            "appointment_date": p.appointment.date if p.appointment else None,
-            "patient_name": p.patient.full_name if p.patient else None,
-            "doctor_name": p.doctor.full_name if p.doctor else None,
-            "amount": float(p.amount),
-            "payment_method": p.payment_method,
-            "status": p.status,
-            "created_at": p.created_at
-        })
-    return result
+# Removed duplicate app initialization - moved to line 120+
 
 # Setup logging
 logging.basicConfig(
