@@ -78,13 +78,13 @@ Password: 12345678
 
 ### Frontend (React)
 ```
-URL: https://frontend-invisible.preview.emergentagent.com
+URL: https://front-fixes-1.preview.emergentagent.com
 ```
 
 ### Backend API
 ```
-Base URL: https://frontend-invisible.preview.emergentagent.com/api
-Health Check: https://frontend-invisible.preview.emergentagent.com/api/health
+Base URL: https://front-fixes-1.preview.emergentagent.com/api
+Health Check: https://front-fixes-1.preview.emergentagent.com/api/health
 ```
 
 ---
@@ -209,7 +209,7 @@ CORS_ORIGINS=*
 
 ### Frontend (.env)
 ```
-REACT_APP_BACKEND_URL=https://frontend-invisible.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://front-fixes-1.preview.emergentagent.com
 ```
 
 ---
