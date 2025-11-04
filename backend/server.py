@@ -2252,7 +2252,7 @@ app.include_router(api_router, prefix=API_PREFIX)
 # Root endpoint
 @app.get("/")
 async def root():
-    return {"message": "Healthcare API with MySQL + MongoDB (Payments)", "docs": f"{API_PREFIX}/docs"}
+    return {"message": "Healthcare API with MySQL Database", "docs": f"{API_PREFIX}/docs"}
 
 # Health check endpoint
 @app.get("/health")
