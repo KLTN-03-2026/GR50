@@ -1,4 +1,4 @@
-import sys, os, logging, uuid
+import sys, os, logging
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from datetime import datetime, timezone, timedelta, date, time
@@ -136,7 +136,7 @@ if "*" in origins:
     origins = ["*"]
 else:
     origins.extend([
-        "http://localhost:3000",  # React development server
+        "http://localhost:3001",  # React development server
         "http://localhost:8000",  # FastAPI development server
     ])
 

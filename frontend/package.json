@@ -62,6 +62,7 @@
   },
   "scripts": {
     "start": "craco start",
+    "dev": "npm start",
     "build": "craco build",
     "test": "craco test"
   },
