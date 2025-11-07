@@ -1471,7 +1471,6 @@ async def department_head_create_user(
     
     # Create user
     db_user = DBUser(
-        id=user_id,
         email=user_data.email,
         username=user_data.username,
         password=hashed_password,
@@ -1482,12 +1481,12 @@ async def department_head_create_user(
         role=user_data.role
     )
     db.add(db_user)
+    await db.flush()  # Flush to get auto-generated ID
     
     # Create role-specific profiles
     if user_data.role == UserRole.DOCTOR:
         db_doctor = DBDoctor(
-            id=doctor_id,
-            user_id=user_id,
+            user_id=db_user.id,
             specialty_id=user_data.specialty_id,
             experience_years=user_data.experience_years or 0,
             consultation_fee=user_data.consultation_fee or 0.0,
@@ -1497,8 +1496,7 @@ async def department_head_create_user(
         db.add(db_doctor)
     elif user_data.role == UserRole.PATIENT:
         db_patient = DBPatient(
-            id=patient_id,
-            user_id=user_id
+            user_id=db_user.id
         )
         db.add(db_patient)
     
