@@ -137,14 +137,13 @@ function App() {
                 <Route path="/department-head/create-accounts" element={user?.role === "department_head" ? <DepartmentHeadCreateAccounts /> : <Navigate to="/login" />} />
                 <Route path="/department-head/doctors" element={user?.role === "department_head" ? <DepartmentHeadDoctors /> : <Navigate to="/login" />} />
                 <Route path="/department-head/patients" element={user?.role === "department_head" ? <DepartmentHeadPatients /> : <Navigate to="/login" />} />
-              </Routes>
-              <FloatingChatButton />
-              <Toaster position="top-right" />
-            </div>
-          </AuthContext.Provider>
-        </LanguageProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+            </Routes>
+            <FloatingChatButton />
+            <Toaster position="top-right" />
+          </div>
+        </AuthContext.Provider>
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
 
