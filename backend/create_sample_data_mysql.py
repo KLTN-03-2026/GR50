@@ -83,8 +83,7 @@ async def create_sample_data():
                 username="deptheaduser",
                 password=pwd_context.hash("12345678"),
                 full_name="Department Head",
-                role="department_head",
-                user_id="dh_01"
+                role="department_head"
             ))
             print("✓ Created department head account")
         await db.commit()
