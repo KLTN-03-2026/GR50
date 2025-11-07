@@ -3,7 +3,6 @@ Create root admin account for MySQL database
 """
 import asyncio
 import os
-import uuid
 import hashlib
 from pathlib import Path
 from dotenv import load_dotenv
