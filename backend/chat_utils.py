@@ -42,8 +42,9 @@ async def save_chat_image(file: UploadFile) -> str:
             detail=f"File too large. Maximum size is {MAX_FILE_SIZE / (1024*1024):.0f}MB"
         )
     
-    # Generate unique filename
-    unique_filename = f"{uuid.uuid4()}{file_ext}"
+    # Generate unique filename using timestamp
+    timestamp = int(datetime.now().timestamp() * 1000000)
+    unique_filename = f"{timestamp}{file_ext}"
     file_path = UPLOAD_DIR / unique_filename
     
     # Ensure upload directory exists
