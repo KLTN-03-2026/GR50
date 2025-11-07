@@ -158,19 +158,19 @@ SELECT id, email, username, role FROM users;
 ### Test Login API
 ```bash
 # Patient login
-curl -X POST https://api-endpoints-1.preview.emergentagent.com/api/auth/login \
+curl -X POST https://auth-troubleshoot-20.preview.emergentagent.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"login":"patient1@test.com","password":"12345678"}'
 
 # Admin login
-curl -X POST https://api-endpoints-1.preview.emergentagent.com/api/auth/login \
+curl -X POST https://auth-troubleshoot-20.preview.emergentagent.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"login":"admin@medischedule.com","password":"12345678"}'
 ```
 
 ### Test Registration API
 ```bash
-curl -X POST https://api-endpoints-1.preview.emergentagent.com/api/auth/register \
+curl -X POST https://auth-troubleshoot-20.preview.emergentagent.com/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email":"newuser@test.com",

@@ -73,8 +73,8 @@
 - Không cần setup
 
 **Địa chỉ:**
-- Frontend: https://api-endpoints-1.preview.emergentagent.com
-- Backend: https://api-endpoints-1.preview.emergentagent.com/api
+- Frontend: https://auth-troubleshoot-20.preview.emergentagent.com
+- Backend: https://auth-troubleshoot-20.preview.emergentagent.com/api
 
 ---
 
@@ -91,7 +91,7 @@
 3. Dùng `CHECKLIST_CAI_DAT.md` để đảm bảo không bỏ sót
 
 ### Nếu bạn chỉ muốn TEST NHANH:
-1. Truy cập: https://api-endpoints-1.preview.emergentagent.com
+1. Truy cập: https://auth-troubleshoot-20.preview.emergentagent.com
 2. Login: `patient1@test.com` / `12345678`
 3. Xong!
 
