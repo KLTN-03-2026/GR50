@@ -96,12 +96,11 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <ThemeProvider>
-        <LanguageProvider>
-          <AuthContext.Provider value={{ user, token, login, logout }}>
-            <div className="App">
-              <Routes>
+    <ThemeProvider>
+      <LanguageProvider>
+        <AuthContext.Provider value={{ user, token, login, logout }}>
+          <div className="App">
+            <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
