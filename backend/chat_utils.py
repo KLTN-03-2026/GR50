@@ -2,9 +2,9 @@
 Chat utilities for image upload and handling
 """
 import os
-import uuid
 import aiofiles
 from pathlib import Path
+from datetime import datetime
 from fastapi import UploadFile, HTTPException
 
 UPLOAD_DIR = Path("/app/backend/uploads/chat_images")
