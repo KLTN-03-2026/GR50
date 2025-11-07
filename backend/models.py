@@ -3,7 +3,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from datetime import datetime
-import uuid
 from database import Base
 
 # ==============================
@@ -13,7 +12,7 @@ class User(Base):
     __tablename__ = 'users'
     __table_args__ = {"extend_existing": True}
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String(255), unique=True, nullable=False)
     username = Column(String(100), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
@@ -41,8 +40,8 @@ class Patient(Base):
     __tablename__ = 'patients'
     __table_args__ = {"extend_existing": True}
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False)
     medical_history = Column(Text)
     allergies = Column(Text)
     blood_type = Column(String(10))
@@ -60,14 +59,14 @@ class Doctor(Base):
     __tablename__ = 'doctors'
     __table_args__ = {"extend_existing": True}
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False)
-    specialty_id = Column(String(36), ForeignKey('specialties.id', ondelete='SET NULL'))
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False)
+    specialty_id = Column(Integer, ForeignKey('specialties.id', ondelete='SET NULL'))
     experience_years = Column(Integer, default=0)
     consultation_fee = Column(DECIMAL(10, 2), default=0.00)
     bio = Column(Text)
     status = Column(Enum('pending', 'approved', 'rejected'), default='pending')
-    approved_by = Column(String(36))
+    approved_by = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -82,7 +81,7 @@ class Specialty(Base):
     __tablename__ = 'specialties'
     __table_args__ = {"extend_existing": True}
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), unique=True, nullable=False)
     description = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -97,9 +96,9 @@ class Appointment(Base):
     __tablename__ = "appointments"
     __table_args__ = {"extend_existing": True}
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id = Column(String(36), ForeignKey("users.id"))
-    doctor_id = Column(String(36), ForeignKey("users.id"))
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    patient_id = Column(Integer, ForeignKey("users.id"))
+    doctor_id = Column(Integer, ForeignKey("users.id"))
     appointment_date = Column(Date)
     appointment_time = Column(Time)
     appointment_type = Column(Enum("online", "in_person", "Offline", name="appointment_type_enum"))
@@ -122,9 +121,9 @@ class Payment(Base):
     __table_args__ = {"extend_existing": True}
 
     payment_id = Column(Integer, primary_key=True, autoincrement=True)
-    appointment_id = Column(String(36), ForeignKey("appointments.id"))
-    patient_id = Column(String(36), ForeignKey("users.id"))
-    doctor_id = Column(String(36), ForeignKey("users.id"))
+    appointment_id = Column(Integer, ForeignKey("appointments.id"))
+    patient_id = Column(Integer, ForeignKey("users.id"))
+    doctor_id = Column(Integer, ForeignKey("users.id"))
     amount = Column(DECIMAL(10, 2))
     payment_method = Column(Enum('mock_card', 'mock_wallet', 'mock_bank'), default='mock_card')
     status = Column(Enum('pending', 'processing', 'completed', 'failed', 'refunded'), default='pending')
@@ -143,15 +142,15 @@ class ChatMessage(Base):
     __tablename__ = "chat_messages"
     __table_args__ = {"extend_existing": True}
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    appointment_id = Column(String(36), ForeignKey("appointments.id"))
-    sender_id = Column(String(36), ForeignKey("users.id"))
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    appointment_id = Column(Integer, ForeignKey("appointments.id"))
+    sender_id = Column(Integer, ForeignKey("users.id"))
     message = Column(Text)
     image_url = Column(String(500))
     created_at = Column(DateTime, default=datetime.utcnow)
     appointment = relationship("Appointment", back_populates="chat_messages")
     sender = relationship("User", foreign_keys=[sender_id], back_populates="sent_messages")                                              
-    receiver_id = Column(String(36), ForeignKey("users.id"))
+    receiver_id = Column(Integer, ForeignKey("users.id"))
     receiver = relationship("User", foreign_keys=[receiver_id], back_populates="received_messages")
 
 # ==============================
@@ -161,7 +160,7 @@ class AdminPermission(Base):
     __tablename__ = 'admin_permissions'
     __table_args__ = {"extend_existing": True}
 
-    user_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
     can_manage_doctors = Column(Boolean, default=True)
     can_manage_patients = Column(Boolean, default=True)
     can_manage_appointments = Column(Boolean, default=True)
@@ -180,15 +179,16 @@ class AIChatHistory(Base):
     __tablename__ = 'ai_chat_history'
     __table_args__ = {"extend_existing": True}
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    session_id = Column(String(36), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    session_id = Column(String(100), nullable=False)
     role = Column(Enum('user', 'assistant'), nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = relationship("User", back_populates="ai_chats")
+
 print("=== Base registered classes ===")
 for cls in Base.registry._class_registry.keys():
     print(" -", cls)
