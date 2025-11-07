@@ -38,15 +38,12 @@ async def create_admin():
             print("Admin already exists")
             return
         
-        # Create admin user
-        admin_id = str(uuid.uuid4())
-
+        # Create admin user (không truyền ID, để database tự tạo)
         raw_password = "12345678"  # thay đổi nếu cần
         prepared = prepare_password_for_bcrypt(raw_password)
-        hashed_password = pwd_context.hash(prepare_password_for_bcrypt("12345678"))
+        hashed_password = pwd_context.hash(prepared)
         
         admin_user = DBUser(
-            id=admin_id,
             email="admin@medischedule.com",
             username="admin",
             password=hashed_password,
@@ -55,10 +52,11 @@ async def create_admin():
             role="admin"
         )
         db.add(admin_user)
+        await db.flush()  # Flush để lấy ID tự động
         
         # Create admin permissions (root admin with all permissions)
         admin_permissions = DBAdminPermission(
-            user_id=admin_id,
+            user_id=admin_user.id,  # Dùng ID tự động từ database
             can_manage_doctors=True,
             can_manage_patients=True,
             can_manage_appointments=True,
