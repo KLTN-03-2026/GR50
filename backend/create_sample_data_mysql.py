@@ -103,8 +103,7 @@ async def create_sample_data():
                     username=doc["username"],
                     password=pwd_context.hash("12345678"),
                     full_name=doc["full_name"],
-                    role="doctor",
-                    user_id=f"d_{idx:02d}"
+                    role="doctor"
                 )
                 db.add(db_user)
                 await db.flush()
