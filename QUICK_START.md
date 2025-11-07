@@ -17,7 +17,7 @@ frontend   RUNNING
 ```
 
 ### 2. Mở Ứng Dụng (5s)
-Truy cập: **https://web-local-rewrite.preview.emergentagent.com**
+Truy cập: **https://api-endpoints-1.preview.emergentagent.com**
 
 ### 3. Đăng Nhập (10s)
 Chọn một trong các tài khoản sau:
@@ -85,14 +85,14 @@ tail -20 /var/log/supervisor/frontend.err.log
 
 ### Login Test
 ```bash
-curl -X POST https://web-local-rewrite.preview.emergentagent.com/api/auth/login \
+curl -X POST https://api-endpoints-1.preview.emergentagent.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"login":"patient1@test.com","password":"12345678"}'
 ```
 
 ### Register Test
 ```bash
-curl -X POST https://web-local-rewrite.preview.emergentagent.com/api/auth/register \
+curl -X POST https://api-endpoints-1.preview.emergentagent.com/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email":"test@test.com",

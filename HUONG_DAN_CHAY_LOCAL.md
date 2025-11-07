@@ -78,13 +78,13 @@ Password: 12345678
 
 ### Frontend (React)
 ```
-URL: https://web-local-rewrite.preview.emergentagent.com
+URL: https://api-endpoints-1.preview.emergentagent.com
 ```
 
 ### Backend API
 ```
-Base URL: https://web-local-rewrite.preview.emergentagent.com/api
-Health Check: https://web-local-rewrite.preview.emergentagent.com/api/health
+Base URL: https://api-endpoints-1.preview.emergentagent.com/api
+Health Check: https://api-endpoints-1.preview.emergentagent.com/api/health
 ```
 
 ---
@@ -209,7 +209,7 @@ CORS_ORIGINS=*
 
 ### Frontend (.env)
 ```
-REACT_APP_BACKEND_URL=https://web-local-rewrite.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://api-endpoints-1.preview.emergentagent.com
 ```
 
 ---
