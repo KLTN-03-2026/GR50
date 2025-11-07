@@ -55,8 +55,7 @@ async def create_sample_data():
                 username="admin",
                 password=pwd_context.hash("12345678"),
                 full_name="System Administrator",
-                role="admin",
-                user_id="a_01"
+                role="admin"
             )
             db.add(admin_user)
             await db.flush()
