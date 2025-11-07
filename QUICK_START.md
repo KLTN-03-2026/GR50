@@ -1,4 +1,7 @@
-# ⚡ Quick Start - MediSchedule
+# ⚡ Quick Start - Windows Local (ID số tự động)
+
+> **Khởi động nhanh MediSchedule trên Windows trong 5 phút!**  
+> **ID tự động tăng: 1, 2, 3, 4... (không mã hóa UUID)**
 
 ## 🎯 Khởi động nhanh trong 30 giây
 
