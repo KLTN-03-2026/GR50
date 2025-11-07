@@ -621,6 +621,12 @@ frontend:
       - working: true
         agent: "testing"
         comment: "🔐 FINAL MYSQL AUTHENTICATION & PAYMENT TESTING - USER ISSUE RESOLVED: Completed comprehensive testing after MySQL database restoration as requested by user. ✅ AUTHENTICATION RESULTS (10/10 - 100% success): All 8 test accounts login successfully ✓ (admin@medischedule.com, departmenthead@test.com, doctor1/2/3@test.com, patient1/2/3@test.com with password 12345678). New user registration working ✓. Wrong password rejection with Vietnamese message ✓. Duplicate email rejection with Vietnamese message ✓. ✅ PAYMENT SYSTEM RESULTS: GET /api/payments/my endpoint accessible and working ✓. Payments table exists and functional ✓. Auto-payment creation on appointment booking working ✓ (created test appointment, generated payment ID=login-fix-chat, Amount=200000.0, Status=pending). ✅ VERIFICATION RESULTS: Health check shows MySQL database ✓. Found exactly 8 specialties as expected ✓. 🎯 USER REPORTED ISSUES RESOLVED: Login/registration failures ✅ FIXED. Missing payment menu ✅ FIXED - payment endpoints are accessible and working. MySQL database fully restored and operational."
+      - working: false
+        agent: "user"
+        comment: "USER REPORTED ISSUE: login không được mặc dù đúng thông tin (Login not working even with correct credentials)"
+      - working: "NA"
+        agent: "main"
+        comment: "INVESTIGATION & FIX APPLIED: User reported login not working. ROOT CAUSE: Services were stopped and MySQL was not installed/running. SOLUTION: 1) ✅ Installed MariaDB server 2) ✅ Started MySQL service 3) ✅ Created medischedule database with password 190705 4) ✅ Ran create_database_integer_id.sql to create all 8 tables 5) ✅ Ran create_sample_data_mysql.py to create test accounts (admin@medischedule.com, departmenthead@test.com, doctor1/2/3@test.com, patient1/2/3@test.com - all with password 12345678) 6) ✅ Installed Python dependencies (sqlalchemy, aiomysql, etc) 7) ✅ Restarted backend - successfully connected to MySQL 8) ✅ Tested login endpoint with curl - patient1@test.com/12345678 returns JWT token successfully. Backend is now running and connected to MySQL. Login API endpoint (POST /api/auth/login with field 'login' and 'password') is working correctly. Needs frontend testing to verify full login flow."
   
   - task: "Payment System - MySQL Integration"
     implemented: true
