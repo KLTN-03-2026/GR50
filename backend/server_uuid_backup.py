@@ -187,7 +187,7 @@ async def get_current_user(
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
+        user_id: str = payload.get("sub")
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -256,7 +256,7 @@ class AdminPermissions(BaseModel):
 
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    id: Optional[int] = None
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: str
     username: str
     full_name: str
@@ -357,7 +357,7 @@ class UserLogin(BaseModel):
 
 class Specialty(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    id: Optional[int] = None
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     description: Optional[str] = None
 
@@ -367,8 +367,8 @@ class SpecialtyCreate(BaseModel):
 
 class DoctorProfile(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    user_id: int
-    specialty_id: int
+    user_id: str
+    specialty_id: str
     specialty_name: Optional[str] = None
     bio: Optional[str] = None
     experience_years: Optional[int] = None
@@ -399,10 +399,10 @@ class AppointmentStatus:
 
 class Appointment(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    id: Optional[int] = None
-    patient_id: int
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    patient_id: str
     patient_name: Optional[str] = None
-    doctor_id: int
+    doctor_id: str
     doctor_name: Optional[str] = None
     appointment_date: str  # YYYY-MM-DD
     appointment_time: str  # HH:MM
@@ -411,7 +411,7 @@ class Appointment(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class AppointmentCreate(BaseModel):
-    doctor_id: int
+    doctor_id: str
     appointment_date: str
     appointment_time: str
     symptoms: Optional[str] = None
@@ -421,15 +421,15 @@ class AppointmentStatusUpdate(BaseModel):
 
 class ChatMessage(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    id: Optional[int] = None
-    appointment_id: int
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    appointment_id: str
     sender_id: str
     sender_name: Optional[str] = None
     message: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ChatMessageCreate(BaseModel):
-    appointment_id: int
+    appointment_id: str
     message: str
     image_url: Optional[str] = None
 
@@ -507,6 +507,7 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
     hashed_password = hash_password(user_data.password)
     
     # Create user
+    user_id = str(uuid.uuid4())
     db_user = DBUser(
         id=user_id,
         email=user_data.email,
@@ -522,6 +523,7 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
     
     # If registering as doctor or department_head, create doctor profile
     if user_data.role in [UserRole.DOCTOR, UserRole.DEPARTMENT_HEAD]:
+        doctor_id = str(uuid.uuid4())
         db_doctor = DBDoctor(
             id=doctor_id,
             user_id=user_id,
@@ -535,6 +537,7 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
     
     # If registering as patient, create patient profile
     elif user_data.role == UserRole.PATIENT:
+        patient_id = str(uuid.uuid4())
         db_patient = DBPatient(
             id=patient_id,
             user_id=user_id
@@ -711,6 +714,7 @@ async def create_specialty(
     if existing:
         raise HTTPException(status_code=400, detail="Chuyên khoa đã tồn tại")
     
+    specialty_id = str(uuid.uuid4())
     db_specialty = DBSpecialty(
         id=specialty_id,
         name=specialty_data.name,
@@ -753,7 +757,7 @@ async def get_doctors(specialty_id: Optional[str] = None, db: AsyncSession = Dep
     return doctors
 
 @api_router.get("/doctors/{doctor_id}")
-async def get_doctor(doctor_id: int, db: AsyncSession = Depends(get_db)):
+async def get_doctor(doctor_id: str, db: AsyncSession = Depends(get_db)):
     # Get doctor with user and specialty info
     result = await db.execute(
         select(DBDoctor, DBUser, DBSpecialty).join(
@@ -839,6 +843,7 @@ async def create_appointment(
     doctor_user, doctor = row
     
     # Create appointment
+    appointment_id = str(uuid.uuid4())
     db_appointment = DBAppointment(
         id=appointment_id,
         patient_id=current_user["id"],
@@ -857,6 +862,7 @@ async def create_appointment(
         amount = float(doctor.consultation_fee) if doctor.consultation_fee else 200000.0
         
         new_payment = DBPayment(
+            id=str(uuid.uuid4()),
             appointment_id=appointment_id,
             patient_id=current_user["id"],
             doctor_id=appointment_data.doctor_id,
@@ -926,7 +932,7 @@ async def get_my_appointments(current_user: dict = Depends(get_current_user), db
 
 @api_router.put("/appointments/{appointment_id}/status")
 async def update_appointment_status(
-    appointment_id: int,
+    appointment_id: str,
     status_data: AppointmentStatusUpdate,
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
@@ -980,6 +986,7 @@ async def send_message(
         raise HTTPException(status_code=403, detail="Not your appointment")
     
     # Create message
+    message_id = str(uuid.uuid4())
     db_message = DBChatMessage(
         id=message_id,
         appointment_id=message_data.appointment_id,
@@ -998,7 +1005,7 @@ async def send_message(
 
 @api_router.get("/chat/{appointment_id}")
 async def get_chat_messages(
-    appointment_id: int,
+    appointment_id: str,
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -1092,7 +1099,7 @@ async def admin_get_doctors(current_user: dict = Depends(get_current_user), db: 
 
 @api_router.put("/admin/doctors/{doctor_id}/approve")
 async def admin_approve_doctor(
-    doctor_id: int,
+    doctor_id: str,
     status: str,
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
@@ -1213,6 +1220,7 @@ async def create_admin_account(
         }
     
     # Create admin user
+    user_id = str(uuid.uuid4())
     db_user = DBUser(
         id=user_id,
         email=user_data.email,
@@ -1272,7 +1280,7 @@ async def get_all_admins(current_user: dict = Depends(get_current_user), db: Asy
 
 @api_router.put("/admin/update-permissions")
 async def update_admin_permissions(
-    admin_id: int,
+    admin_id: str,
     permissions: AdminPermissions,
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
@@ -1317,7 +1325,7 @@ async def update_admin_permissions(
 
 @api_router.delete("/admin/delete-admin/{admin_id}")
 async def delete_admin(
-    admin_id: int,
+    admin_id: str,
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -1345,7 +1353,7 @@ async def delete_admin(
 
 @api_router.delete("/admin/delete-user/{user_id}")
 async def admin_delete_user(
-    user_id: int,
+    user_id: str,
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -1402,6 +1410,7 @@ async def admin_create_user(
     hashed_password = hash_password(user_data.password)
     
     # Create user
+    user_id = str(uuid.uuid4())
     db_user = DBUser(
         id=user_id,
         email=user_data.email,
@@ -1417,6 +1426,7 @@ async def admin_create_user(
     
     # Create role-specific profiles
     if user_data.role in [UserRole.DOCTOR, UserRole.DEPARTMENT_HEAD]:
+        doctor_id = str(uuid.uuid4())
         db_doctor = DBDoctor(
             id=doctor_id,
             user_id=user_id,
@@ -1428,6 +1438,7 @@ async def admin_create_user(
         )
         db.add(db_doctor)
     elif user_data.role == UserRole.PATIENT:
+        patient_id = str(uuid.uuid4())
         db_patient = DBPatient(
             id=patient_id,
             user_id=user_id
@@ -1474,6 +1485,7 @@ async def department_head_create_user(
     hashed_password = hash_password(user_data.password)
     
     # Create user
+    user_id = str(uuid.uuid4())
     db_user = DBUser(
         id=user_id,
         email=user_data.email,
@@ -1489,6 +1501,7 @@ async def department_head_create_user(
     
     # Create role-specific profiles
     if user_data.role == UserRole.DOCTOR:
+        doctor_id = str(uuid.uuid4())
         db_doctor = DBDoctor(
             id=doctor_id,
             user_id=user_id,
@@ -1500,6 +1513,7 @@ async def department_head_create_user(
         )
         db.add(db_doctor)
     elif user_data.role == UserRole.PATIENT:
+        patient_id = str(uuid.uuid4())
         db_patient = DBPatient(
             id=patient_id,
             user_id=user_id
@@ -1555,7 +1569,7 @@ async def department_head_get_patients(current_user: dict = Depends(get_current_
 
 @api_router.delete("/department-head/remove-patient/{patient_id}")
 async def department_head_remove_patient(
-    patient_id: int,
+    patient_id: str,
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -1668,6 +1682,7 @@ async def ai_chat(
         
         # Save user message
         user_msg = DBAIChatHistory(
+            id=str(uuid.uuid4()),
             user_id=current_user["id"],
             session_id=session_id,
             role="user",
@@ -1677,6 +1692,7 @@ async def ai_chat(
         
         # Save AI response
         ai_msg = DBAIChatHistory(
+            id=str(uuid.uuid4()),
             user_id=current_user["id"],
             session_id=session_id,
             role="assistant",
@@ -1777,7 +1793,7 @@ async def ai_recommend_doctor(
 
 @api_router.post("/ai/summarize-conversation/{appointment_id}")
 async def ai_summarize_conversation(
-    appointment_id: int,
+    appointment_id: str,
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -1868,7 +1884,7 @@ async def get_ai_chat_history(
 # Payment Schemas
 # ========================================
 class PaymentCreate(BaseModel):
-    appointment_id: int
+    appointment_id: str
     payment_method: str = "mock_card"
 
 class PaymentProcess(BaseModel):
@@ -1934,6 +1950,7 @@ async def create_payment(
         
         # Create payment in MySQL
         new_payment = DBPayment(
+            id=str(uuid.uuid4()),
             appointment_id=payment_data.appointment_id,
             patient_id=user_id,
             doctor_id=appointment.doctor_id,
@@ -2090,7 +2107,7 @@ async def process_payment(
             raise HTTPException(status_code=400, detail="Thanh toán đã được xử lý")
         
         # In demo mode, always succeed
-        transaction_id = f"TXN{int(datetime.now().timestamp() * 1000)}"
+        transaction_id = f"TXN{uuid.uuid4().hex[:12].upper()}"
         
         # Update payment status
         payment.status = "completed" if payment_process.success else "failed"
