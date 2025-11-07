@@ -582,9 +582,9 @@ frontend:
   
   - task: "Authentication System - Login & Registration"
     implemented: true
-    working: true
+    working: false
     file: "backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "critical"
     needs_retesting: false
     status_history:
