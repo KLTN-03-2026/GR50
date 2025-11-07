@@ -508,7 +508,6 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
     
     # Create user
     db_user = DBUser(
-        id=user_id,
         email=user_data.email,
         username=user_data.username,
         password=hashed_password,
@@ -519,12 +518,12 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
         role=user_data.role
     )
     db.add(db_user)
+    await db.flush()  # Flush to get auto-generated ID
     
     # If registering as doctor or department_head, create doctor profile
     if user_data.role in [UserRole.DOCTOR, UserRole.DEPARTMENT_HEAD]:
         db_doctor = DBDoctor(
-            id=doctor_id,
-            user_id=user_id,
+            user_id=db_user.id,
             specialty_id=user_data.specialty_id,
             experience_years=user_data.experience_years or 0,
             consultation_fee=user_data.consultation_fee or 0.0,
@@ -536,8 +535,7 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
     # If registering as patient, create patient profile
     elif user_data.role == UserRole.PATIENT:
         db_patient = DBPatient(
-            id=patient_id,
-            user_id=user_id
+            user_id=db_user.id
         )
         db.add(db_patient)
     
@@ -548,7 +546,7 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
     user_dict = db_to_dict(db_user)
     
     # Create access token
-    access_token = create_access_token(data={"sub": user_id, "role": user_data.role})
+    access_token = create_access_token(data={"sub": db_user.id, "role": user_data.role})
     
     return {
         "token": access_token,
