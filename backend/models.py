@@ -167,8 +167,6 @@ class AdminPermission(Base):
     can_view_stats = Column(Boolean, default=True)
     can_manage_specialties = Column(Boolean, default=True)
     can_create_admins = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user = relationship("User", back_populates="admin_permissions")
 
 
