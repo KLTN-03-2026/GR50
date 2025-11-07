@@ -683,8 +683,10 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "Authentication System - Login & Registration"
+  stuck_tasks:
+    - "Authentication System - Login & Registration"
   test_all: false
   test_priority: "high_first"
 
