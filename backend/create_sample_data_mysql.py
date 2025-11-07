@@ -7,7 +7,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 from passlib.context import CryptContext
 from sqlalchemy import select
-import uuid
 from database import AsyncSessionLocal
 from models import (
     User as DBUser, 
