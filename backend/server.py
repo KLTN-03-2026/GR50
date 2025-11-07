@@ -1212,7 +1212,6 @@ async def create_admin_account(
     
     # Create admin user
     db_user = DBUser(
-        id=user_id,
         email=user_data.email,
         username=user_data.username,
         password=hashed_password,
@@ -1223,10 +1222,11 @@ async def create_admin_account(
         role=UserRole.ADMIN
     )
     db.add(db_user)
+    await db.flush()  # Flush to get auto-generated ID
     
     # Create admin permissions
     db_permissions = DBAdminPermission(
-        user_id=user_id,
+        user_id=db_user.id,
         can_manage_doctors=user_data.admin_permissions.get("can_manage_doctors", True),
         can_manage_patients=user_data.admin_permissions.get("can_manage_patients", True),
         can_manage_appointments=user_data.admin_permissions.get("can_manage_appointments", True),
