@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import FloatingChatButton from "@/components/FloatingChatButton";
-
+import ThemeToggle from "@/components/ThemeToggle";
 // Pages
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";

@@ -20401,5 +20401,8 @@
         "url": "https://github.com/sponsors/colinhacks"
       }
     }
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3"
   }
 }
