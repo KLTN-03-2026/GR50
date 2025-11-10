@@ -581,7 +581,7 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
             del admin_permissions['user_id']
     
     # Create access token
-    access_token = create_access_token(data={"sub": user.id, "role": user.role})
+    access_token = create_access_token(data={"sub": str(user.id), "role": user.role})
     
     # Prepare user dict
     user_dict = db_to_dict(user)
