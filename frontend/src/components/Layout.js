@@ -104,7 +104,7 @@ export default function Layout({ children }) {
       {/* Main Content */}
       <main className="ml-64 flex-1 flex flex-col">
         {/* Top Header Bar */}
-        <header className="bg-gray-50 dark:bg-[#1e293b] shadow-sm px-6 py-4 flex justify-end items-center gap-3 transition-colors duration-300">
+        <header className="bg-white dark:bg-gray-800 shadow-sm px-6 py-4 flex justify-end items-center gap-3 transition-colors duration-300">
           <ThemeToggle />
           <LanguageToggle />
           <Button
