@@ -64,7 +64,7 @@ export default function DoctorAppointments() {
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-5xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Quản lý lịch hẹn</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Quản lý lịch hẹn</h1>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger data-testid="status-filter" className="w-48">
                 <SelectValue />
@@ -80,12 +80,12 @@ export default function DoctorAppointments() {
           </div>
 
           {loading ? (
-            <p className="text-center text-gray-500">Đang tải...</p>
+            <p className="text-center text-gray-500 dark:text-gray-400">Đang tải...</p>
           ) : filteredAppointments.length === 0 ? (
-            <div className="bg-white rounded-3xl shadow-xl p-12 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-12 text-center">
               <Calendar className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Không có lịch hẹn</h2>
-              <p className="text-gray-600">Không tìm thấy lịch hẹn phù hợp với bộ lọc</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Không có lịch hẹn</h2>
+              <p className="text-gray-600 dark:text-gray-300">Không tìm thấy lịch hẹn phù hợp với bộ lọc</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -121,32 +121,32 @@ function AppointmentCard({ appointment, onStatusChange, navigate }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all">
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
-            <h3 className="font-bold text-xl text-gray-900">{appointment.patient_name || 'Bệnh nhân'}</h3>
+            <h3 className="font-bold text-xl text-gray-900 dark:text-white">{appointment.patient_name || 'Bệnh nhân'}</h3>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusColors[appointment.status]}`}>
               {statusText[appointment.status]}
             </span>
           </div>
           
           <div className="space-y-2 mb-4">
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               <Calendar className="w-4 h-4 inline mr-2" />
               {appointment.appointment_date}
             </p>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               <Clock className="w-4 h-4 inline mr-2" />
               {appointment.appointment_time}
             </p>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               Loại: <span className="font-semibold">{appointment.appointment_type === 'online' ? 'Tư vấn online' : 'Khám trực tiếp'}</span>
             </p>
             {appointment.symptoms && (
-              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+              <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <p className="text-sm font-semibold text-gray-700 mb-1">Triệu chứng:</p>
-                <p className="text-gray-600">{appointment.symptoms}</p>
+                <p className="text-gray-600 dark:text-gray-300">{appointment.symptoms}</p>
               </div>
             )}
           </div>

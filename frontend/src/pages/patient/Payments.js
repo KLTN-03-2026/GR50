@@ -39,19 +39,19 @@ export default function PatientPayments() {
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-5xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Lịch sử thanh toán</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Lịch sử thanh toán</h1>
             <Button onClick={() => navigate('/patient/appointments')} variant="outline">
               Quay lại lịch hẹn
             </Button>
           </div>
 
           {loading ? (
-            <p className="text-center text-gray-500">Đang tải...</p>
+            <p className="text-center text-gray-500 dark:text-gray-400">Đang tải...</p>
           ) : payments.length === 0 ? (
-            <div className="bg-white rounded-3xl shadow-xl p-12 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-12 text-center">
               <CreditCard className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Chưa có giao dịch</h2>
-              <p className="text-gray-600 mb-6">Bạn chưa có giao dịch thanh toán nào</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Chưa có giao dịch</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">Bạn chưa có giao dịch thanh toán nào</p>
               <Button onClick={() => navigate('/patient/appointments')} className="bg-gradient-to-r from-teal-500 to-cyan-500">
                 Xem lịch hẹn
               </Button>
@@ -101,11 +101,11 @@ function PaymentCard({ payment, onPayNow }) {
   const config = statusConfig[payment.status] || statusConfig.pending;
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all">
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
-            <h3 className="font-bold text-xl text-gray-900">Thanh toán cho: {payment.doctor_name}</h3>
+            <h3 className="font-bold text-xl text-gray-900 dark:text-white">Thanh toán cho: {payment.doctor_name}</h3>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1 ${config.color}`}>
               {config.icon}
               {config.text}
@@ -113,23 +113,23 @@ function PaymentCard({ payment, onPayNow }) {
           </div>
           
           <div className="space-y-2 mb-4">
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               <CreditCard className="w-4 h-4 inline mr-2" />
               Số tiền: <span className="font-bold text-teal-600">{payment.amount.toLocaleString()} VNĐ</span>
             </p>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 dark:text-gray-300 text-sm">
               Phương thức: {getPaymentMethodName(payment.payment_method)}
             </p>
             {payment.transaction_id && (
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 dark:text-gray-300 text-sm">
                 Mã GD: {payment.transaction_id}
               </p>
             )}
-            <p className="text-gray-500 text-xs">
+            <p className="text-gray-500 dark:text-gray-400 text-xs">
               Ngày tạo: {new Date(payment.created_at).toLocaleString('vi-VN')}
             </p>
             {payment.payment_date && (
-              <p className="text-gray-500 text-xs">
+              <p className="text-gray-500 dark:text-gray-400 text-xs">
                 Ngày thanh toán: {new Date(payment.payment_date).toLocaleString('vi-VN')}
               </p>
             )}

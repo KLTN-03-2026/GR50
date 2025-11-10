@@ -135,16 +135,16 @@ export default function DoctorChat() {
             Quay lại
           </Button>
 
-          <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
             <div className="bg-gradient-to-r from-teal-500 to-cyan-500 p-6">
               <h1 className="text-2xl font-bold text-white">Tư vấn bệnh nhân</h1>
             </div>
 
             <div className="h-[500px] overflow-y-auto p-6 space-y-4" data-testid="chat-messages">
               {loading ? (
-                <p className="text-center text-gray-500">Đang tải...</p>
+                <p className="text-center text-gray-500 dark:text-gray-400">Đang tải...</p>
               ) : messages.length === 0 ? (
-                <p className="text-center text-gray-500">Chưa có tin nhắn nào</p>
+                <p className="text-center text-gray-500 dark:text-gray-400">Chưa có tin nhắn nào</p>
               ) : (
                 messages.map((msg) => (
                   <MessageBubble key={msg.id} message={msg} isOwn={msg.sender_id === user?.id} />
@@ -154,7 +154,7 @@ export default function DoctorChat() {
             </div>
 
             {imagePreview && (
-              <div className="border-t p-4 bg-gray-50">
+              <div className="border-t p-4 bg-gray-50 dark:bg-gray-800">
                 <div className="relative inline-block">
                   <img src={imagePreview} alt="Preview" className="h-20 rounded-lg" />
                   <button

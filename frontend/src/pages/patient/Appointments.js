@@ -35,19 +35,19 @@ export default function PatientAppointments() {
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-5xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Lịch hẹn của tôi</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Lịch hẹn của tôi</h1>
             <Button data-testid="search-doctors-btn" onClick={() => navigate('/patient/search-doctors')} className="bg-gradient-to-r from-teal-500 to-cyan-500">
               Đặt lịch mới
             </Button>
           </div>
 
           {loading ? (
-            <p className="text-center text-gray-500">Đang tải...</p>
+            <p className="text-center text-gray-500 dark:text-gray-400">Đang tải...</p>
           ) : appointments.length === 0 ? (
-            <div className="bg-white rounded-3xl shadow-xl p-12 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-12 text-center">
               <Calendar className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Chưa có lịch hẹn</h2>
-              <p className="text-gray-600 mb-6">Bắt đầu tìm kiếm bác sĩ và đặt lịch khám</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Chưa có lịch hẹn</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">Bắt đầu tìm kiếm bác sĩ và đặt lịch khám</p>
               <Button data-testid="start-search-btn" onClick={() => navigate('/patient/search-doctors')} className="bg-gradient-to-r from-teal-500 to-cyan-500">
                 Tìm bác sĩ ngay
               </Button>
@@ -81,30 +81,30 @@ function AppointmentCard({ appointment, navigate }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all">
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
-            <h3 className="font-bold text-xl text-gray-900">{appointment.doctor_name || 'Bác sĩ'}</h3>
+            <h3 className="font-bold text-xl text-gray-900 dark:text-white">{appointment.doctor_name || 'Bác sĩ'}</h3>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusColors[appointment.status]}`}>
               {statusText[appointment.status]}
             </span>
           </div>
           
           <div className="space-y-2 mb-4">
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               <Calendar className="w-4 h-4 inline mr-2" />
               {appointment.appointment_date}
             </p>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               <Clock className="w-4 h-4 inline mr-2" />
               {appointment.appointment_time}
             </p>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               Loại: <span className="font-semibold">{appointment.appointment_type === 'online' ? 'Tư vấn online' : 'Khám trực tiếp'}</span>
             </p>
             {appointment.symptoms && (
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 dark:text-gray-300 text-sm">
                 Triệu chứng: {appointment.symptoms}
               </p>
             )}

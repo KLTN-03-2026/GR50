@@ -73,10 +73,10 @@ export default function SearchDoctors() {
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Tìm kiếm bác sĩ</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Tìm kiếm bác sĩ</h1>
 
           {/* Filters */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label>Tìm kiếm</Label>
@@ -110,11 +110,11 @@ export default function SearchDoctors() {
 
           {/* Doctors Grid */}
           {loading ? (
-            <p className="text-center text-gray-500">Đang tải...</p>
+            <p className="text-center text-gray-500 dark:text-gray-400">Đang tải...</p>
           ) : filteredDoctors.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-2xl">
+            <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-2xl">
               <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">Không tìm thấy bác sĩ phù hợp</p>
+              <p className="text-gray-500 dark:text-gray-400">Không tìm thấy bác sĩ phù hợp</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -144,30 +144,30 @@ export default function SearchDoctors() {
 
 function DoctorCard({ doctor, onBook }) {
   return (
-    <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6">
       <div className="flex items-start gap-4 mb-4">
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-2xl font-bold">
           {doctor.full_name?.charAt(0) || 'D'}
         </div>
         <div className="flex-1">
-          <h3 className="font-bold text-lg text-gray-900">{doctor.full_name || 'Bác sĩ'}</h3>
+          <h3 className="font-bold text-lg text-gray-900 dark:text-white">{doctor.full_name || 'Bác sĩ'}</h3>
           <p className="text-teal-600 text-sm">{doctor.specialty_name || 'Chuyên khoa'}</p>
         </div>
       </div>
       
       {doctor.bio && (
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{doctor.bio}</p>
+        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">{doctor.bio}</p>
       )}
       
       <div className="space-y-2 mb-4">
         {doctor.experience_years > 0 && (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             <Star className="w-4 h-4 inline mr-2 text-yellow-500" />
             {doctor.experience_years} năm kinh nghiệm
           </p>
         )}
         {doctor.consultation_fee > 0 && (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             <MapPin className="w-4 h-4 inline mr-2" />
             Phí tư vấn: {doctor.consultation_fee.toLocaleString()} VNĐ
           </p>

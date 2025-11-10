@@ -61,7 +61,7 @@ export default function AdminPayments() {
     return (
       <Layout>
         <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6 flex items-center justify-center">
-          <p className="text-gray-500">Đang tải...</p>
+          <p className="text-gray-500 dark:text-gray-400">Đang tải...</p>
         </div>
       </Layout>
     );
@@ -71,7 +71,7 @@ export default function AdminPayments() {
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Quản lý thanh toán</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Quản lý thanh toán</h1>
 
           {/* Stats Cards */}
           <div className="grid md:grid-cols-4 gap-6 mb-8">
@@ -102,7 +102,7 @@ export default function AdminPayments() {
           </div>
 
           {/* Filters */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
             <div className="grid md:grid-cols-2 gap-4">
               <Input
                 placeholder="Tìm theo tên bệnh nhân, bác sĩ, mã GD..."
@@ -125,10 +125,10 @@ export default function AdminPayments() {
           </div>
 
           {/* Payments Table */}
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-gray-50 dark:bg-gray-800 border-b">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Mã GD</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Bệnh nhân</th>
@@ -142,7 +142,7 @@ export default function AdminPayments() {
                 <tbody className="divide-y divide-gray-200">
                   {filteredPayments.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan="7" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                         Không tìm thấy giao dịch
                       </td>
                     </tr>
@@ -170,12 +170,12 @@ function StatsCard({ icon, title, value, color }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-lg">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
       <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${colorClasses[color]} flex items-center justify-center text-white mb-4`}>
         {icon}
       </div>
-      <h3 className="text-gray-600 text-sm mb-1">{title}</h3>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
+      <h3 className="text-gray-600 dark:text-gray-300 text-sm mb-1">{title}</h3>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
     </div>
   );
 }
@@ -198,16 +198,16 @@ function PaymentRow({ payment }) {
   };
 
   return (
-    <tr className="hover:bg-gray-50">
-      <td className="px-6 py-4 text-sm font-mono text-gray-900">
+    <tr className="hover:bg-gray-50 dark:bg-gray-800">
+      <td className="px-6 py-4 text-sm font-mono text-gray-900 dark:text-white">
         {payment.transaction_id || '-'}
       </td>
-      <td className="px-6 py-4 text-sm text-gray-900">{payment.patient_name}</td>
-      <td className="px-6 py-4 text-sm text-gray-900">{payment.doctor_name}</td>
+      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{payment.patient_name}</td>
+      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{payment.doctor_name}</td>
       <td className="px-6 py-4 text-sm font-semibold text-teal-600">
         {payment.amount.toLocaleString()} VNĐ
       </td>
-      <td className="px-6 py-4 text-sm text-gray-600">
+      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
         {methodNames[payment.payment_method] || payment.payment_method}
       </td>
       <td className="px-6 py-4">
@@ -215,7 +215,7 @@ function PaymentRow({ payment }) {
           {status.text}
         </span>
       </td>
-      <td className="px-6 py-4 text-sm text-gray-600">
+      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
         {new Date(payment.created_at).toLocaleDateString('vi-VN')}
       </td>
     </tr>

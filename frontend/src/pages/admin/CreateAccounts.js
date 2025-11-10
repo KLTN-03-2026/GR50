@@ -140,12 +140,12 @@ export default function CreateAccounts() {
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">{t('createAccount')}</h1>
-            <p className="text-gray-600 mt-1">{t('createAccountDesc')}</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('createAccount')}</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-1">{t('createAccountDesc')}</p>
           </div>
 
           {/* Role Selection */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
             <Label className="mb-4 block text-lg font-semibold">{t('selectAccountType')}</Label>
             <div className="grid md:grid-cols-3 gap-4">
               <RoleCard
@@ -173,7 +173,7 @@ export default function CreateAccounts() {
           </div>
 
           {/* Create Account Form */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h2 className="text-xl font-bold mb-6">{t('accountInfo')} {getRoleName(selectedRole)}</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Information */}
@@ -218,7 +218,7 @@ export default function CreateAccounts() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400"
                     >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>

@@ -69,10 +69,10 @@ export default function AdminPatients() {
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('patientManagement')}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">{t('patientManagement')}</h1>
 
           {/* Search */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
@@ -87,14 +87,14 @@ export default function AdminPatients() {
 
           {/* Patients List */}
           {loading ? (
-            <p className="text-center text-gray-500">{t('loading')}</p>
+            <p className="text-center text-gray-500 dark:text-gray-400">{t('loading')}</p>
           ) : filteredPatients.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center">
               <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">{t('noData')}</p>
+              <p className="text-gray-500 dark:text-gray-400">{t('noData')}</p>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white">
                   <tr>
@@ -112,11 +112,11 @@ export default function AdminPatients() {
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white font-bold">
                             {patient.full_name?.charAt(0) || 'P'}
                           </div>
-                          <span className="font-semibold text-gray-900">{patient.full_name}</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">{patient.full_name}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{patient.email}</td>
-                      <td className="px-6 py-4 text-gray-600">
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{patient.email}</td>
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
                         {patient.created_at ? new Date(patient.created_at).toLocaleDateString('vi-VN') : 'N/A'}
                       </td>
                       <td className="px-6 py-4">
@@ -137,7 +137,7 @@ export default function AdminPatients() {
             </div>
           )}
 
-          <div className="mt-6 text-center text-gray-600">
+          <div className="mt-6 text-center text-gray-600 dark:text-gray-300">
             {t('totalPatients')}: <span className="font-bold text-teal-600">{filteredPatients.length}</span>
           </div>
         </div>

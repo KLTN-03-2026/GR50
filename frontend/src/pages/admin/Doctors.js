@@ -88,10 +88,10 @@ export default function AdminDoctors() {
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('doctorManagement')}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">{t('doctorManagement')}</h1>
 
           {/* Filters */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <div className="relative">
@@ -123,11 +123,11 @@ export default function AdminDoctors() {
 
           {/* Doctors List */}
           {loading ? (
-            <p className="text-center text-gray-500">{t('loading')}</p>
+            <p className="text-center text-gray-500 dark:text-gray-400">{t('loading')}</p>
           ) : filteredDoctors.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center">
               <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">{t('noData')}</p>
+              <p className="text-gray-500 dark:text-gray-400">{t('noData')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -156,7 +156,7 @@ function DoctorCard({ doctor, onApprove, onDelete, t }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
       <div className="flex justify-between items-start">
         <div className="flex gap-4 flex-1">
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
@@ -164,20 +164,20 @@ function DoctorCard({ doctor, onApprove, onDelete, t }) {
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h3 className="font-bold text-xl text-gray-900">{doctor.full_name || t('doctor')}</h3>
+              <h3 className="font-bold text-xl text-gray-900 dark:text-white">{doctor.full_name || t('doctor')}</h3>
               <span className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1 ${statusColors[doctor.status]}`}>
                 {statusIcons[doctor.status]}
                 {t(doctor.status)}
               </span>
             </div>
-            <p className="text-gray-600 mb-2">{doctor.email}</p>
+            <p className="text-gray-600 dark:text-gray-300 mb-2">{doctor.email}</p>
             {doctor.specialty_name && (
               <p className="text-teal-600 font-semibold mb-2">{t('specialty')}: {doctor.specialty_name}</p>
             )}
             {doctor.bio && (
-              <p className="text-gray-600 text-sm mb-2 line-clamp-2">{doctor.bio}</p>
+              <p className="text-gray-600 dark:text-gray-300 text-sm mb-2 line-clamp-2">{doctor.bio}</p>
             )}
-            <div className="flex gap-4 text-sm text-gray-600">
+            <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-300">
               {doctor.experience_years > 0 && (
                 <span>{doctor.experience_years} {t('years')} {t('experience')}</span>
               )}

@@ -40,19 +40,19 @@ export default function DoctorChatList() {
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-5xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Tin nhắn với bệnh nhân</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Tin nhắn với bệnh nhân</h1>
             <Button onClick={() => navigate('/doctor/appointments')} variant="outline">
               Quay lại lịch hẹn
             </Button>
           </div>
 
           {loading ? (
-            <p className="text-center text-gray-500">Đang tải...</p>
+            <p className="text-center text-gray-500 dark:text-gray-400">Đang tải...</p>
           ) : appointments.length === 0 ? (
-            <div className="bg-white rounded-3xl shadow-xl p-12 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-12 text-center">
               <MessageSquare className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Chưa có cuộc trò chuyện</h2>
-              <p className="text-gray-600 mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Chưa có cuộc trò chuyện</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
                 Chưa có lịch hẹn online nào cần tư vấn
               </p>
               <Button onClick={() => navigate('/doctor/appointments')} className="bg-gradient-to-r from-teal-500 to-cyan-500">
@@ -84,7 +84,7 @@ function ChatCard({ appointment, navigate }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all cursor-pointer"
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all cursor-pointer"
          onClick={() => navigate(`/doctor/chat/${appointment.id}`)}>
       <div className="flex justify-between items-start">
         <div className="flex items-start gap-4 flex-1">
@@ -94,13 +94,13 @@ function ChatCard({ appointment, navigate }) {
           
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h3 className="font-bold text-xl text-gray-900">{appointment.patient_name || 'Bệnh nhân'}</h3>
+              <h3 className="font-bold text-xl text-gray-900 dark:text-white">{appointment.patient_name || 'Bệnh nhân'}</h3>
               <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusColors[appointment.status]}`}>
                 {statusText[appointment.status]}
               </span>
             </div>
             
-            <div className="space-y-1 text-sm text-gray-600">
+            <div className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
               <p>
                 <Calendar className="w-4 h-4 inline mr-2" />
                 {appointment.appointment_date}
@@ -110,7 +110,7 @@ function ChatCard({ appointment, navigate }) {
                 {appointment.appointment_time}
               </p>
               {appointment.symptoms && (
-                <p className="text-gray-600 text-sm mt-2">
+                <p className="text-gray-600 dark:text-gray-300 text-sm mt-2">
                   Triệu chứng: {appointment.symptoms}
                 </p>
               )}

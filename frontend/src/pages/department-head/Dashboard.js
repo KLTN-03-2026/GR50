@@ -38,9 +38,9 @@ export default function DepartmentHeadDashboard() {
     >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-600 text-sm mb-1">{title}</p>
-          <h3 className="text-3xl font-bold text-gray-800">{value}</h3>
-          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+          <p className="text-gray-600 dark:text-gray-300 text-sm mb-1">{title}</p>
+          <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100">{value}</h3>
+          {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>}
         </div>
         <div className={`p-4 rounded-2xl ${color}`}>
           <Icon className="w-8 h-8 text-white" />
@@ -63,7 +63,7 @@ export default function DepartmentHeadDashboard() {
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('departmentHeadDashboard')}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">{t('departmentHeadDashboard')}</h1>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -118,8 +118,8 @@ export default function DepartmentHeadDashboard() {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">{t('quickActions')}</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">{t('quickActions')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button
                 onClick={() => navigate('/department-head/create-accounts')}

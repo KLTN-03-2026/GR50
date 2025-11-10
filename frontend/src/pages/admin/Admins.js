@@ -107,8 +107,8 @@ export default function AdminsManagement() {
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Quản lý Admin</h1>
-              <p className="text-gray-600 mt-1">Quản lý tài khoản và phân quyền admin</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Quản lý Admin</h1>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">Quản lý tài khoản và phân quyền admin</p>
             </div>
             {canCreateAdmins && (
               <Button
@@ -123,7 +123,7 @@ export default function AdminsManagement() {
 
           {/* Create Admin Form */}
           {showCreateForm && canCreateAdmins && (
-            <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
               <h2 className="text-xl font-bold mb-4">Tạo tài khoản Admin mới</h2>
               <form onSubmit={handleCreateAdmin} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
@@ -165,7 +165,7 @@ export default function AdminsManagement() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400"
                     >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -231,7 +231,7 @@ export default function AdminsManagement() {
           )}
 
           {/* Admin List */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h2 className="text-xl font-bold mb-4">Danh sách Admin</h2>
             <div className="space-y-4">
               {admins.map((admin) => (
@@ -245,7 +245,7 @@ export default function AdminsManagement() {
                 />
               ))}
               {admins.length === 0 && (
-                <p className="text-center text-gray-500 py-8">Chưa có admin nào khác</p>
+                <p className="text-center text-gray-500 dark:text-gray-400 py-8">Chưa có admin nào khác</p>
               )}
             </div>
           </div>
@@ -273,12 +273,12 @@ function AdminCard({ admin, currentUserId, canCreateAdmins, onDelete, onUpdatePe
             {admin.full_name.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">
+            <h3 className="font-semibold text-gray-900 dark:text-white">
               {admin.full_name}
               {isCurrentUser && <span className="ml-2 text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded">Bạn</span>}
             </h3>
-            <p className="text-sm text-gray-600">{admin.email}</p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-300">{admin.email}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Tạo: {new Date(admin.created_at).toLocaleDateString('vi-VN')}
             </p>
           </div>

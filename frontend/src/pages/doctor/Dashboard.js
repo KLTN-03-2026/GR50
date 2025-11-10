@@ -41,8 +41,8 @@ export default function DoctorDashboard() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Xin chào, BS. {user?.full_name}!</h1>
-            <p className="text-gray-600 mt-1">Quản lý lịch khám của bạn</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Xin chào, BS. {user?.full_name}!</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-1">Quản lý lịch khám của bạn</p>
           </div>
 
           {/* Status Warning */}
@@ -110,20 +110,20 @@ export default function DoctorDashboard() {
           </div>
 
           {/* Recent Appointments */}
-          <div className="bg-white rounded-3xl shadow-xl p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Lịch hẹn mới nhất</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Lịch hẹn mới nhất</h2>
               <Button data-testid="view-all-btn" variant="outline" onClick={() => navigate('/doctor/appointments')}>
                 Xem tất cả
               </Button>
             </div>
 
             {loading ? (
-              <p className="text-center text-gray-500 py-8">Đang tải...</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">Đang tải...</p>
             ) : appointments.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">Chưa có lịch hẹn nào</p>
+                <p className="text-gray-500 dark:text-gray-400">Chưa có lịch hẹn nào</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -141,12 +141,12 @@ export default function DoctorDashboard() {
 
 function StatCard({ icon, title, value, color, testId }) {
   return (
-    <div data-testid={testId} className="bg-white rounded-2xl p-6 shadow-lg">
+    <div data-testid={testId} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
       <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white mb-4`}>
         {icon}
       </div>
-      <p className="text-gray-600 text-sm mb-1">{title}</p>
-      <p className="text-3xl font-bold text-gray-900">{value}</p>
+      <p className="text-gray-600 dark:text-gray-300 text-sm mb-1">{title}</p>
+      <p className="text-3xl font-bold text-gray-900 dark:text-white">{value}</p>
     </div>
   );
 }
@@ -156,13 +156,13 @@ function QuickActionCard({ icon, title, description, onClick, testId }) {
     <div
       data-testid={testId}
       onClick={onClick}
-      className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1"
+      className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1"
     >
       <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white mb-4">
         {icon}
       </div>
-      <h3 className="text-xl font-bold mb-2 text-gray-900">{title}</h3>
-      <p className="text-gray-600">{description}</p>
+      <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">{title}</h3>
+      <p className="text-gray-600 dark:text-gray-300">{description}</p>
     </div>
   );
 }
@@ -187,17 +187,17 @@ function AppointmentCard({ appointment, navigate }) {
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="font-bold text-lg text-gray-900">{appointment.patient_name || 'Bệnh nhân'}</h3>
+            <h3 className="font-bold text-lg text-gray-900 dark:text-white">{appointment.patient_name || 'Bệnh nhân'}</h3>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[appointment.status]}`}>
               {statusText[appointment.status]}
             </span>
           </div>
-          <p className="text-gray-600 mb-1">
+          <p className="text-gray-600 dark:text-gray-300 mb-1">
             <Clock className="w-4 h-4 inline mr-2" />
             {appointment.appointment_date} - {appointment.appointment_time}
           </p>
           {appointment.symptoms && (
-            <p className="text-gray-500 text-sm">Triệu chứng: {appointment.symptoms}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Triệu chứng: {appointment.symptoms}</p>
           )}
         </div>
         <Button data-testid={`view-appointment-${appointment.id}`} size="sm" onClick={() => navigate('/doctor/appointments')} variant="outline">

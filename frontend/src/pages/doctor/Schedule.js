@@ -73,7 +73,7 @@ export default function DoctorSchedule() {
     return (
       <Layout>
         <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6 flex items-center justify-center">
-          <p className="text-gray-500">Đang tải...</p>
+          <p className="text-gray-500 dark:text-gray-400">Đang tải...</p>
         </div>
       </Layout>
     );
@@ -84,18 +84,18 @@ export default function DoctorSchedule() {
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Lịch làm việc</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Lịch làm việc</h1>
             <Button data-testid="add-slot-btn" onClick={addSlot} className="bg-gradient-to-r from-teal-500 to-cyan-500">
               <Plus className="w-4 h-4 mr-2" />
               Thêm khung giờ
             </Button>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-xl p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8">
             {slots.length === 0 ? (
               <div className="text-center py-12">
                 <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">Chưa có lịch làm việc</p>
+                <p className="text-gray-500 dark:text-gray-400 mb-4">Chưa có lịch làm việc</p>
                 <Button data-testid="add-first-slot-btn" onClick={addSlot} className="bg-gradient-to-r from-teal-500 to-cyan-500">
                   Thêm khung giờ đầu tiên
                 </Button>

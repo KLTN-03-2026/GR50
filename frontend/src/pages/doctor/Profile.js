@@ -69,7 +69,7 @@ export default function DoctorProfile() {
     return (
       <Layout>
         <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6 flex items-center justify-center">
-          <p className="text-gray-500">Đang tải...</p>
+          <p className="text-gray-500 dark:text-gray-400">Đang tải...</p>
         </div>
       </Layout>
     );
@@ -79,16 +79,16 @@ export default function DoctorProfile() {
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Hồ sơ bác sĩ</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Hồ sơ bác sĩ</h1>
 
-          <div className="bg-white rounded-3xl shadow-xl p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8">
             <div className="flex items-center gap-4 mb-8 pb-8 border-b">
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-3xl font-bold">
                 {user?.full_name?.charAt(0) || 'D'}
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">{user?.full_name}</h2>
-                <p className="text-gray-600">{user?.email}</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{user?.full_name}</h2>
+                <p className="text-gray-600 dark:text-gray-300">{user?.email}</p>
                 <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
                   profile.status === 'approved' ? 'bg-green-100 text-green-800' :
                   profile.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :

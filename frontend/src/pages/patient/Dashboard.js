@@ -37,8 +37,8 @@ export default function PatientDashboard() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">{t('greeting')}, {user?.full_name}!</h1>
-            <p className="text-gray-600 mt-1">{t('welcomeToMediSchedule')}</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('greeting')}, {user?.full_name}!</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-1">{t('welcomeToMediSchedule')}</p>
           </div>
 
           {/* Quick Actions */}
@@ -67,20 +67,20 @@ export default function PatientDashboard() {
           </div>
 
           {/* Recent Appointments */}
-          <div className="bg-white rounded-3xl shadow-xl p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">{t('recentAppointments')}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('recentAppointments')}</h2>
               <Button data-testid="view-all-appointments-btn" variant="outline" onClick={() => navigate('/patient/appointments')}>
                 {t('viewAll')}
               </Button>
             </div>
 
             {loading ? (
-              <p className="text-center text-gray-500 py-8">{t('loading')}</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">{t('loading')}</p>
             ) : appointments.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">{t('noAppointmentsYet')}</p>
+                <p className="text-gray-500 dark:text-gray-400 mb-4">{t('noAppointmentsYet')}</p>
                 <Button data-testid="book-now-btn" onClick={() => navigate('/patient/search-doctors')} className="bg-gradient-to-r from-teal-500 to-cyan-500">
                   {t('bookNow')}
                 </Button>
@@ -104,13 +104,13 @@ function QuickActionCard({ icon, title, description, onClick, testId }) {
     <div
       data-testid={testId}
       onClick={onClick}
-      className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1"
+      className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1"
     >
       <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white mb-4">
         {icon}
       </div>
-      <h3 className="text-xl font-bold mb-2 text-gray-900">{title}</h3>
-      <p className="text-gray-600">{description}</p>
+      <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">{title}</h3>
+      <p className="text-gray-600 dark:text-gray-300">{description}</p>
     </div>
   );
 }
@@ -136,16 +136,16 @@ function AppointmentCard({ appointment, token }) {
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="font-bold text-lg text-gray-900">{appointment.doctor_name || 'Bác sĩ'}</h3>
+            <h3 className="font-bold text-lg text-gray-900 dark:text-white">{appointment.doctor_name || 'Bác sĩ'}</h3>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[appointment.status]}`}>
               {statusText[appointment.status]}
             </span>
           </div>
-          <p className="text-gray-600 mb-1">
+          <p className="text-gray-600 dark:text-gray-300 mb-1">
             <Clock className="w-4 h-4 inline mr-2" />
             {appointment.appointment_date} - {appointment.appointment_time}
           </p>
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
             Loại: {appointment.appointment_type === 'online' ? 'Tư vấn online' : 'Khám trực tiếp'}
           </p>
         </div>

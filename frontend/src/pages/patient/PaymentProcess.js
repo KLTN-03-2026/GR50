@@ -101,7 +101,7 @@ export default function PaymentProcess() {
     return (
       <Layout>
         <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6 flex items-center justify-center">
-          <p className="text-gray-500">Đang tải...</p>
+          <p className="text-gray-500 dark:text-gray-400">Đang tải...</p>
         </div>
       </Layout>
     );
@@ -112,9 +112,9 @@ export default function PaymentProcess() {
       <Layout>
         <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
           <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-3xl shadow-xl p-12 text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Không thể thanh toán</h2>
-              <p className="text-gray-600 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-12 text-center">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Không thể thanh toán</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
                 {payment?.status === 'completed' ? 'Thanh toán này đã được xử lý' : 'Thanh toán không hợp lệ'}
               </p>
               <Button onClick={() => navigate('/patient/payments')}>
@@ -143,19 +143,19 @@ export default function PaymentProcess() {
           <div className="grid md:grid-cols-3 gap-6">
             {/* Payment Summary */}
             <div className="md:col-span-1">
-              <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Thông tin thanh toán</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 sticky top-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Thông tin thanh toán</h3>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm text-gray-600">Bác sĩ</p>
-                    <p className="font-semibold text-gray-900">{payment.doctor_name}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Bác sĩ</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{payment.doctor_name}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Bệnh nhân</p>
-                    <p className="font-semibold text-gray-900">{payment.patient_name}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Bệnh nhân</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{payment.patient_name}</p>
                   </div>
                   <div className="border-t pt-3">
-                    <p className="text-sm text-gray-600">Tổng tiền</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Tổng tiền</p>
                     <p className="text-2xl font-bold text-teal-600">{payment.amount.toLocaleString()} VNĐ</p>
                   </div>
                 </div>
@@ -164,8 +164,8 @@ export default function PaymentProcess() {
 
             {/* Payment Form */}
             <div className="md:col-span-2">
-              <div className="bg-white rounded-2xl shadow-lg p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Phương thức thanh toán</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Phương thức thanh toán</h2>
 
                 {/* Payment Method Selection */}
                 <div className="grid grid-cols-3 gap-4 mb-8">
@@ -207,7 +207,7 @@ export default function PaymentProcess() {
                           required
                           className="mt-2"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Demo: 4111111111111111</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Demo: 4111111111111111</p>
                       </div>
 
                       <div>
@@ -255,30 +255,30 @@ export default function PaymentProcess() {
                   {paymentMethod === 'mock_wallet' && (
                     <div className="text-center py-4">
                       <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl p-8 mb-6">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                           💳 Thanh toán
                         </h3>
                         <div className="flex items-center justify-center gap-2 mb-4">
-                          <p className="text-sm text-gray-600">Mã đơn hàng:</p>
-                          <code className="bg-white px-3 py-1 rounded-lg text-teal-600 font-mono text-sm font-bold">
+                          <p className="text-sm text-gray-600 dark:text-gray-300">Mã đơn hàng:</p>
+                          <code className="bg-white dark:bg-gray-800 px-3 py-1 rounded-lg text-teal-600 font-mono text-sm font-bold">
                             HD{paymentId.slice(-8)}
                           </code>
                           <button
                             type="button"
                             onClick={() => copyToClipboard(`HD${paymentId.slice(-8)}`)}
-                            className="p-1 hover:bg-white rounded transition-colors"
+                            className="p-1 hover:bg-white dark:bg-gray-800 rounded transition-colors"
                           >
-                            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
+                            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
                           </button>
                         </div>
                         <div className="mb-4">
-                          <p className="text-sm text-gray-600">Tổng tiền:</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">Tổng tiền:</p>
                           <p className="text-3xl font-bold text-teal-600">{payment.amount.toLocaleString()} VNĐ</p>
                         </div>
                       </div>
 
-                      <div className="bg-white p-6 rounded-2xl shadow-lg mb-4 inline-block">
-                        <div className="bg-white p-4 rounded-xl border-4 border-teal-500">
+                      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg mb-4 inline-block">
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border-4 border-teal-500">
                           <img 
                             src={generateVietQRData()}
                             alt="VietQR Code"
@@ -315,22 +315,22 @@ export default function PaymentProcess() {
                   {paymentMethod === 'mock_bank' && (
                     <div className="space-y-4">
                       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 mb-4">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                           <Building className="w-5 h-5 text-blue-600" />
                           Thông tin chuyển khoản
                         </h3>
                         
-                        <div className="bg-white rounded-lg p-4 space-y-3">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Ngân hàng:</span>
-                            <span className="font-semibold text-gray-900">VietinBank</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Ngân hàng:</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">VietinBank</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Chi nhánh:</span>
-                            <span className="font-semibold text-gray-900">Hà Nội</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Chi nhánh:</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">Hà Nội</span>
                           </div>
                           <div className="flex justify-between items-center border-t pt-3">
-                            <span className="text-sm text-gray-600">Số tài khoản:</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Số tài khoản:</span>
                             <div className="flex items-center gap-2">
                               <code className="font-mono font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded">
                                 1017592879600097
@@ -340,22 +340,22 @@ export default function PaymentProcess() {
                                 onClick={() => copyToClipboard('1017592879600097')}
                                 className="p-1 hover:bg-gray-100 rounded transition-colors"
                               >
-                                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
+                                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
                               </button>
                             </div>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Chủ tài khoản:</span>
-                            <span className="font-semibold text-gray-900">DAT LICH KHAM BENH</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Chủ tài khoản:</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">DAT LICH KHAM BENH</span>
                           </div>
                           <div className="flex justify-between items-center border-t pt-3">
-                            <span className="text-sm text-gray-600">Số tiền:</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Số tiền:</span>
                             <span className="text-xl font-bold text-teal-600">{payment.amount.toLocaleString()} VNĐ</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Nội dung:</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Nội dung:</span>
                             <div className="flex items-center gap-2">
-                              <code className="font-mono font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded">
+                              <code className="font-mono font-bold text-gray-900 dark:text-white bg-gray-100 px-3 py-1 rounded">
                                 HD{paymentId.slice(-8)}
                               </code>
                               <button
@@ -363,7 +363,7 @@ export default function PaymentProcess() {
                                 onClick={() => copyToClipboard(`HD${paymentId.slice(-8)}`)}
                                 className="p-1 hover:bg-gray-100 rounded transition-colors"
                               >
-                                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
+                                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
                               </button>
                             </div>
                           </div>

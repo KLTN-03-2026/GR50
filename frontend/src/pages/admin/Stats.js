@@ -31,7 +31,7 @@ export default function AdminStats() {
     return (
       <Layout>
         <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6 flex items-center justify-center">
-          <p className="text-gray-500">Đang tải...</p>
+          <p className="text-gray-500 dark:text-gray-400">Đang tải...</p>
         </div>
       </Layout>
     );
@@ -41,11 +41,11 @@ export default function AdminStats() {
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Thống kê hệ thống</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Thống kê hệ thống</h1>
 
           {/* User Stats */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Người dùng</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Người dùng</h2>
             <div className="grid md:grid-cols-3 gap-6">
               <StatCard
                 icon={<Users className="w-8 h-8" />}
@@ -73,7 +73,7 @@ export default function AdminStats() {
 
           {/* Appointment Stats */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Trạng thái lịch hẹn</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Trạng thái lịch hẹn</h2>
             <div className="grid md:grid-cols-4 gap-6">
               <StatCard
                 icon={<Clock className="w-6 h-6" />}
@@ -108,7 +108,7 @@ export default function AdminStats() {
 
           {/* Consultation Type Stats */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Loại hình tư vấn</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Loại hình tư vấn</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <StatCard
                 icon={<TrendingUp className="w-8 h-8" />}
@@ -129,7 +129,7 @@ export default function AdminStats() {
 
           {/* Doctor Approval Stats */}
           <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Trạng thái duyệt bác sĩ</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Trạng thái duyệt bác sĩ</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <StatCard
                 icon={<Clock className="w-8 h-8" />}
@@ -155,12 +155,12 @@ export default function AdminStats() {
 
 function StatCard({ icon, title, value, color, testId }) {
   return (
-    <div data-testid={testId} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
+    <div data-testid={testId} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
       <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white mb-4`}>
         {icon}
       </div>
-      <p className="text-gray-600 text-sm mb-1">{title}</p>
-      <p className="text-4xl font-bold text-gray-900">{value || 0}</p>
+      <p className="text-gray-600 dark:text-gray-300 text-sm mb-1">{title}</p>
+      <p className="text-4xl font-bold text-gray-900 dark:text-white">{value || 0}</p>
     </div>
   );
 }
