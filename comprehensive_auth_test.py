@@ -292,7 +292,7 @@ class ComprehensiveAuthTester:
                               "Correctly rejected non-existent email (401 status)")
         else:
             self.log_result("Non-existent Email Test", False, 
-                          "Should reject non-existent email with 401 status")
+                          f"Should reject non-existent email with 401 status, got {response.status_code if response else 'no response'}")
 
     def test_additional_endpoints(self):
         """Test 5: Additional Endpoints (if time permits)"""
