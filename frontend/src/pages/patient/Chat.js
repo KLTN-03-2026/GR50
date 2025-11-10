@@ -213,7 +213,7 @@ function MessageBubble({ message, isOwn }) {
       <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${
         isOwn 
           ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white' 
-          : 'bg-gray-100 text-gray-900'
+          : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
       }`}>
         <p className="font-semibold text-sm mb-1">{message.sender_name}</p>
         {message.image_url && (
