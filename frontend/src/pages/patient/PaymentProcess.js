@@ -338,7 +338,7 @@ export default function PaymentProcess() {
                               <button
                                 type="button"
                                 onClick={() => copyToClipboard('1017592879600097')}
-                                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                               >
                                 {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
                               </button>
