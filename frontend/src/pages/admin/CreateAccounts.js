@@ -417,7 +417,7 @@ function RoleCard({ icon, title, role, selected, onClick }) {
       }`}>
         {icon}
       </div>
-      <h3 className={`font-semibold ${selected ? 'text-teal-700' : 'text-gray-900'}`}>
+      <h3 className={`font-semibold ${selected ? 'text-teal-700 dark:text-teal-400' : 'text-gray-900 dark:text-gray-100'}`}>
         {title}
       </h3>
     </div>
