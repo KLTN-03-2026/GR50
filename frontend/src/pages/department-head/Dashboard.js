@@ -33,7 +33,7 @@ export default function DepartmentHeadDashboard() {
 
   const StatCard = ({ icon: Icon, title, value, subtitle, color, onClick }) => (
     <div 
-      className={`bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all ${onClick ? 'cursor-pointer' : ''}`}
+      className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
