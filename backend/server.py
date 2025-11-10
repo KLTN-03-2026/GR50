@@ -1,4 +1,4 @@
-import sys, os, logging
+import sys, os, logging, uuid
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from datetime import datetime, timezone, timedelta, date, time
