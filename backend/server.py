@@ -855,7 +855,7 @@ async def create_appointment(
         amount = float(doctor.consultation_fee) if doctor.consultation_fee else 200000.0
         
         new_payment = DBPayment(
-            appointment_id=appointment_id,
+            appointment_id=db_appointment.id,
             patient_id=current_user["id"],
             doctor_id=appointment_data.doctor_id,
             amount=Decimal(str(amount)),
