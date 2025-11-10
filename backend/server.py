@@ -839,7 +839,6 @@ async def create_appointment(
     
     # Create appointment
     db_appointment = DBAppointment(
-        id=appointment_id,
         patient_id=current_user["id"],
         doctor_id=appointment_data.doctor_id,
         appointment_date=datetime.fromisoformat(appointment_data.appointment_date).date(),
