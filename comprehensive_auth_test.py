@@ -225,7 +225,7 @@ class ComprehensiveAuthTester:
                               "Correctly rejected duplicate email (400 status)")
         else:
             self.log_result("Duplicate Email Registration", False, 
-                          "Should reject duplicate email with 400 status")
+                          f"Should reject duplicate email with 400 status, got {response.status_code if response else 'no response'}")
         
         # Test 3: Register with missing required fields
         incomplete_data = {
