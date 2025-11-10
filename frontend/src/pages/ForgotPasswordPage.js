@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
           {t('backToLogin')}
         </Button>
         
-        <div className="bg-white rounded-3xl shadow-2xl p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8">
           <div className="flex items-center justify-center gap-2 mb-8">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
               <Calendar className="w-7 h-7 text-white" />
@@ -46,8 +46,8 @@ export default function ForgotPasswordPage() {
             <span className="text-3xl font-bold text-gray-800">Đặt Lịch Khám Bệnh</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-center mb-4 text-gray-900">{t('resetPassword')}</h2>
-          <p className="text-center text-gray-600 mb-8">{t('enterEmailReset')}</p>
+          <h2 className="text-2xl font-bold text-center mb-4 text-gray-900 dark:text-white">{t('resetPassword')}</h2>
+          <p className="text-center text-gray-600 dark:text-gray-300 mb-8">{t('enterEmailReset')}</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-gray-600">
+          <p className="mt-6 text-center text-gray-600 dark:text-gray-300">
             {t('alreadyHaveAccount')}{' '}
             <Link to="/login" className="text-teal-600 hover:text-teal-700 font-semibold">
               {t('login')}
