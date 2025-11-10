@@ -582,15 +582,21 @@ frontend:
   
   - task: "Authentication System - Login & Registration"
     implemented: true
-    working: false
+    working: true
     file: "backend/server.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "critical"
     needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "✅ FIXED ALL AUTHENTICATION ISSUES: 1) Fixed import errors (backend.models -> models, backend.database -> database) in server.py, routes/auth.py, models.py, create_sample_data_mysql.py. 2) Installed MariaDB/MySQL and created medischedule database. 3) Fixed database schema issues (added missing updated_at columns to specialties, admin_permissions, patients, doctors, ai_chat_history). 4) Created sample data successfully (admin, department head, 3 doctors, 3 patients, 8 specialties). 5) Fixed missing imports (date, time) in server.py. 6) Tested login with curl - patient1@test.com/12345678 works perfectly, returns JWT token. 7) Tested registration - creates new users successfully. Backend connected to MySQL successfully. All authentication endpoints working."
+      - working: false
+        agent: "user"
+        comment: "USER REPORTED: lỗi đăng nhập, đăng kí và không tạo được db (login error, registration error, cannot create database). Backend and frontend services were stopped. MySQL was not running."
+      - working: true
+        agent: "main"
+        comment: "✅ FULLY FIXED - 10/11/2025: User reported login/registration failures and database issues. ROOT CAUSE: MySQL/MariaDB was not installed/running in container. SOLUTION IMPLEMENTED: 1) ✅ Installed MariaDB server (mariadb-server 10.11.14) 2) ✅ Started MySQL service with mysqld_safe 3) ✅ Set root password to 190705 4) ✅ Created medischedule database using create_database_integer_id.sql 5) ✅ Created admin account via create_admin_mysql.py 6) ✅ Created sample data (8 specialties, 1 dept head, 3 doctors, 3 patients) via create_sample_data_mysql.py 7) ✅ Restarted all services - backend, frontend now RUNNING 8) ✅ Backend successfully connected to MySQL. VERIFICATION TESTS PASSED: ✅ Patient login (patient1@test.com/12345678) returns JWT token ✅ New user registration (testuser@test.com) successful ✅ Database has 9 users (admin, dept head, 3 doctors, 3 patients, 1 test user) ✅ All 9 tables created (users, patients, doctors, specialties, appointments, chat_messages, payments, ai_chat_history, admin_permissions). System fully operational!"
   
   - task: "Chat System with Image Upload"
     implemented: true
