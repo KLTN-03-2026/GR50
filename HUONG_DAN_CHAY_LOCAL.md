@@ -78,13 +78,13 @@ Password: 12345678
 
 ### Frontend (React)
 ```
-URL: https://visual-mode-error.preview.emergentagent.com
+URL: https://single-file-only.preview.emergentagent.com
 ```
 
 ### Backend API
 ```
-Base URL: https://visual-mode-error.preview.emergentagent.com/api
-Health Check: https://visual-mode-error.preview.emergentagent.com/api/health
+Base URL: https://single-file-only.preview.emergentagent.com/api
+Health Check: https://single-file-only.preview.emergentagent.com/api/health
 ```
 
 ---
@@ -209,7 +209,7 @@ CORS_ORIGINS=*
 
 ### Frontend (.env)
 ```
-REACT_APP_BACKEND_URL=https://visual-mode-error.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://single-file-only.preview.emergentagent.com
 ```
 
 ---
