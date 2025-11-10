@@ -979,7 +979,6 @@ async def send_message(
     
     # Create message
     db_message = DBChatMessage(
-        id=message_id,
         appointment_id=message_data.appointment_id,
         sender_id=current_user["id"],
         message=message_data.message,
