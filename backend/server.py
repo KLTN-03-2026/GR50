@@ -194,11 +194,6 @@ async def get_current_user(
                 detail="Invalid authentication token"
             )
         user_id = int(user_id)  # Convert back to int for database query
-        if user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication token"
-            )
         
         result = await db.execute(select(DBUser).where(DBUser.id == user_id))
         user = result.scalar_one_or_none()
