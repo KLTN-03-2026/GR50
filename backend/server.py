@@ -546,7 +546,7 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
     user_dict = db_to_dict(db_user)
     
     # Create access token
-    access_token = create_access_token(data={"sub": db_user.id, "role": user_data.role})
+    access_token = create_access_token(data={"sub": str(db_user.id), "role": user_data.role})
     
     return {
         "token": access_token,
