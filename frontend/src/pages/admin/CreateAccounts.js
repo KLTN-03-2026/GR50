@@ -413,7 +413,7 @@ function RoleCard({ icon, title, role, selected, onClick }) {
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${
         selected
           ? 'bg-gradient-to-br from-teal-500 to-cyan-500 text-white'
-          : 'bg-gray-100 text-gray-600'
+          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
       }`}>
         {icon}
       </div>
