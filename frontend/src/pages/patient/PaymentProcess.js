@@ -355,7 +355,7 @@ export default function PaymentProcess() {
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600 dark:text-gray-300">Nội dung:</span>
                             <div className="flex items-center gap-2">
-                              <code className="font-mono font-bold text-gray-900 dark:text-white bg-gray-100 px-3 py-1 rounded">
+                              <code className="font-mono font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">
                                 HD{paymentId.slice(-8)}
                               </code>
                               <button
