@@ -268,7 +268,7 @@ class ComprehensiveAuthTester:
                               "Correctly rejected wrong password (401 status)")
         else:
             self.log_result("Wrong Password Test", False, 
-                          "Should reject wrong password with 401 status")
+                          f"Should reject wrong password with 401 status, got {response.status_code if response else 'no response'}")
         
         # Test 2: Non-existent email
         nonexistent_email_data = {
