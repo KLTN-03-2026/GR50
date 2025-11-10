@@ -240,7 +240,7 @@ class ComprehensiveAuthTester:
                           "Correctly rejected registration with missing required fields")
         else:
             self.log_result("Missing Fields Registration", False, 
-                          "Should reject registration with missing required fields")
+                          f"Should reject registration with missing required fields, got {response.status_code if response else 'no response'}")
 
     def test_wrong_credentials(self):
         """Test 4: Wrong Credentials Tests ✅"""
