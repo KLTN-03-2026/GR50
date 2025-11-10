@@ -118,7 +118,7 @@ export default function Layout({ children }) {
         </header>
         
         {/* Page Content */}
-        <div className="flex-1 bg-[#0f172a] dark:bg-[#0f172a] text-gray-100 transition-colors duration-300">
+        <div className="flex-1 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
           {children}
         </div>
       </main>
