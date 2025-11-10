@@ -17,7 +17,7 @@ frontend   RUNNING
 ```
 
 ### 2. Mở Ứng Dụng (5s)
-Truy cập: **https://account-setup-13.preview.emergentagent.com**
+Truy cập: **https://visual-mode-error.preview.emergentagent.com**
 
 ### 3. Đăng Nhập (10s)
 Chọn một trong các tài khoản sau:
@@ -85,14 +85,14 @@ tail -20 /var/log/supervisor/frontend.err.log
 
 ### Login Test
 ```bash
-curl -X POST https://account-setup-13.preview.emergentagent.com/api/auth/login \
+curl -X POST https://visual-mode-error.preview.emergentagent.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"login":"patient1@test.com","password":"12345678"}'
 ```
 
 ### Register Test
 ```bash
-curl -X POST https://account-setup-13.preview.emergentagent.com/api/auth/register \
+curl -X POST https://visual-mode-error.preview.emergentagent.com/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email":"test@test.com",

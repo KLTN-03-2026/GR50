@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 import uuid
 
 # Backend URL from environment
-BACKEND_URL = "https://account-setup-13.preview.emergentagent.com/api"
+BACKEND_URL = "https://visual-mode-error.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_PATIENT = {
