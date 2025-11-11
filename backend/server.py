@@ -421,6 +421,28 @@ class AppointmentCreate(BaseModel):
 class AppointmentStatusUpdate(BaseModel):
     status: str
 
+# Conversation Models
+class ConversationCreate(BaseModel):
+    patient_id: Optional[int] = None
+    doctor_id: Optional[int] = None
+    appointment_id: Optional[int] = None
+
+class ConversationResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: int
+    patient_id: int
+    doctor_id: int
+    appointment_id: Optional[int] = None
+    created_at: datetime
+    updated_at: datetime
+    last_message_at: datetime
+    # Additional fields populated from joins
+    other_user_id: Optional[int] = None
+    other_user_name: Optional[str] = None
+    other_user_role: Optional[str] = None
+    last_message: Optional[str] = None
+    unread_count: Optional[int] = 0
+
 class ChatMessage(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: Optional[int] = None
