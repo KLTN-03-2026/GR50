@@ -116,6 +116,8 @@ function App() {
                 <Route path="/patient/appointments" element={user?.role === "patient" ? <PatientAppointments /> : <Navigate to="/login" />} />
                 <Route path="/patient/chat" element={user?.role === "patient" ? <PatientChatList /> : <Navigate to="/login" />} />
                 <Route path="/patient/chat/:appointmentId" element={user?.role === "patient" ? <PatientChat /> : <Navigate to="/login" />} />
+                <Route path="/patient/conversations" element={user?.role === "patient" ? <PatientConversations /> : <Navigate to="/login" />} />
+                <Route path="/patient/conversation/:conversationId" element={user?.role === "patient" ? <PatientConversationChat /> : <Navigate to="/login" />} />
                 <Route path="/patient/payments" element={user?.role === "patient" ? <PatientPayments /> : <Navigate to="/login" />} />
                 <Route path="/patient/payment/:paymentId" element={user?.role === "patient" ? <PaymentProcess /> : <Navigate to="/login" />} />
 
@@ -126,6 +128,8 @@ function App() {
                 <Route path="/doctor/appointments" element={user?.role === "doctor" ? <DoctorAppointments /> : <Navigate to="/login" />} />
                 <Route path="/doctor/chat" element={user?.role === "doctor" ? <DoctorChatList /> : <Navigate to="/login" />} />
                 <Route path="/doctor/chat/:appointmentId" element={user?.role === "doctor" ? <DoctorChat /> : <Navigate to="/login" />} />
+                <Route path="/doctor/conversations" element={user?.role === "doctor" ? <DoctorConversations /> : <Navigate to="/login" />} />
+                <Route path="/doctor/conversation/:conversationId" element={user?.role === "doctor" ? <DoctorConversationChat /> : <Navigate to="/login" />} />
 
                 {/* Admin Routes */}
                 <Route path="/admin/dashboard" element={user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />} />
