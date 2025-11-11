@@ -148,7 +148,7 @@ export default function AdminPayments() {
                     </tr>
                   ) : (
                     filteredPayments.map(payment => (
-                      <PaymentRow key={payment.id} payment={payment} />
+                      <PaymentRow key={payment.payment_id} payment={payment} />
                     ))
                   )}
                 </tbody>
