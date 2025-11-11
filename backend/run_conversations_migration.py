@@ -5,7 +5,7 @@ Migration script to add conversations table and update chat_messages
 import asyncio
 import os
 from sqlalchemy import text
-from database import engine, async_session_maker
+from database import engine, AsyncSessionLocal
 
 async def run_migration():
     """Run the conversations migration"""
