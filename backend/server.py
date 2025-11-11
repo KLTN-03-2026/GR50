@@ -778,6 +778,70 @@ async def get_doctors(specialty_id: Optional[str] = None, db: AsyncSession = Dep
     
     return doctors
 
+@api_router.get("/doctors/available")
+async def get_available_doctors(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get list of available doctors for patients to start conversations"""
+    if current_user["role"] != "patient":
+        raise HTTPException(status_code=403, detail="Only patients can access this endpoint")
+    
+    # Get approved doctors
+    result = await db.execute(
+        select(DBDoctor, DBUser, DBSpecialty).join(
+            DBUser, DBDoctor.user_id == DBUser.id
+        ).outerjoin(
+            DBSpecialty, DBDoctor.specialty_id == DBSpecialty.id
+        ).where(DBDoctor.status == "approved")
+    )
+    rows = result.all()
+    
+    doctors = []
+    for doctor, user, specialty in rows:
+        doctor_dict = {
+            "id": user.id,
+            "user_id": user.id,
+            "full_name": user.full_name,
+            "email": user.email,
+            "phone": user.phone,
+            "specialty_name": specialty.name if specialty else None,
+            "experience_years": doctor.experience_years,
+            "consultation_fee": float(doctor.consultation_fee) if doctor.consultation_fee else None,
+            "bio": doctor.bio
+        }
+        doctors.append(doctor_dict)
+    
+    return doctors
+
+@api_router.get("/patients/available")
+async def get_available_patients(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get list of patients for doctors to start conversations"""
+    if current_user["role"] != "doctor":
+        raise HTTPException(status_code=403, detail="Only doctors can access this endpoint")
+    
+    # Get all patients
+    result = await db.execute(
+        select(DBUser).where(DBUser.role == "patient")
+    )
+    patients = result.scalars().all()
+    
+    patient_list = []
+    for patient in patients:
+        patient_dict = {
+            "id": patient.id,
+            "full_name": patient.full_name,
+            "email": patient.email,
+            "phone": patient.phone,
+            "date_of_birth": patient.date_of_birth.isoformat() if patient.date_of_birth else None
+        }
+        patient_list.append(patient_dict)
+    
+    return patient_list
+
 @api_router.get("/doctors/{doctor_id}")
 async def get_doctor(doctor_id: int, db: AsyncSession = Depends(get_db)):
     # Get doctor with user and specialty info
