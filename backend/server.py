@@ -869,7 +869,7 @@ async def create_appointment(
         
         db.add(new_payment)
         await db.commit()
-        logger.info(f"Auto-created payment {new_payment.id} for appointment {appointment_id}")
+        logger.info(f"Auto-created payment {new_payment.payment_id} for appointment {appointment_id}")
     except Exception as e:
         logger.error(f"Failed to create payment for appointment: {e}")
         # Don't fail the appointment creation if payment creation fails
