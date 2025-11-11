@@ -23,6 +23,7 @@ from models import (
     Doctor as DBDoctor,
     Specialty as DBSpecialty,
     Appointment as DBAppointment,
+    Conversation as DBConversation,
     ChatMessage as DBChatMessage,
     AIChatHistory as DBAIChatHistory,
     AdminPermission as DBAdminPermission,
