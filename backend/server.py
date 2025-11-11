@@ -1945,7 +1945,7 @@ async def create_payment(
         
         # Return payment data
         return {
-            "id": new_payment.id,
+            "payment_id": new_payment.payment_id,
             "appointment_id": new_payment.appointment_id,
             "patient_id": new_payment.patient_id,
             "doctor_id": new_payment.doctor_id,
