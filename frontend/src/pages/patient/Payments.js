@@ -31,7 +31,7 @@ export default function PatientPayments() {
   };
 
   const handlePayNow = (payment) => {
-    navigate(`/patient/payment/${payment.id}`);
+    navigate(`/patient/payment/${payment.payment_id}`);
   };
 
   return (
@@ -59,7 +59,7 @@ export default function PatientPayments() {
           ) : (
             <div className="space-y-4">
               {payments.map(payment => (
-                <PaymentCard key={payment.id} payment={payment} onPayNow={handlePayNow} />
+                <PaymentCard key={payment.payment_id} payment={payment} onPayNow={handlePayNow} />
               ))}
             </div>
           )}
