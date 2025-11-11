@@ -446,14 +446,18 @@ class ConversationResponse(BaseModel):
 class ChatMessage(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: Optional[int] = None
-    appointment_id: int
+    conversation_id: Optional[int] = None
+    appointment_id: Optional[int] = None  # Keep for backward compatibility
     sender_id: str
+    receiver_id: Optional[str] = None
     sender_name: Optional[str] = None
     message: str
+    image_url: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ChatMessageCreate(BaseModel):
-    appointment_id: int
+    conversation_id: Optional[int] = None
+    appointment_id: Optional[int] = None  # Keep for backward compatibility
     message: str
     image_url: Optional[str] = None
 
