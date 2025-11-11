@@ -57,7 +57,7 @@ async def run_migration():
     print("\nVerifying tables...")
     
     # Verify the migration
-    async with async_session_maker() as session:
+    async with AsyncSessionLocal() as session:
         # Check conversations table
         result = await session.execute(text("SHOW TABLES LIKE 'conversations'"))
         if result.fetchone():
