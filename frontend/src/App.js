@@ -20,6 +20,8 @@ import SearchDoctors from "@/pages/patient/SearchDoctors";
 import PatientAppointments from "@/pages/patient/Appointments";
 import PatientChat from "@/pages/patient/Chat";
 import PatientChatList from "@/pages/patient/ChatList";
+import PatientConversations from "@/pages/patient/Conversations";
+import PatientConversationChat from "@/pages/patient/ConversationChat";
 import PatientPayments from "@/pages/patient/Payments";
 import PaymentProcess from "@/pages/patient/PaymentProcess";
 
@@ -30,6 +32,8 @@ import DoctorSchedule from "@/pages/doctor/Schedule";
 import DoctorAppointments from "@/pages/doctor/Appointments";
 import DoctorChat from "@/pages/doctor/Chat";
 import DoctorChatList from "@/pages/doctor/ChatList";
+import DoctorConversations from "@/pages/doctor/Conversations";
+import DoctorConversationChat from "@/pages/doctor/ConversationChat";
 
 // Admin Pages
 import AdminDashboard from "@/pages/admin/Dashboard";
