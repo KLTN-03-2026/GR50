@@ -32,7 +32,7 @@ async def run_migration():
     print(f"Found {len(statements)} SQL statements to execute")
     
     # Execute each statement
-    async with async_session_maker() as session:
+    async with AsyncSessionLocal() as session:
         for i, statement in enumerate(statements, 1):
             try:
                 print(f"\n[{i}/{len(statements)}] Executing:")
