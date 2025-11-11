@@ -24,12 +24,14 @@ export default function Layout({ children }) {
     { path: '/patient/search-doctors', icon: Users, label: t('findDoctor') },
     { path: '/patient/appointments', icon: Calendar, label: t('appointments') },
     { path: '/patient/payments', icon: CreditCard, label: t('payments') },
+    { path: '/patient/conversations', icon: MessagesSquare, label: 'Tin nhắn' },
     { path: '/patient/chat', icon: MessageSquare, label: t('chat') }
   ];
 
   const doctorLinks = [
     { path: '/doctor/dashboard', icon: Home, label: t('home') },
     { path: '/doctor/appointments', icon: Calendar, label: t('appointments') },
+    { path: '/doctor/conversations', icon: MessagesSquare, label: 'Tin nhắn' },
     { path: '/doctor/chat', icon: MessageSquare, label: t('chat') },
     { path: '/doctor/profile', icon: User, label: t('profile') },
     { path: '/doctor/schedule', icon: Clock, label: t('schedule') }
