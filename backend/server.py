@@ -2188,7 +2188,7 @@ async def admin_get_all_payments(
         payment_list = []
         for payment in payments:
             payment_dict = {
-                "id": payment.id,
+                "payment_id": payment.payment_id,
                 "appointment_id": payment.appointment_id,
                 "patient_id": payment.patient_id,
                 "doctor_id": payment.doctor_id,
