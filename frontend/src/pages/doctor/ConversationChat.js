@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { ArrowLeft, Send, Image as ImageIcon, X, User } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function PatientConversationChat() {
+export default function DoctorConversationChat() {
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const { token, user } = useContext(AuthContext);
