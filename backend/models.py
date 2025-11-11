@@ -136,6 +136,27 @@ class Payment(Base):
 
 
 # ==============================
+# CONVERSATION
+# ==============================
+class Conversation(Base):
+    __tablename__ = "conversations"
+    __table_args__ = {"extend_existing": True}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    patient_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    doctor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    appointment_id = Column(Integer, ForeignKey("appointments.id"), nullable=True)  # Optional: link to appointment if exists
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_message_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    patient = relationship("User", foreign_keys=[patient_id])
+    doctor = relationship("User", foreign_keys=[doctor_id])
+    appointment = relationship("Appointment", foreign_keys=[appointment_id])
+    messages = relationship("ChatMessage", back_populates="conversation", cascade="all, delete-orphan")
+
+
 # CHAT MESSAGE
 # ==============================
 class ChatMessage(Base):
@@ -143,14 +164,18 @@ class ChatMessage(Base):
     __table_args__ = {"extend_existing": True}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    appointment_id = Column(Integer, ForeignKey("appointments.id"))
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False)
+    appointment_id = Column(Integer, ForeignKey("appointments.id"), nullable=True)  # Keep for backward compatibility
     sender_id = Column(Integer, ForeignKey("users.id"))
+    receiver_id = Column(Integer, ForeignKey("users.id"))
     message = Column(Text)
     image_url = Column(String(500))
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    conversation = relationship("Conversation", back_populates="messages")
     appointment = relationship("Appointment", back_populates="chat_messages")
     sender = relationship("User", foreign_keys=[sender_id], back_populates="sent_messages")                                              
-    receiver_id = Column(Integer, ForeignKey("users.id"))
     receiver = relationship("User", foreign_keys=[receiver_id], back_populates="received_messages")
 
 # ==============================
