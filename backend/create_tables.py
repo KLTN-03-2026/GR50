@@ -3,7 +3,7 @@ Script to create all database tables using SQLAlchemy models
 """
 import asyncio
 from database import Base, engine
-from models import User, Patient, Doctor, Specialty, Appointment, Payment, ChatMessage, AdminPermission, AIChatHistory
+from models import User, Patient, Doctor, Specialty, Appointment, Payment, Conversation, ChatMessage, AdminPermission, AIChatHistory
 
 async def create_tables():
     print("Creating all database tables...")
