@@ -1085,6 +1085,266 @@ async def serve_chat_image(filename: str):
     return FileResponse(file_path)
 
 # ========================================
+# Conversation Routes (Independent Chat)
+# ========================================
+
+@api_router.post("/conversations/create")
+async def create_conversation(
+    conv_data: ConversationCreate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Create a new conversation between patient and doctor"""
+    user_role = current_user["role"]
+    
+    # Determine patient_id and doctor_id based on who's creating
+    if user_role == "patient":
+        patient_id = current_user["id"]
+        doctor_id = conv_data.doctor_id
+        if not doctor_id:
+            raise HTTPException(status_code=400, detail="doctor_id is required for patients")
+        
+        # Verify doctor exists and is approved
+        result = await db.execute(select(DBDoctor, DBUser).join(DBUser).where(
+            DBDoctor.user_id == doctor_id,
+            DBUser.role == "doctor"
+        ))
+        doctor_info = result.first()
+        if not doctor_info:
+            raise HTTPException(status_code=404, detail="Doctor not found")
+        if doctor_info[0].status != "approved":
+            raise HTTPException(status_code=400, detail="Doctor is not approved")
+            
+    elif user_role == "doctor":
+        doctor_id = current_user["id"]
+        patient_id = conv_data.patient_id
+        if not patient_id:
+            raise HTTPException(status_code=400, detail="patient_id is required for doctors")
+        
+        # Verify patient exists
+        result = await db.execute(select(DBUser).where(
+            DBUser.id == patient_id,
+            DBUser.role == "patient"
+        ))
+        if not result.scalar_one_or_none():
+            raise HTTPException(status_code=404, detail="Patient not found")
+    else:
+        raise HTTPException(status_code=403, detail="Only patients and doctors can create conversations")
+    
+    # Check if conversation already exists
+    result = await db.execute(
+        select(DBConversation).where(
+            DBConversation.patient_id == patient_id,
+            DBConversation.doctor_id == doctor_id,
+            DBConversation.appointment_id == conv_data.appointment_id
+        )
+    )
+    existing_conv = result.scalar_one_or_none()
+    
+    if existing_conv:
+        # Return existing conversation
+        conv_dict = db_to_dict(existing_conv)
+        return conv_dict
+    
+    # Create new conversation
+    new_conversation = DBConversation(
+        patient_id=patient_id,
+        doctor_id=doctor_id,
+        appointment_id=conv_data.appointment_id
+    )
+    db.add(new_conversation)
+    await db.commit()
+    await db.refresh(new_conversation)
+    
+    conv_dict = db_to_dict(new_conversation)
+    return conv_dict
+
+@api_router.get("/conversations/my")
+async def get_my_conversations(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get all conversations for current user"""
+    user_id = current_user["id"]
+    user_role = current_user["role"]
+    
+    # Build query based on role
+    if user_role == "patient":
+        query = select(DBConversation, DBUser).join(
+            DBUser, DBConversation.doctor_id == DBUser.id
+        ).where(DBConversation.patient_id == user_id)
+    elif user_role == "doctor":
+        query = select(DBConversation, DBUser).join(
+            DBUser, DBConversation.patient_id == DBUser.id
+        ).where(DBConversation.doctor_id == user_id)
+    else:
+        raise HTTPException(status_code=403, detail="Only patients and doctors can view conversations")
+    
+    query = query.order_by(desc(DBConversation.last_message_at))
+    result = await db.execute(query)
+    rows = result.all()
+    
+    conversations = []
+    for conversation, other_user in rows:
+        conv_dict = db_to_dict(conversation)
+        conv_dict["other_user_name"] = other_user.full_name
+        conv_dict["other_user_id"] = other_user.id
+        conv_dict["other_user_role"] = other_user.role
+        
+        # Get last message
+        msg_result = await db.execute(
+            select(DBChatMessage).where(
+                DBChatMessage.conversation_id == conversation.id
+            ).order_by(desc(DBChatMessage.created_at)).limit(1)
+        )
+        last_msg = msg_result.scalar_one_or_none()
+        if last_msg:
+            conv_dict["last_message"] = last_msg.message[:50] + "..." if len(last_msg.message) > 50 else last_msg.message
+        
+        conversations.append(conv_dict)
+    
+    return conversations
+
+@api_router.get("/conversations/{conversation_id}/messages")
+async def get_conversation_messages(
+    conversation_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get all messages in a conversation"""
+    # Verify conversation exists and user is part of it
+    result = await db.execute(select(DBConversation).where(DBConversation.id == conversation_id))
+    conversation = result.scalar_one_or_none()
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    if current_user["id"] not in [conversation.patient_id, conversation.doctor_id]:
+        raise HTTPException(status_code=403, detail="Not your conversation")
+    
+    # Get messages with sender info
+    result = await db.execute(
+        select(DBChatMessage, DBUser).join(
+            DBUser, DBChatMessage.sender_id == DBUser.id
+        ).where(DBChatMessage.conversation_id == conversation_id).order_by(DBChatMessage.created_at)
+    )
+    rows = result.all()
+    
+    messages = []
+    for message, sender in rows:
+        msg_dict = db_to_dict(message)
+        msg_dict["sender_name"] = sender.full_name
+        messages.append(msg_dict)
+    
+    return messages
+
+@api_router.post("/conversations/{conversation_id}/send")
+async def send_conversation_message(
+    conversation_id: int,
+    message_data: ChatMessageCreate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Send a message in a conversation"""
+    # Verify conversation exists and user is part of it
+    result = await db.execute(select(DBConversation).where(DBConversation.id == conversation_id))
+    conversation = result.scalar_one_or_none()
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    if current_user["id"] not in [conversation.patient_id, conversation.doctor_id]:
+        raise HTTPException(status_code=403, detail="Not your conversation")
+    
+    # Determine receiver_id
+    receiver_id = conversation.doctor_id if current_user["id"] == conversation.patient_id else conversation.patient_id
+    
+    # Create message
+    db_message = DBChatMessage(
+        conversation_id=conversation_id,
+        sender_id=current_user["id"],
+        receiver_id=receiver_id,
+        message=message_data.message,
+        image_url=message_data.image_url
+    )
+    db.add(db_message)
+    
+    # Update conversation's last_message_at
+    conversation.last_message_at = datetime.utcnow()
+    
+    await db.commit()
+    await db.refresh(db_message)
+    
+    message_dict = db_to_dict(db_message)
+    message_dict["sender_name"] = current_user["full_name"]
+    
+    return message_dict
+
+@api_router.get("/doctors/available")
+async def get_available_doctors(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get list of available doctors for patients to start conversations"""
+    if current_user["role"] != "patient":
+        raise HTTPException(status_code=403, detail="Only patients can access this endpoint")
+    
+    # Get approved doctors
+    result = await db.execute(
+        select(DBDoctor, DBUser, DBSpecialty).join(
+            DBUser, DBDoctor.user_id == DBUser.id
+        ).outerjoin(
+            DBSpecialty, DBDoctor.specialty_id == DBSpecialty.id
+        ).where(DBDoctor.status == "approved")
+    )
+    rows = result.all()
+    
+    doctors = []
+    for doctor, user, specialty in rows:
+        doctor_dict = {
+            "id": user.id,
+            "user_id": user.id,
+            "full_name": user.full_name,
+            "email": user.email,
+            "phone": user.phone,
+            "specialty_name": specialty.name if specialty else None,
+            "experience_years": doctor.experience_years,
+            "consultation_fee": float(doctor.consultation_fee) if doctor.consultation_fee else None,
+            "bio": doctor.bio
+        }
+        doctors.append(doctor_dict)
+    
+    return doctors
+
+@api_router.get("/patients/available")
+async def get_available_patients(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get list of patients for doctors to start conversations"""
+    if current_user["role"] != "doctor":
+        raise HTTPException(status_code=403, detail="Only doctors can access this endpoint")
+    
+    # Get all patients
+    result = await db.execute(
+        select(DBUser).where(DBUser.role == "patient")
+    )
+    patients = result.scalars().all()
+    
+    patient_list = []
+    for patient in patients:
+        patient_dict = {
+            "id": patient.id,
+            "full_name": patient.full_name,
+            "email": patient.email,
+            "phone": patient.phone,
+            "date_of_birth": patient.date_of_birth.isoformat() if patient.date_of_birth else None
+        }
+        patient_list.append(patient_dict)
+    
+    return patient_list
+
+# ========================================
 # Admin Routes
 # ========================================
 
