@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import FloatingChatButton from "@/components/FloatingChatButton";
 import ThemeToggle from "@/components/ThemeToggle";
 // Pages
-import LandingPage from "@/pages/LandingPage";
+import LandingPage from "@/pages/LandingPageNew";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
