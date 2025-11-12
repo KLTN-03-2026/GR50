@@ -3,11 +3,11 @@
 ## ✅ HỆ THỐNG ĐÃ HOẠT ĐỘNG
 
 ### 🌐 Truy Cập Ứng Dụng
-**Frontend:** https://link-share.preview.emergentagent.com
+**Frontend:** https://auth-issue-solver.preview.emergentagent.com
 
-**Backend API:** https://link-share-server.preview.emergentagent.com/api
+**Backend API:** https://auth-issue-solver.preview.emergentagent.com/api
 
-**API Documentation:** https://link-share-server.preview.emergentagent.com/docs
+**API Documentation:** https://auth-issue-solver.preview.emergentagent.com/docs
 
 ---
 
@@ -93,7 +93,7 @@
 ## 🎯 HƯỚNG DẪN SỬ DỤNG
 
 ### 1. Đăng Nhập
-1. Truy cập: https://link-share.preview.emergentagent.com
+1. Truy cập: https://auth-issue-solver.preview.emergentagent.com
 2. Nhấn nút **"Đăng nhập"**
 3. Nhập email và mật khẩu từ danh sách trên
 4. Nhấn **"Đăng nhập"**
@@ -171,10 +171,10 @@
 ### Kiểm Tra Hệ Thống
 ```bash
 # Backend health check
-curl https://link-share-server.preview.emergentagent.com/health
+curl https://auth-issue-solver.preview.emergentagent.com/health
 
 # Test login API
-curl -X POST https://link-share-server.preview.emergentagent.com/api/auth/login \
+curl -X POST https://auth-issue-solver.preview.emergentagent.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"login":"patient1@test.com","password":"12345678"}'
 ```
@@ -190,7 +190,7 @@ curl -X POST https://link-share-server.preview.emergentagent.com/api/auth/login 
 
 ## 🎉 BẮT ĐẦU SỬ DỤNG
 
-1. **Truy cập:** https://link-share.preview.emergentagent.com
+1. **Truy cập:** https://auth-issue-solver.preview.emergentagent.com
 2. **Đăng nhập bằng một trong các tài khoản trên**
 3. **Khám phá các tính năng!**
 
