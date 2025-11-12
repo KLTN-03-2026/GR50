@@ -85,7 +85,7 @@ DATABASE_URL=mysql+aiomysql://root:190705@localhost:3306/medischedule
 ### ✅ Frontend (.env)
 ```env
 # Trước (Emergent)
-REACT_APP_BACKEND_URL=https://auth-issue-solver.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://bookingcare-clone.preview.emergentagent.com
 PORT=3050
 
 # Sau (Local)
