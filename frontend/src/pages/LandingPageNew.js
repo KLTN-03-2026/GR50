@@ -431,7 +431,7 @@ export default function LandingPageNew() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
                   <Calendar className="w-6 h-6 text-white" />
                 </div>
                 <span className="text-xl font-bold">BookingCare</span>
@@ -444,20 +444,20 @@ export default function LandingPageNew() {
             <div>
               <h3 className="font-bold mb-4">Dịch vụ</h3>
               <ul className="space-y-2 text-gray-400 text-sm">
-                <li><a href="#" className="hover:text-yellow-400">Khám chuyên khoa</a></li>
-                <li><a href="#" className="hover:text-yellow-400">Khám từ xa</a></li>
-                <li><a href="#" className="hover:text-yellow-400">Xét nghiệm</a></li>
-                <li><a href="#" className="hover:text-yellow-400">Gói phẫu thuật</a></li>
+                <li><a href="#" className="hover:text-cyan-400">Khám chuyên khoa</a></li>
+                <li><a href="#" className="hover:text-cyan-400">Khám từ xa</a></li>
+                <li><a href="#" className="hover:text-cyan-400">Xét nghiệm</a></li>
+                <li><a href="#" className="hover:text-cyan-400">Gói phẫu thuật</a></li>
               </ul>
             </div>
 
             <div>
               <h3 className="font-bold mb-4">Hỗ trợ</h3>
               <ul className="space-y-2 text-gray-400 text-sm">
-                <li><a href="#" className="hover:text-yellow-400">Câu hỏi thường gặp</a></li>
-                <li><a href="#" className="hover:text-yellow-400">Hướng dẫn đặt lịch</a></li>
-                <li><a href="#" className="hover:text-yellow-400">Chính sách</a></li>
-                <li><a href="#" className="hover:text-yellow-400">Điều khoản</a></li>
+                <li><a href="#" className="hover:text-cyan-400">Câu hỏi thường gặp</a></li>
+                <li><a href="#" className="hover:text-cyan-400">Hướng dẫn đặt lịch</a></li>
+                <li><a href="#" className="hover:text-cyan-400">Chính sách</a></li>
+                <li><a href="#" className="hover:text-cyan-400">Điều khoản</a></li>
               </ul>
             </div>
 
