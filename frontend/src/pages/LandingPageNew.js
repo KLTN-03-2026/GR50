@@ -247,7 +247,7 @@ export default function LandingPageNew() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Dịch vụ toàn diện</h2>
-            <button className="text-yellow-600 hover:text-yellow-700 font-medium flex items-center gap-1">
+            <button className="text-cyan-600 hover:text-cyan-700 font-medium flex items-center gap-1">
               Xem thêm <ChevronRight className="w-4 h-4" />
             </button>
           </div>
