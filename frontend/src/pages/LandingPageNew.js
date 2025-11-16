@@ -210,12 +210,12 @@ export default function LandingPageNew() {
       </header>
 
       {/* Hero Section with Search */}
-      <section className="bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 py-16">
+      <section className="bg-gradient-to-br from-cyan-50 via-cyan-100 to-cyan-200 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-6">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
               Nền tảng đặt lịch khám bệnh
-              <span className="block mt-2 bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
+              <span className="block mt-2 bg-gradient-to-r from-cyan-500 to-cyan-600 bg-clip-text text-transparent">
                 Chăm sóc sức khỏe toàn diện
               </span>
             </h1>
@@ -231,9 +231,9 @@ export default function LandingPageNew() {
                   placeholder="Tìm bệnh viện, phòng khám, bác sĩ..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-6 py-4 pr-12 rounded-full border-2 border-yellow-300 focus:border-yellow-500 focus:outline-none text-lg dark:bg-gray-700 dark:text-white dark:border-yellow-600"
+                  className="w-full px-6 py-4 pr-12 rounded-full border-2 border-cyan-300 focus:border-cyan-500 focus:outline-none text-lg dark:bg-gray-700 dark:text-white dark:border-cyan-600"
                 />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 p-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full hover:from-yellow-500 hover:to-orange-600 transition">
+                <button className="absolute right-2 top-1/2 -translate-y-1/2 p-3 bg-gradient-to-r from-cyan-400 to-cyan-600 rounded-full hover:from-cyan-500 hover:to-cyan-700 transition">
                   <Search className="w-5 h-5 text-white" />
                 </button>
               </div>
