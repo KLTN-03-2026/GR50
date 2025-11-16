@@ -478,16 +478,16 @@ export default function LandingPageNew() {
                 </li>
               </ul>
               <div className="flex gap-3 mt-4">
-                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 hover:bg-yellow-500 flex items-center justify-center transition">
+                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 hover:bg-cyan-500 flex items-center justify-center transition">
                   <Facebook className="w-4 h-4" />
                 </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 hover:bg-yellow-500 flex items-center justify-center transition">
+                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 hover:bg-cyan-500 flex items-center justify-center transition">
                   <Twitter className="w-4 h-4" />
                 </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 hover:bg-yellow-500 flex items-center justify-center transition">
+                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 hover:bg-cyan-500 flex items-center justify-center transition">
                   <Youtube className="w-4 h-4" />
                 </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 hover:bg-yellow-500 flex items-center justify-center transition">
+                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 hover:bg-cyan-500 flex items-center justify-center transition">
                   <Instagram className="w-4 h-4" />
                 </a>
               </div>
