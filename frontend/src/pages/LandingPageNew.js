@@ -407,7 +407,7 @@ export default function LandingPageNew() {
       </section>
 
       {/* Call to Action Section */}
-      <section className="py-20 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-gray-800 dark:to-gray-700">
+      <section className="py-20 bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-gray-800 dark:to-gray-700">
         <div className="max-w-4xl mx-auto px-4 text-center space-y-8">
           <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white">
             Sẵn sàng chăm sóc sức khỏe của bạn?
@@ -418,7 +418,7 @@ export default function LandingPageNew() {
           <Button 
             size="lg"
             onClick={() => navigate('/register')}
-            className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white text-lg px-12"
+            className="bg-gradient-to-r from-cyan-400 to-cyan-600 hover:from-cyan-500 hover:to-cyan-700 text-white text-lg px-12"
           >
             Đăng ký miễn phí
           </Button>
