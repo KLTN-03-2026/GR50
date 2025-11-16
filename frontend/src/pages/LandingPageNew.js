@@ -171,20 +171,20 @@ export default function LandingPageNew() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
+              <span className="text-xl font-bold bg-gradient-to-r from-cyan-500 to-cyan-600 bg-clip-text text-transparent">
                 BookingCare
               </span>
             </div>
 
             {/* Navigation Menu */}
             <nav className="hidden md:flex items-center gap-6">
-              <a href="#dich-vu" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 transition">Dịch vụ</a>
-              <a href="#chuyen-khoa" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 transition">Chuyên khoa</a>
-              <a href="#bac-si" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 transition">Bác sĩ</a>
-              <a href="#co-so" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 transition">Cơ sở y tế</a>
+              <a href="#dich-vu" className="text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition">Dịch vụ</a>
+              <a href="#chuyen-khoa" className="text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition">Chuyên khoa</a>
+              <a href="#bac-si" className="text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition">Bác sĩ</a>
+              <a href="#co-so" className="text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition">Cơ sở y tế</a>
             </nav>
 
             {/* Right Actions */}
@@ -194,13 +194,13 @@ export default function LandingPageNew() {
               <Button 
                 variant="outline" 
                 onClick={() => navigate('/login')}
-                className="border-yellow-500 text-yellow-600 hover:bg-yellow-50 dark:border-yellow-400 dark:text-yellow-400"
+                className="border-cyan-500 text-cyan-600 hover:bg-cyan-50 dark:border-cyan-400 dark:text-cyan-400"
               >
                 Đăng nhập
               </Button>
               <Button 
                 onClick={() => navigate('/register')}
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white"
+                className="bg-gradient-to-r from-cyan-400 to-cyan-600 hover:from-cyan-500 hover:to-cyan-700 text-white"
               >
                 Đăng ký
               </Button>
