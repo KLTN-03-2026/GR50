@@ -720,7 +720,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Theme Toggle Functionality"
+    - "Admin Dashboard Theme Functionality After Color Changes"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
