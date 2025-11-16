@@ -73,7 +73,7 @@ export default function Layout({ children }) {
       <aside className="w-64 bg-white dark:bg-gray-800 shadow-xl fixed h-full z-10 flex flex-col">
         <div className="p-6 flex-1">
           <Link to="/" className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
               <Calendar className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-bold text-gray-800 dark:text-white">Đặt Lịch Khám Bệnh</span>
@@ -90,7 +90,7 @@ export default function Layout({ children }) {
                   data-testid={`nav-${link.path.split('/').pop()}`}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg'
+                      ? 'bg-gradient-to-r from-cyan-400 to-cyan-600 text-white shadow-lg'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
