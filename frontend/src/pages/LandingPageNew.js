@@ -328,7 +328,7 @@ export default function LandingPageNew() {
                 </div>
                 <div className="p-6">
                   <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">{doctor.name}</h3>
-                  <p className="text-yellow-600 font-medium mb-3">{doctor.specialty}</p>
+                  <p className="text-cyan-600 font-medium mb-3">{doctor.specialty}</p>
                   <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                     <span className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
