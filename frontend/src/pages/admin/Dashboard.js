@@ -11,13 +11,13 @@ export default function AdminDashboard() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gray-900 dark:bg-gray-900 text-foreground p-6 transition-colors duration-300">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-foreground p-6 transition-colors duration-300">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {t('welcomeAdmin')} {user?.full_name}!
             </h1>
-            <p className="text-muted-foreground mt-1">{t('manageSystem')}</p>
+            <p className="text-gray-600 dark:text-gray-300 mt-1">{t('manageSystem')}</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
