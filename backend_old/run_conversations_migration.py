@@ -11,7 +11,7 @@ async def run_migration():
     """Run the conversations migration"""
     
     # Read migration SQL
-    migration_file = '/app/backend/migrations/add_conversations_table.sql'
+    migration_file = os.path.join(os.path.dirname(__file__), 'migrations', 'add_conversations_table.sql')
     with open(migration_file, 'r') as f:
         sql_content = f.read()
     
@@ -80,4 +80,6 @@ async def run_migration():
 
 if __name__ == "__main__":
     print("🚀 Starting conversations migration...\n")
+    if os.name == 'nt':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(run_migration())

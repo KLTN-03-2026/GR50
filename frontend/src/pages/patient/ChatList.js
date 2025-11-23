@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext, API } from '@/App';
+import { AuthContext } from '@/contexts/AuthContext';
+import { API } from '@/config';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Calendar, Clock, User } from 'lucide-react';

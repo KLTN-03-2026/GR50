@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import FloatingChatButton from "@/components/FloatingChatButton";
 import ThemeToggle from "@/components/ThemeToggle";
+
 // Pages
 import LandingPage from "@/pages/LandingPageNew";
 import LoginPage from "@/pages/LoginPage";
@@ -22,6 +23,7 @@ import PatientChat from "@/pages/patient/Chat";
 import PatientChatList from "@/pages/patient/ChatList";
 import PatientConversations from "@/pages/patient/Conversations";
 import PatientConversationChat from "@/pages/patient/ConversationChat";
+import PatientUnifiedChat from "@/pages/patient/UnifiedChat";
 import PatientPayments from "@/pages/patient/Payments";
 import PaymentProcess from "@/pages/patient/PaymentProcess";
 
@@ -32,7 +34,7 @@ import DoctorSchedule from "@/pages/doctor/Schedule";
 import DoctorAppointments from "@/pages/doctor/Appointments";
 import DoctorChat from "@/pages/doctor/Chat";
 import DoctorChatList from "@/pages/doctor/ChatList";
-import DoctorConversations from "@/pages/doctor/Conversations";
+import DoctorUnifiedChat from "@/pages/doctor/UnifiedChat";
 import DoctorConversationChat from "@/pages/doctor/ConversationChat";
 
 // Admin Pages
@@ -49,12 +51,11 @@ import DepartmentHeadDashboard from "@/pages/department-head/Dashboard";
 import DepartmentHeadCreateAccounts from "@/pages/department-head/CreateAccounts";
 import DepartmentHeadDoctors from "@/pages/department-head/Doctors";
 import DepartmentHeadPatients from "@/pages/department-head/Patients";
+import DepartmentHeadUnifiedChat from "@/pages/department-head/UnifiedChat";
+import DepartmentHeadConversationChat from "@/pages/department-head/ConversationChat";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-export const API = `${BACKEND_URL}/api`;
-
-// Auth Context
-export const AuthContext = React.createContext();
+import { AuthContext } from "@/contexts/AuthContext";
+import { API } from "@/config";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -70,15 +71,19 @@ function App() {
   }, [token]);
 
   const fetchCurrentUser = async () => {
+    console.log("Fetching current user...");
     try {
       const response = await axios.get(`${API}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 5000 // 5 seconds timeout
       });
+      console.log("User fetched successfully", response.data);
       setUser(response.data);
     } catch (error) {
       console.error("Failed to fetch user", error);
       logout();
     } finally {
+      console.log("Loading set to false");
       setLoading(false);
     }
   };
@@ -118,6 +123,7 @@ function App() {
                 <Route path="/patient/chat/:appointmentId" element={user?.role === "patient" ? <PatientChat /> : <Navigate to="/login" />} />
                 <Route path="/patient/conversations" element={user?.role === "patient" ? <PatientConversations /> : <Navigate to="/login" />} />
                 <Route path="/patient/conversation/:conversationId" element={user?.role === "patient" ? <PatientConversationChat /> : <Navigate to="/login" />} />
+                <Route path="/patient/messages" element={user?.role === "patient" ? <PatientUnifiedChat /> : <Navigate to="/login" />} />
                 <Route path="/patient/payments" element={user?.role === "patient" ? <PatientPayments /> : <Navigate to="/login" />} />
                 <Route path="/patient/payment/:paymentId" element={user?.role === "patient" ? <PaymentProcess /> : <Navigate to="/login" />} />
 
@@ -128,7 +134,7 @@ function App() {
                 <Route path="/doctor/appointments" element={user?.role === "doctor" ? <DoctorAppointments /> : <Navigate to="/login" />} />
                 <Route path="/doctor/chat" element={user?.role === "doctor" ? <DoctorChatList /> : <Navigate to="/login" />} />
                 <Route path="/doctor/chat/:appointmentId" element={user?.role === "doctor" ? <DoctorChat /> : <Navigate to="/login" />} />
-                <Route path="/doctor/conversations" element={user?.role === "doctor" ? <DoctorConversations /> : <Navigate to="/login" />} />
+                <Route path="/doctor/conversations" element={user?.role === "doctor" ? <DoctorUnifiedChat /> : <Navigate to="/login" />} />
                 <Route path="/doctor/conversation/:conversationId" element={user?.role === "doctor" ? <DoctorConversationChat /> : <Navigate to="/login" />} />
 
                 {/* Admin Routes */}
@@ -145,6 +151,8 @@ function App() {
                 <Route path="/department-head/create-accounts" element={user?.role === "department_head" ? <DepartmentHeadCreateAccounts /> : <Navigate to="/login" />} />
                 <Route path="/department-head/doctors" element={user?.role === "department_head" ? <DepartmentHeadDoctors /> : <Navigate to="/login" />} />
                 <Route path="/department-head/patients" element={user?.role === "department_head" ? <DepartmentHeadPatients /> : <Navigate to="/login" />} />
+                <Route path="/department-head/conversations" element={user?.role === "department_head" ? <DepartmentHeadUnifiedChat /> : <Navigate to="/login" />} />
+                <Route path="/department-head/conversation/:conversationId" element={user?.role === "department_head" ? <DepartmentHeadConversationChat /> : <Navigate to="/login" />} />
             </Routes>
             <FloatingChatButton />
             <Toaster position="top-right" />

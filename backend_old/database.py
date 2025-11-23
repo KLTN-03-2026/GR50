@@ -6,7 +6,7 @@ load_dotenv()
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "mysql+aiomysql://root:190705@localhost:3306/medischedule"
+    "mysql+aiomysql://root:190705@127.0.0.1:3306/medischedule"
 )
 
 # Async engine & session

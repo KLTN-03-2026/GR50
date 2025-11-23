@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AuthContext, API } from '@/App';
+import { AuthContext } from '@/contexts/AuthContext';
+import { API } from '@/config';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -192,7 +193,7 @@ export default function PatientConversationChat() {
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={() => navigate('/patient/conversations')}
+          onClick={() => navigate('/patient/messages', { state: { activeTab: 'doctor' } })}
           className="text-white hover:bg-white/20"
         >
           <ArrowLeft className="w-5 h-5" />

@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { AuthContext, API } from '@/App';
+import { AuthContext } from '@/contexts/AuthContext';
+import { API } from '@/config';
 import axios from 'axios';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

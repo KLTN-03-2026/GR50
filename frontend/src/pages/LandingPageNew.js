@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { AuthContext } from '@/App';
+import { AuthContext } from '@/contexts/AuthContext';
 import { 
   Calendar, Users, MessageSquare, Shield, Search, 
   Stethoscope, Video, FileText, TestTube, Brain, Heart,

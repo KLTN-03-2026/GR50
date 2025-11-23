@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Calendar, Users, Clock, Home, User, BarChart, FileText, MessageSquare, Settings, Shield, UserPlus, LogOut, CreditCard, MessagesSquare } from 'lucide-react';
-import { AuthContext } from '@/App';
+import { AuthContext } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -24,15 +24,13 @@ export default function Layout({ children }) {
     { path: '/patient/search-doctors', icon: Users, label: t('findDoctor') },
     { path: '/patient/appointments', icon: Calendar, label: t('appointments') },
     { path: '/patient/payments', icon: CreditCard, label: t('payments') },
-    { path: '/patient/conversations', icon: MessagesSquare, label: 'Tin nhắn' },
-    { path: '/patient/chat', icon: MessageSquare, label: t('chat') }
+    { path: '/patient/messages', icon: MessageSquare, label: 'Tin nhắn' }
   ];
 
   const doctorLinks = [
     { path: '/doctor/dashboard', icon: Home, label: t('home') },
     { path: '/doctor/appointments', icon: Calendar, label: t('appointments') },
     { path: '/doctor/conversations', icon: MessagesSquare, label: 'Tin nhắn' },
-    { path: '/doctor/chat', icon: MessageSquare, label: t('chat') },
     { path: '/doctor/profile', icon: User, label: t('profile') },
     { path: '/doctor/schedule', icon: Clock, label: t('schedule') }
   ];
@@ -55,7 +53,8 @@ export default function Layout({ children }) {
     { path: '/department-head/dashboard', icon: Home, label: t('home') },
     { path: '/department-head/create-accounts', icon: UserPlus, label: t('createAccounts') },
     { path: '/department-head/doctors', icon: Users, label: t('doctors') },
-    { path: '/department-head/patients', icon: FileText, label: t('patients') }
+    { path: '/department-head/patients', icon: FileText, label: t('patients') },
+    { path: '/department-head/conversations', icon: MessagesSquare, label: 'Tin nhắn' }
   ];
 
   const links = role === 'patient' ? patientLinks 

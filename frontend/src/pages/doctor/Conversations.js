@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext, API } from '@/App';
+import { AuthContext } from '@/contexts/AuthContext';
+import { API } from '@/config';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, User, Plus, Search, Clock } from 'lucide-react';
@@ -22,6 +23,8 @@ export default function DoctorConversations() {
   const [loading, setLoading] = useState(true);
   const [showPatientSelector, setShowPatientSelector] = useState(false);
   const [patients, setPatients] = useState([]);
+  const [departmentHeads, setDepartmentHeads] = useState([]);
+  const [activeTab, setActiveTab] = useState('patients'); // 'patients' | 'dept_heads'
   const [searchTerm, setSearchTerm] = useState('');
   const [creatingChat, setCreatingChat] = useState(false);
 
@@ -55,12 +58,28 @@ export default function DoctorConversations() {
     }
   };
 
-  const handleNewConversation = async (patientId) => {
+  const fetchDepartmentHeads = async () => {
+    try {
+      const response = await axios.get(`${API}/doctors/department-heads`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDepartmentHeads(response.data);
+    } catch (error) {
+      console.error('Error fetching department heads:', error);
+      toast.error('Không thể tải danh sách trưởng khoa');
+    }
+  };
+
+  const handleNewConversation = async (userId, type = 'patient') => {
     setCreatingChat(true);
     try {
+      const payload = type === 'patient' 
+        ? { patient_id: userId }
+        : { doctor_id: userId }; // For Dept Head, we send doctor_id
+        
       const response = await axios.post(
         `${API}/conversations/create`,
-        { patient_id: patientId },
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -80,11 +99,17 @@ export default function DoctorConversations() {
   const openPatientSelector = () => {
     setShowPatientSelector(true);
     fetchPatients();
+    fetchDepartmentHeads();
   };
 
   const filteredPatients = patients.filter(patient =>
     patient.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (patient.email && patient.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const filteredDeptHeads = departmentHeads.filter(dh =>
+    dh.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (dh.email && dh.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const formatRelativeTime = (dateString) => {
@@ -125,14 +150,29 @@ export default function DoctorConversations() {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[600px] max-h-[80vh]">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold">Chọn bệnh nhân để trò chuyện</DialogTitle>
+                  <DialogTitle className="text-2xl font-bold">Chọn người để trò chuyện</DialogTitle>
                 </DialogHeader>
+                
+                <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 mb-4">
+                  <button
+                    className={`pb-2 px-4 font-medium ${activeTab === 'patients' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    onClick={() => setActiveTab('patients')}
+                  >
+                    Bệnh nhân
+                  </button>
+                  <button
+                    className={`pb-2 px-4 font-medium ${activeTab === 'dept_heads' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    onClick={() => setActiveTab('dept_heads')}
+                  >
+                    Trưởng khoa
+                  </button>
+                </div>
                 
                 <div className="space-y-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <Input
-                      placeholder="Tìm kiếm bệnh nhân..."
+                      placeholder={activeTab === 'patients' ? "Tìm kiếm bệnh nhân..." : "Tìm kiếm trưởng khoa..."}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -140,17 +180,34 @@ export default function DoctorConversations() {
                   </div>
                   
                   <div className="max-h-[400px] overflow-y-auto space-y-2">
-                    {filteredPatients.map(patient => (
-                      <PatientCard 
-                        key={patient.id} 
-                        patient={patient} 
-                        onSelect={handleNewConversation}
-                        creating={creatingChat}
-                      />
-                    ))}
-                    
-                    {filteredPatients.length === 0 && (
-                      <p className="text-center text-gray-500 py-8">Không tìm thấy bệnh nhân</p>
+                    {activeTab === 'patients' ? (
+                      <>
+                        {filteredPatients.map(patient => (
+                          <PatientCard 
+                            key={patient.id} 
+                            patient={patient} 
+                            onSelect={(id) => handleNewConversation(id, 'patient')}
+                            creating={creatingChat}
+                          />
+                        ))}
+                        {filteredPatients.length === 0 && (
+                          <p className="text-center text-gray-500 py-8">Không tìm thấy bệnh nhân</p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {filteredDeptHeads.map(dh => (
+                          <PatientCard 
+                            key={dh.id} 
+                            patient={dh} 
+                            onSelect={(id) => handleNewConversation(id, 'dept_head')}
+                            creating={creatingChat}
+                          />
+                        ))}
+                        {filteredDeptHeads.length === 0 && (
+                          <p className="text-center text-gray-500 py-8">Không tìm thấy trưởng khoa</p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

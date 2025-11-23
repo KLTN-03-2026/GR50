@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import React, { useContext } from 'react';
-import { AuthContext } from '@/App';
+import { AuthContext } from '@/contexts/AuthContext';
 import Layout from '../../components/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Users, FileText, BarChart, Shield, UserPlus } from 'lucide-react';
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);

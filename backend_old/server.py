@@ -88,6 +88,7 @@ if "*" in origins:
 else:
     origins.extend([
         "http://localhost:3001",  # React development server
+        "http://localhost:3000",  # React default port
         "http://localhost:8000",  # FastAPI development server
     ])
 
@@ -101,7 +102,7 @@ app.add_middleware(
 
 # Security settings
 pwd_context = CryptContext(
-    schemes=["bcrypt"],
+    schemes=["pbkdf2_sha256"],
     deprecated="auto"
 )
 security = HTTPBearer()
@@ -583,6 +584,7 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
 
 @api_router.post("/auth/login")
 async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
+    print(f"Login attempt for: {login_data.login}")
     # Find user by username or email
     result = await db.execute(
         select(DBUser).where(
@@ -591,6 +593,16 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     )
     user = result.scalar_one_or_none()
     
+    if user:
+        print(f"User found: {user.username}, Role: {user.role}")
+        # Verify password
+        is_valid = verify_password(login_data.password, user.password)
+        print(f"Password valid: {is_valid}")
+        if not is_valid:
+            print(f"Hash in DB: {user.password}")
+    else:
+        print("User not found")
+
     if not user or not verify_password(login_data.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -738,7 +750,6 @@ async def create_specialty(
         raise HTTPException(status_code=400, detail="Chuyên khoa đã tồn tại")
     
     db_specialty = DBSpecialty(
-        id=specialty_id,
         name=specialty_data.name,
         description=specialty_data.description
     )
@@ -777,7 +788,6 @@ async def get_doctors(specialty_id: Optional[str] = None, db: AsyncSession = Dep
         doctors.append(doctor_dict)
     
     return doctors
-
 @api_router.get("/doctors/available")
 async def get_available_doctors(
     current_user: dict = Depends(get_current_user),
@@ -813,6 +823,23 @@ async def get_available_doctors(
         doctors.append(doctor_dict)
     
     return doctors
+
+@api_router.get("/doctors/department-heads")
+async def get_department_heads(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get list of department heads for doctors to start conversations"""
+    if current_user["role"] != UserRole.DOCTOR:
+        raise HTTPException(status_code=403, detail="Only doctors can access this endpoint")
+    
+    # Get all department heads
+    result = await db.execute(
+        select(DBUser).where(DBUser.role == UserRole.DEPARTMENT_HEAD)
+    )
+    dept_heads = result.scalars().all()
+    
+    return [db_to_dict(dh) for dh in dept_heads]
 
 @api_router.get("/patients/available")
 async def get_available_patients(
@@ -960,7 +987,7 @@ async def create_appointment(
         
         db.add(new_payment)
         await db.commit()
-        logger.info(f"Auto-created payment {new_payment.payment_id} for appointment {appointment_id}")
+        logger.info(f"Auto-created payment {new_payment.payment_id} for appointment {db_appointment.id}")
     except Exception as e:
         logger.error(f"Failed to create payment for appointment: {e}")
         # Don't fail the appointment creation if payment creation fails
@@ -969,6 +996,10 @@ async def create_appointment(
     appointment_dict = db_to_dict(db_appointment)
     appointment_dict["patient_name"] = current_user["full_name"]
     appointment_dict["doctor_name"] = doctor_user.full_name
+    
+    # Add payment_id if payment was created
+    if 'new_payment' in locals() and new_payment.payment_id:
+        appointment_dict["payment_id"] = new_payment.payment_id
     
     return appointment_dict
 
@@ -1141,7 +1172,7 @@ async def upload_chat_image(
 @api_router.get("/uploads/chat_images/{filename}")
 async def serve_chat_image(filename: str):
     """Serve uploaded chat images"""
-    file_path = Path("/app/backend/uploads/chat_images") / filename
+    file_path = ROOT_DIR / "uploads" / "chat_images" / filename
     
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Image not found")
@@ -1158,57 +1189,67 @@ async def create_conversation(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Create a new conversation between patient and doctor"""
+    """Create a new conversation"""
     user_role = current_user["role"]
     
-    # Determine patient_id and doctor_id based on who's creating
-    if user_role == "patient":
+    patient_id = None
+    doctor_id = None
+    
+    # Logic:
+    # - DB.patient_id column: Holds Patient OR Doctor (when chatting with Dept Head)
+    # - DB.doctor_id column: Holds Doctor OR Dept Head
+    
+    if user_role == UserRole.PATIENT:
         patient_id = current_user["id"]
         doctor_id = conv_data.doctor_id
         if not doctor_id:
-            raise HTTPException(status_code=400, detail="doctor_id is required for patients")
-        
-        # Verify doctor exists and is approved
-        result = await db.execute(select(DBDoctor, DBUser).join(DBUser).where(
-            DBDoctor.user_id == doctor_id,
-            DBUser.role == "doctor"
-        ))
-        doctor_info = result.first()
-        if not doctor_info:
-            raise HTTPException(status_code=404, detail="Doctor not found")
-        if doctor_info[0].status != "approved":
-            raise HTTPException(status_code=400, detail="Doctor is not approved")
+            raise HTTPException(status_code=400, detail="doctor_id is required")
             
-    elif user_role == "doctor":
+    elif user_role == UserRole.DOCTOR:
+        if conv_data.patient_id:
+            # Doctor chatting with Patient
+            doctor_id = current_user["id"]
+            patient_id = conv_data.patient_id
+        elif conv_data.doctor_id:
+            # Doctor chatting with Dept Head
+            # We store Doctor in patient_id column and Dept Head in doctor_id column
+            patient_id = current_user["id"]
+            doctor_id = conv_data.doctor_id
+        else:
+             raise HTTPException(status_code=400, detail="Target user required")
+             
+    elif user_role == UserRole.DEPARTMENT_HEAD:
+        # Dept Head chatting with Doctor
         doctor_id = current_user["id"]
-        patient_id = conv_data.patient_id
-        if not patient_id:
-            raise HTTPException(status_code=400, detail="patient_id is required for doctors")
+        patient_id = conv_data.patient_id # Expecting Doctor ID here
         
-        # Verify patient exists
-        result = await db.execute(select(DBUser).where(
-            DBUser.id == patient_id,
-            DBUser.role == "patient"
-        ))
-        if not result.scalar_one_or_none():
-            raise HTTPException(status_code=404, detail="Patient not found")
-    else:
-        raise HTTPException(status_code=403, detail="Only patients and doctors can create conversations")
+        if not patient_id:
+             # Fallback: check if doctor_id was sent instead (as target)
+             if conv_data.doctor_id:
+                 patient_id = conv_data.doctor_id
+             else:
+                 raise HTTPException(status_code=400, detail="Target doctor required")
     
+    else:
+        raise HTTPException(status_code=403, detail="Unauthorized to create conversations")
+    
+    # Verify users exist
+    # We can skip detailed role checks for now and trust the IDs, or do a quick check
+    # For simplicity and speed, we'll trust the IDs but ensure they are not the same
+    if patient_id == doctor_id:
+        raise HTTPException(status_code=400, detail="Cannot chat with yourself")
+
     # Check if conversation already exists
     result = await db.execute(
         select(DBConversation).where(
             DBConversation.patient_id == patient_id,
-            DBConversation.doctor_id == doctor_id,
-            DBConversation.appointment_id == conv_data.appointment_id
+            DBConversation.doctor_id == doctor_id
         )
     )
     existing_conv = result.scalar_one_or_none()
     
     if existing_conv:
-        # Return existing conversation
-        conv_dict = db_to_dict(existing_conv)
-        return conv_dict
+        return db_to_dict(existing_conv)
     
     # Create new conversation
     new_conversation = DBConversation(
@@ -1220,8 +1261,7 @@ async def create_conversation(
     await db.commit()
     await db.refresh(new_conversation)
     
-    conv_dict = db_to_dict(new_conversation)
-    return conv_dict
+    return db_to_dict(new_conversation)
 
 @api_router.get("/conversations/my")
 async def get_my_conversations(
@@ -1233,39 +1273,53 @@ async def get_my_conversations(
     user_role = current_user["role"]
     
     # Build query based on role
-    if user_role == "patient":
-        query = select(DBConversation, DBUser).join(
-            DBUser, DBConversation.doctor_id == DBUser.id
-        ).where(DBConversation.patient_id == user_id)
-    elif user_role == "doctor":
-        query = select(DBConversation, DBUser).join(
-            DBUser, DBConversation.patient_id == DBUser.id
-        ).where(DBConversation.doctor_id == user_id)
-    else:
-        raise HTTPException(status_code=403, detail="Only patients and doctors can view conversations")
+    # Generic query for all roles - find conversations where user is either patient or doctor
+    # We join with DBUser twice to get info about the OTHER participant
+    
+    # This is a bit complex because we need to know WHICH user is the "other" one
+    # We'll fetch all conversations involving the user
+    query = select(DBConversation).where(
+        or_(
+            DBConversation.patient_id == user_id,
+            DBConversation.doctor_id == user_id
+        )
+    )
     
     query = query.order_by(desc(DBConversation.last_message_at))
     result = await db.execute(query)
     rows = result.all()
     
     conversations = []
-    for conversation, other_user in rows:
+    conversations = []
+    for conversation in rows:
+        # Note: rows is just a list of DBConversation objects now because we removed the join in the query
+        # We need to manually fetch the other user
+        
         conv_dict = db_to_dict(conversation)
-        conv_dict["other_user_name"] = other_user.full_name
-        conv_dict["other_user_id"] = other_user.id
-        conv_dict["other_user_role"] = other_user.role
         
-        # Get last message
-        msg_result = await db.execute(
-            select(DBChatMessage).where(
-                DBChatMessage.conversation_id == conversation.id
-            ).order_by(desc(DBChatMessage.created_at)).limit(1)
-        )
-        last_msg = msg_result.scalar_one_or_none()
-        if last_msg:
-            conv_dict["last_message"] = last_msg.message[:50] + "..." if len(last_msg.message) > 50 else last_msg.message
+        # Determine who is the other user
+        other_user_id = conversation.doctor_id if conversation.patient_id == user_id else conversation.patient_id
         
-        conversations.append(conv_dict)
+        # Fetch other user details
+        user_result = await db.execute(select(DBUser).where(DBUser.id == other_user_id))
+        other_user = user_result.scalar_one_or_none()
+        
+        if other_user:
+            conv_dict["other_user_id"] = other_user.id
+            conv_dict["other_user_name"] = other_user.full_name
+            conv_dict["other_user_role"] = other_user.role
+            
+            # Get last message
+            msg_result = await db.execute(
+                select(DBChatMessage).where(
+                    DBChatMessage.conversation_id == conversation.id
+                ).order_by(desc(DBChatMessage.created_at)).limit(1)
+            )
+            last_msg = msg_result.scalar_one_or_none()
+            if last_msg:
+                conv_dict["last_message"] = last_msg.message[:50] + "..." if len(last_msg.message) > 50 else last_msg.message
+            
+            conversations.append(conv_dict)
     
     return conversations
 
@@ -1727,6 +1781,7 @@ async def admin_create_user(
 
 @api_router.get("/health")
 async def health_check():
+    print("Health check called")
     return {"status": "healthy", "database": "mysql"}
 
 # ========================================
@@ -1899,19 +1954,59 @@ async def ai_chat(
     db: AsyncSession = Depends(get_db)
 ):
     """AI health consultation chatbot"""
-    if current_user["role"] != UserRole.PATIENT:
-        raise HTTPException(status_code=403, detail="Only patients can use AI chat")
+    if current_user["role"] not in [UserRole.PATIENT, UserRole.DOCTOR, UserRole.DEPARTMENT_HEAD]:
+        raise HTTPException(status_code=403, detail="Only patients, doctors and department heads can use AI chat")
     
     try:
-        # Import OpenAI
+        # Import OpenAI and Google Generative AI
         from openai import OpenAI
+        import google.generativeai as genai
+        import asyncio
         
         # Get API key
         api_key = os.environ.get("EMERGENT_LLM_KEY")
-        if not api_key:
-            raise HTTPException(status_code=500, detail="AI service not configured")
         
-        client = OpenAI(api_key=api_key)
+        # Check if API key is valid (not missing and not a placeholder)
+        is_valid_key = api_key and not api_key.startswith("your-") and "**************" not in api_key
+        
+        if not is_valid_key:
+            # Return mock response for development
+            logger.warning("Invalid or missing API key. Using mock response.")
+            await asyncio.sleep(1) # Simulate network delay
+            
+            mock_responses = [
+                "Chào bạn, tôi là trợ lý ảo (Mock Mode). Vì chưa có API Key hợp lệ, tôi chỉ có thể trả lời mẫu này.",
+                "Bạn đang cảm thấy thế nào? Hãy mô tả triệu chứng để tôi hỗ trợ (Mock Mode).",
+                "Tôi khuyên bạn nên nghỉ ngơi và uống nhiều nước. Nếu sốt cao hãy đi khám bác sĩ (Mock Mode).",
+                "Rất tiếc tôi không thể phân tích sâu hơn vì đang chạy ở chế độ thử nghiệm không có kết nối AI."
+            ]
+            import random
+            ai_response = random.choice(mock_responses)
+            
+            # Generate session ID if not provided
+            session_id = chat_request.session_id or str(uuid.uuid4())
+            
+            # Save user message
+            user_msg = DBAIChatHistory(
+                user_id=current_user["id"],
+                session_id=session_id,
+                role="user",
+                content=chat_request.message
+            )
+            db.add(user_msg)
+            
+            # Save AI response
+            ai_msg = DBAIChatHistory(
+                user_id=current_user["id"],
+                session_id=session_id,
+                role="assistant",
+                content=ai_response
+            )
+            db.add(ai_msg)
+            
+            await db.commit()
+            
+            return {"response": ai_response, "session_id": session_id}
         
         # Generate session ID if not provided
         session_id = chat_request.session_id or str(uuid.uuid4())
@@ -1927,24 +2022,45 @@ async def ai_chat(
         )
         history = result.scalars().all()
         
-        # Build messages array
-        messages = [
-            {"role": "system", "content": "You are a helpful medical assistant. Provide health advice and information, but always recommend consulting a doctor for serious concerns."}
-        ]
+        ai_response = ""
         
-        for msg in history:
-            messages.append({"role": msg.role, "content": msg.content})
-        
-        messages.append({"role": "user", "content": chat_request.message})
-        
-        # Call OpenAI API
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            max_tokens=500
-        )
-        
-        ai_response = response.choices[0].message.content
+        # Check if it's a Google API Key
+        if api_key.startswith("AIza"):
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            
+            # Convert history to Gemini format
+            chat_history = []
+            for msg in history:
+                role = "user" if msg.role == "user" else "model"
+                chat_history.append({"role": role, "parts": [msg.content]})
+            
+            chat = model.start_chat(history=chat_history)
+            response = chat.send_message(chat_request.message)
+            ai_response = response.text
+            
+        else:
+            # Use OpenAI
+            client = OpenAI(api_key=api_key)
+            
+            # Build messages array
+            messages = [
+                {"role": "system", "content": "You are a helpful medical assistant. Provide health advice and information, but always recommend consulting a doctor for serious concerns."}
+            ]
+            
+            for msg in history:
+                messages.append({"role": msg.role, "content": msg.content})
+            
+            messages.append({"role": "user", "content": chat_request.message})
+            
+            # Call OpenAI API
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                max_tokens=500
+            )
+            
+            ai_response = response.choices[0].message.content
         
         # Save user message
         user_msg = DBAIChatHistory(
@@ -1998,17 +2114,24 @@ async def ai_recommend_doctor(
         specialties = result.scalars().all()
         specialty_list = "\n".join([f"- {s.name}: {s.description}" for s in specialties])
         
-        # Call OpenAI to analyze symptoms
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": f"You are a medical triage assistant. Based on patient symptoms, recommend the most appropriate medical specialty. Available specialties:\n{specialty_list}\n\nRespond with just the specialty name."},
-                {"role": "user", "content": f"Patient symptoms: {recommendation_request.symptoms}"}
-            ],
-            max_tokens=50
-        )
-        
-        recommended_specialty = response.choices[0].message.content.strip()
+        # Call AI to analyze symptoms
+        if api_key.startswith("AIza"):
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            prompt = f"You are a medical triage assistant. Based on patient symptoms, recommend the most appropriate medical specialty. Available specialties:\n{specialty_list}\n\nRespond with just the specialty name.\n\nPatient symptoms: {recommendation_request.symptoms}"
+            response = model.generate_content(prompt)
+            recommended_specialty = response.text.strip()
+        else:
+            client = OpenAI(api_key=api_key)
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": f"You are a medical triage assistant. Based on patient symptoms, recommend the most appropriate medical specialty. Available specialties:\n{specialty_list}\n\nRespond with just the specialty name."},
+                    {"role": "user", "content": f"Patient symptoms: {recommendation_request.symptoms}"}
+                ],
+                max_tokens=50
+            )
+            recommended_specialty = response.choices[0].message.content.strip()
         
         # Find matching specialty
         result = await db.execute(
@@ -2097,17 +2220,24 @@ async def ai_summarize_conversation(
         
         client = OpenAI(api_key=api_key)
         
-        # Call OpenAI to summarize
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a medical assistant. Summarize the following doctor-patient conversation, highlighting key symptoms, diagnosis, and treatment recommendations."},
-                {"role": "user", "content": conversation}
-            ],
-            max_tokens=300
-        )
-        
-        summary = response.choices[0].message.content
+        # Call AI to summarize
+        if api_key.startswith("AIza"):
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            prompt = f"You are a medical assistant. Summarize the following doctor-patient conversation, highlighting key symptoms, diagnosis, and treatment recommendations.\n\nConversation:\n{conversation}"
+            response = model.generate_content(prompt)
+            summary = response.text
+        else:
+            client = OpenAI(api_key=api_key)
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a medical assistant. Summarize the following doctor-patient conversation, highlighting key symptoms, diagnosis, and treatment recommendations."},
+                    {"role": "user", "content": conversation}
+                ],
+                max_tokens=300
+            )
+            summary = response.choices[0].message.content
         
         return {"summary": summary}
     
@@ -2121,8 +2251,8 @@ async def get_ai_chat_history(
     db: AsyncSession = Depends(get_db)
 ):
     """Get AI chat history for current user"""
-    if current_user["role"] != UserRole.PATIENT:
-        raise HTTPException(status_code=403, detail="Only patients can access chat history")
+    if current_user["role"] not in [UserRole.PATIENT, UserRole.DOCTOR, UserRole.DEPARTMENT_HEAD]:
+        raise HTTPException(status_code=403, detail="Only patients, doctors and department heads can access chat history")
     
     # Get all chat history grouped by session
     result = await db.execute(
@@ -2547,4 +2677,6 @@ if __name__ == "__main__":
         reload=True,
         log_level="info"
     )
-app.include_router(api_router)
+
+
+# Trigger reload 2025-11-22

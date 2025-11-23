@@ -143,4 +143,7 @@ async def create_sample_data():
         print("\n✅ Sample data created successfully!\n")
 
 if __name__ == "__main__":
+    import os
+    if os.name == 'nt':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(create_sample_data())

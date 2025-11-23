@@ -7,7 +7,7 @@ from pathlib import Path
 from datetime import datetime
 from fastapi import UploadFile, HTTPException
 
-UPLOAD_DIR = Path("/app/backend/uploads/chat_images")
+UPLOAD_DIR = Path(__file__).parent / "uploads" / "chat_images"
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}
 

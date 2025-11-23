@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { AuthContext, API } from '@/App';
+import { AuthContext } from '@/contexts/AuthContext';
+import { API } from '@/config';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,14 +90,16 @@ export default function DoctorProfile() {
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{user?.full_name}</h2>
                 <p className="text-gray-600 dark:text-gray-300">{user?.email}</p>
-                <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                  profile.status === 'approved' ? 'bg-green-100 text-green-800' :
-                  profile.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {profile.status === 'approved' ? 'Đã duyệt' : 
-                   profile.status === 'pending' ? 'Chờ duyệt' : 'Đã từ chối'}
-                </span>
+                {profile && (
+                  <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
+                    profile.status === 'approved' ? 'bg-green-100 text-green-800' :
+                    profile.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {profile.status === 'approved' ? 'Đã duyệt' : 
+                     profile.status === 'pending' ? 'Chờ duyệt' : 'Đã từ chối'}
+                  </span>
+                )}
               </div>
             </div>
 

@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { API } from '@/App';
+import { API } from '@/config';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { Calendar, ArrowLeft } from 'lucide-react';
