@@ -1,4 +1,4 @@
-const { sequelize, User, Specialty, Doctor, Patient, Appointment, AdminPermission } = require('./models');
+const { sequelize, User, Specialty, Doctor, Patient, Appointment, AdminPermission, Payment } = require('./models');
 const { fakerVI: faker } = require('@faker-js/faker');
 const bcrypt = require('bcryptjs');
 
@@ -160,6 +160,60 @@ async function seed() {
       });
     }
     console.log('Appointments created');
+
+    // Payments
+    const allAppointments = await Appointment.findAll();
+    for (const appt of allAppointments) {
+      if (appt.status === 'completed' || appt.status === 'confirmed') {
+        const doctor = await Doctor.findOne({ where: { user_id: appt.doctor_id } });
+        const fee = doctor ? doctor.consultation_fee : 500000;
+        
+        // 70% chance of having a payment record
+        if (Math.random() > 0.3) {
+           await Payment.create({
+            appointment_id: appt.id,
+            patient_id: appt.patient_id,
+            amount: fee,
+            payment_method: faker.helpers.arrayElement(['mock_card', 'mock_wallet', 'mock_bank']),
+            transaction_id: faker.string.uuid(),
+            status: appt.status === 'completed' ? 'completed' : 'pending',
+            payment_date: appt.status === 'completed' ? appt.appointment_date : null
+          });
+        }
+      }
+    }
+    console.log('Payments created');
+
+    // Conversations & Messages
+    const { Conversation, Message } = require('./models');
+    
+    // Create a conversation between patient1 and doctor1
+    const patient1 = patients[0];
+    const doctor1 = doctors[0];
+    
+    if (patient1 && doctor1) {
+      const conversation = await Conversation.create({
+        patient_id: patient1.user_id,
+        doctor_id: doctor1.user_id,
+        status: 'active'
+      });
+
+      await Message.create({
+        conversation_id: conversation.id,
+        sender_id: doctor1.user_id,
+        message: `Xin chào ${patient1.User?.full_name || 'bạn'}, tôi có thể giúp gì cho bạn?`,
+        is_read: true
+      });
+
+      await Message.create({
+        conversation_id: conversation.id,
+        sender_id: patient1.user_id,
+        message: 'Chào bác sĩ, tôi muốn hỏi về lịch khám.',
+        is_read: true
+      });
+      
+      console.log('Sample conversation created');
+    }
 
     console.log('Seeding completed successfully!');
     process.exit(0);

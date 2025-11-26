@@ -32,9 +32,10 @@ export default function DoctorConversationChat() {
     fetchConversation();
     fetchMessages();
     
-    // Poll for new messages every 3 seconds
+    // Poll for new messages and status every 3 seconds
     pollIntervalRef.current = setInterval(() => {
       fetchMessages(true); // silent fetch
+      fetchConversation(true); // silent fetch for status update
     }, 3000);
     
     return () => {
@@ -52,7 +53,7 @@ export default function DoctorConversationChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const fetchConversation = async () => {
+  const fetchConversation = async (silent = false) => {
     try {
       const response = await axios.get(`${API}/conversations/my`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -61,7 +62,9 @@ export default function DoctorConversationChat() {
       setConversation(conv);
     } catch (error) {
       console.error('Error fetching conversation:', error);
-      toast.error('Không thể tải thông tin cuộc hội thoại');
+      if (!silent) {
+        toast.error('Không thể tải thông tin cuộc hội thoại');
+      }
     }
   };
 
@@ -186,6 +189,20 @@ export default function DoctorConversationChat() {
     );
   }
 
+  const formatLastActive = (dateString) => {
+    if (!dateString) return 'Vừa truy cập';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 5) return 'Đang hoạt động';
+    if (diffMins < 60) return `Hoạt động ${diffMins} phút trước`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `Hoạt động ${diffHours} giờ trước`;
+    return `Hoạt động ${date.toLocaleDateString('vi-VN')}`;
+  };
+
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-gray-900">
       {/* Header */}
@@ -205,9 +222,11 @@ export default function DoctorConversationChat() {
           </div>
           <div>
             <h2 className="font-bold text-white text-lg">
-              {conversation?.other_user_name || 'Bác sĩ'}
+              {conversation?.other_user_name || 'Đang tải...'}
             </h2>
-            <p className="text-white/80 text-sm">Hoạt động 7/22/2025</p>
+            <p className="text-white/80 text-sm">
+              {conversation ? formatLastActive(conversation.last_message_at) : '...'}
+            </p>
           </div>
         </div>
       </div>
@@ -303,7 +322,7 @@ function MessageBubble({ message, currentUserId }) {
       <div className={`max-w-[70%] ${isOwn ? 'order-2' : 'order-1'}`}>
         {!isOwn && (
           <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 ml-2">
-            {message.sender_name || 'BITHUB'}
+            {message.sender_name || 'Người dùng'}
           </p>
         )}
         
@@ -329,12 +348,19 @@ function MessageBubble({ message, currentUserId }) {
             <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
           )}
           
-          <p className={`text-xs mt-1 ${isOwn ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}`}>
-            {new Date(message.created_at).toLocaleTimeString('vi-VN', {
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
-          </p>
+          <div className={`flex items-center justify-end gap-1 mt-1`}>
+            <p className={`text-xs ${isOwn ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}`}>
+              {new Date(message.createdAt).toLocaleTimeString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </p>
+            {isOwn && (
+              <span className="text-[10px] text-white/70 ml-1">
+                {message.is_read ? '• Đã xem' : '• Đã gửi'}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>

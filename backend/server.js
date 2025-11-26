@@ -18,6 +18,11 @@ app.use('/api/specialties', require('./routes/specialtyRoutes'));
 app.use('/api/doctors', require('./routes/doctorRoutes'));
 app.use('/api/profile', require('./routes/userRoutes'));
 app.use('/api/appointments', require('./routes/appointmentRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/conversations', require('./routes/conversationRoutes'));
+app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/patients', require('./routes/patientRoutes'));
+app.use('/api/ai', require('./routes/aiRoutes'));
 
 // Database connection and server start
 sequelize.authenticate()

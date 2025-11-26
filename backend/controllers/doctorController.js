@@ -104,3 +104,16 @@ exports.updateSchedule = async (req, res) => {
     res.status(500).json({ detail: 'Internal server error' });
   }
 };
+
+exports.getDepartmentHeads = async (req, res) => {
+  try {
+    const heads = await User.findAll({
+      where: { role: 'department_head' },
+      attributes: ['id', 'full_name', 'email', 'phone', 'address']
+    });
+    res.json(heads);
+  } catch (error) {
+    console.error('Get department heads error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+};

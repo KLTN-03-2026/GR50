@@ -23,9 +23,13 @@ exports.create = async (req, res) => {
       status: 'pending'
     });
 
-    // Auto create payment (mock)
-    // Note: Payment model not fully defined in my steps but referenced in python code.
-    // I'll skip payment creation for now or just log it.
+    // Auto create payment
+    await Payment.create({
+      appointment_id: appointment.id,
+      patient_id: req.user.id,
+      amount: doctor.consultation_fee,
+      status: 'pending'
+    });
     
     const result = await Appointment.findByPk(appointment.id, {
       include: [

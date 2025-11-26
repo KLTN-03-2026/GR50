@@ -23,7 +23,18 @@ export default function DoctorSchedule() {
   const fetchSchedule = async () => {
     try {
       const response = await axios.get(`${API}/doctors/${user.id}`);
-      setSlots(response.data.available_slots || []);
+      let slotsData = response.data.available_slots;
+      
+      if (typeof slotsData === 'string') {
+        try {
+          slotsData = JSON.parse(slotsData);
+        } catch (e) {
+          console.error('Error parsing slots data:', e);
+          slotsData = [];
+        }
+      }
+      
+      setSlots(Array.isArray(slotsData) ? slotsData : []);
     } catch (error) {
       toast.error('Không thể tải lịch làm việc');
     } finally {
