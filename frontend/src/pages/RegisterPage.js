@@ -15,7 +15,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [specialties, setSpecialties] = useState([]);
@@ -50,6 +50,13 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      // Validate specialty for doctor
+      if (formData.role === 'doctor' && !formData.specialty_id) {
+        toast.error(language === 'vi' ? 'Vui lòng chọn chuyên khoa' : 'Please select a specialty');
+        setLoading(false);
+        return;
+      }
+
       // Prepare data - remove specialty_id if not doctor
       const submitData = { ...formData };
       if (formData.role !== 'doctor') {

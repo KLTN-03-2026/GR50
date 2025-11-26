@@ -39,7 +39,7 @@ exports.register = async (req, res) => {
     if (role === 'doctor' || role === 'department_head') {
       await Doctor.create({
         user_id: user.id,
-        specialty_id,
+        specialty_id: specialty_id || null,
         experience_years: experience_years || 0,
         consultation_fee: consultation_fee || 0,
         bio,
