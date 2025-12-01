@@ -59,6 +59,7 @@ const webpackConfig = {
             '**/dist/**',
             '**/coverage/**',
             '**/public/**',
+            '**/System Volume Information/**',
           ],
         };
       }

@@ -5,25 +5,25 @@ import { API } from '@/config';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Send, Image as ImageIcon, X, User } from 'lucide-react';
+import { ArrowLeft, Send, Image as ImageIcon, X, User, Video } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function PatientConversationChat() {
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const { token, user } = useContext(AuthContext);
-  
+
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [conversation, setConversation] = useState(null);
-  
+
   // Image upload states
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
-  
+
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const pollIntervalRef = useRef(null);
@@ -31,13 +31,13 @@ export default function PatientConversationChat() {
   useEffect(() => {
     fetchConversation();
     fetchMessages();
-    
+
     // Poll for new messages and status every 3 seconds
     pollIntervalRef.current = setInterval(() => {
       fetchMessages(true); // silent fetch
       fetchConversation(true); // silent fetch for status update
     }, 3000);
-    
+
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
@@ -91,12 +91,12 @@ export default function PatientConversationChat() {
         toast.error('Kích thước file phải nhỏ hơn 10MB');
         return;
       }
-      
+
       if (!file.type.startsWith('image/')) {
         toast.error('Chỉ chấp nhận file hình ảnh');
         return;
       }
-      
+
       setSelectedImage(file);
       setImagePreview(URL.createObjectURL(file));
     }
@@ -112,19 +112,19 @@ export default function PatientConversationChat() {
 
   const uploadImage = async () => {
     if (!selectedImage) return null;
-    
+
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', selectedImage);
-      
+
       const response = await axios.post(`${API}/chat/upload-image`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
-      
+
       return response.data.image_url;
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -137,16 +137,16 @@ export default function PatientConversationChat() {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    
+
     if (!newMessage.trim() && !selectedImage) {
       return;
     }
-    
+
     setSending(true);
-    
+
     try {
       let imageUrl = null;
-      
+
       // Upload image if selected
       if (selectedImage) {
         imageUrl = await uploadImage();
@@ -156,7 +156,7 @@ export default function PatientConversationChat() {
           return;
         }
       }
-      
+
       // Send message
       await axios.post(
         `${API}/conversations/${conversationId}/send`,
@@ -166,7 +166,7 @@ export default function PatientConversationChat() {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       setNewMessage('');
       handleRemoveImage();
       fetchMessages(true);
@@ -176,6 +176,13 @@ export default function PatientConversationChat() {
     } finally {
       setSending(false);
     }
+  };
+
+  const handleVideoCall = () => {
+    const roomName = `bookingcare-conversation-${conversationId}`;
+    const domain = 'meet.jit.si';
+    const url = `https://${domain}/${roomName}`;
+    window.open(url, '_blank');
   };
 
   if (loading) {
@@ -195,7 +202,7 @@ export default function PatientConversationChat() {
     const now = new Date();
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
-    
+
     if (diffMins < 5) return 'Đang hoạt động';
     if (diffMins < 60) return `Hoạt động ${diffMins} phút trước`;
     const diffHours = Math.floor(diffMins / 60);
@@ -207,15 +214,15 @@ export default function PatientConversationChat() {
     <div className="flex flex-col h-screen bg-white dark:bg-gray-900">
       {/* Header */}
       <div className="bg-gradient-to-r from-teal-500 to-cyan-500 p-4 flex items-center gap-4 shadow-lg">
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => navigate('/patient/messages', { state: { activeTab: 'doctor' } })}
           className="text-white hover:bg-white/20"
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        
+
         <div className="flex items-center gap-3 flex-1">
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
             <User className="w-6 h-6 text-white" />
@@ -229,6 +236,16 @@ export default function PatientConversationChat() {
             </p>
           </div>
         </div>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleVideoCall}
+          className="text-white hover:bg-white/20 rounded-full"
+          title="Gọi video"
+        >
+          <Video className="w-6 h-6" />
+        </Button>
       </div>
 
       {/* Messages */}
@@ -252,9 +269,9 @@ export default function PatientConversationChat() {
       {imagePreview && (
         <div className="px-4 py-2 bg-gray-100 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
           <div className="relative inline-block">
-            <img 
-              src={imagePreview} 
-              alt="Preview" 
+            <img
+              src={imagePreview}
+              alt="Preview"
               className="h-20 w-20 object-cover rounded-lg"
             />
             <button
@@ -277,7 +294,7 @@ export default function PatientConversationChat() {
             accept="image/*"
             className="hidden"
           />
-          
+
           <Button
             type="button"
             variant="ghost"
@@ -288,7 +305,7 @@ export default function PatientConversationChat() {
           >
             <ImageIcon className="w-5 h-5" />
           </Button>
-          
+
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
@@ -296,7 +313,7 @@ export default function PatientConversationChat() {
             disabled={sending || uploading}
             className="flex-1"
           />
-          
+
           <Button
             type="submit"
             disabled={(!newMessage.trim() && !selectedImage) || sending || uploading}
@@ -316,7 +333,7 @@ export default function PatientConversationChat() {
 
 function MessageBubble({ message, currentUserId }) {
   const isOwn = message.sender_id === currentUserId;
-  
+
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[70%] ${isOwn ? 'order-2' : 'order-1'}`}>
@@ -325,13 +342,12 @@ function MessageBubble({ message, currentUserId }) {
             {message.sender_name || 'BITHUB'}
           </p>
         )}
-        
+
         <div
-          className={`rounded-2xl px-4 py-2 ${
-            isOwn
+          className={`rounded-2xl px-4 py-2 ${isOwn
               ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-tr-none'
               : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md rounded-tl-none'
-          }`}
+            }`}
         >
           {message.image_url && (
             <div className="mb-2">
@@ -343,11 +359,11 @@ function MessageBubble({ message, currentUserId }) {
               />
             </div>
           )}
-          
+
           {message.message && (
             <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
           )}
-          
+
           <div className={`flex items-center justify-end gap-1 mt-1`}>
             <p className={`text-xs ${isOwn ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}`}>
               {new Date(message.createdAt).toLocaleTimeString('vi-VN', {

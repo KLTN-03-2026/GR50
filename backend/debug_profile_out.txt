@@ -1,0 +1,28 @@
+Starting debug...
+Fetching profile for user_id: 4
+Doctor found: {
+  "id": 2,
+  "user_id": 4,
+  "specialty_id": 1,
+  "experience_years": 8,
+  "fee": "0.00",
+  "rating": "0.00",
+  "bio": "Bác sĩ BS. Hà Hồng Nhung là một chuyên gia hàng đầu trong lĩnh vực Tim mạch với nhiều năm kinh nghiệm.",
+  "status": "approved",
+  "available_slots": null,
+  "createdAt": "2025-11-26T02:33:54.000Z",
+  "updatedAt": "2025-11-26T02:33:54.000Z",
+  "User": {
+    "full_name": "BS. Hà Hồng Nhung",
+    "email": "doctor2@test.com",
+    "phone": "026 6888 7376",
+    "address": "525 Tô Ranch",
+    "avatar": "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=1000&auto=format&fit=crop"
+  },
+  "Specialty": {
+    "name": "Tim mạch"
+  }
+}
+Fetching reviews...
+Found 0 reviews.
+Done.

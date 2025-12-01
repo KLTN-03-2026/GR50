@@ -15,12 +15,28 @@ const Patient = sequelize.define('Patient', {
       model: User,
       key: 'id'
     }
+  },
+  date_of_birth: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  gender: {
+    type: DataTypes.STRING(10),
+    allowNull: true
+  },
+  insurance_number: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
+  medical_history: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   timestamps: false,
   tableName: 'patients'
 });
 
-Patient.belongsTo(User, { foreignKey: 'user_id' });
+
 
 module.exports = Patient;

@@ -1,12 +1,11 @@
 import React, { useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Calendar, Users, Clock, Home, User, BarChart, FileText, MessageSquare, Settings, Shield, UserPlus, LogOut, CreditCard, MessagesSquare } from 'lucide-react';
+import { Calendar, Users, Clock, Home, User, BarChart, FileText, MessageSquare, Settings, Shield, UserPlus, LogOut, CreditCard, MessagesSquare, Activity, Brain } from 'lucide-react';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
-
 export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -24,15 +23,20 @@ export default function Layout({ children }) {
     { path: '/patient/search-doctors', icon: Users, label: t('findDoctor') },
     { path: '/patient/appointments', icon: Calendar, label: t('appointments') },
     { path: '/patient/payments', icon: CreditCard, label: t('payments') },
+    { path: '/patient/medical-records', icon: FileText, label: 'Hồ sơ bệnh án' },
+    { path: '/patient/ai-consultation', icon: Brain, label: 'Tư vấn AI' },
+    { path: '/patient/ai-history', icon: Activity, label: 'Lịch sử AI' },
     { path: '/patient/messages', icon: MessageSquare, label: 'Tin nhắn' }
   ];
 
   const doctorLinks = [
     { path: '/doctor/dashboard', icon: Home, label: t('home') },
     { path: '/doctor/appointments', icon: Calendar, label: t('appointments') },
+    { path: '/doctor/medical-records', icon: FileText, label: 'Hồ sơ bệnh án' },
     { path: '/doctor/conversations', icon: MessagesSquare, label: 'Tin nhắn' },
     { path: '/doctor/profile', icon: User, label: t('profile') },
-    { path: '/doctor/schedule', icon: Clock, label: t('schedule') }
+    { path: '/doctor/schedule', icon: Clock, label: t('schedule') },
+    { path: '/doctor/ai-diagnoses', icon: Brain, label: 'Chẩn đoán AI' }
   ];
 
   let adminLinks = [
@@ -41,13 +45,17 @@ export default function Layout({ children }) {
     { path: '/admin/doctors', icon: Users, label: t('doctors') },
     { path: '/admin/patients', icon: FileText, label: t('patients') },
     { path: '/admin/stats', icon: BarChart, label: t('stats') },
-    { path: '/admin/payments', icon: CreditCard, label: t('payments') }
+    { path: '/admin/payments', icon: CreditCard, label: t('payments') },
+    { path: '/admin/reports', icon: FileText, label: 'Báo cáo' },
+    { path: '/admin/ai-diagnoses', icon: Brain, label: 'Chẩn đoán AI' },
+    { path: '/admin/settings', icon: Settings, label: 'Cài đặt hệ thống' }
   ];
 
   // Add Admins management link if user has permission
   if (role === 'admin' && user?.admin_permissions?.can_create_admins) {
     adminLinks.push({ path: '/admin/admins', icon: Shield, label: t('admins') });
   }
+
 
   const departmentHeadLinks = [
     { path: '/department-head/dashboard', icon: Home, label: t('home') },
@@ -57,10 +65,10 @@ export default function Layout({ children }) {
     { path: '/department-head/conversations', icon: MessagesSquare, label: 'Tin nhắn' }
   ];
 
-  const links = role === 'patient' ? patientLinks 
-    : role === 'doctor' ? doctorLinks 
-    : role === 'department-head' ? departmentHeadLinks
-    : role === 'admin' ? adminLinks : [];
+  const links = role === 'patient' ? patientLinks
+    : role === 'doctor' ? doctorLinks
+      : role === 'department-head' ? departmentHeadLinks
+        : role === 'admin' ? adminLinks : [];
 
   if (links.length === 0) {
     return <>{children}</>;
@@ -71,11 +79,11 @@ export default function Layout({ children }) {
       {/* Sidebar */}
       <aside className="w-64 bg-white dark:bg-gray-800 shadow-xl fixed h-full z-10 flex flex-col">
         <div className="p-6 flex-1">
-          <Link to="/" className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-gray-800 dark:text-white">Đặt Lịch Khám Bệnh</span>
+          <Link to="/" className="flex items-center gap-2 mb-8 justify-center">
+            <img src="/logo.png" alt="BookingCare Logo" className="h-12 w-auto object-contain" />
+            <span className="text-xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent animate-pulse">
+              BookingCare
+            </span>
           </Link>
 
           <nav className="space-y-2">
@@ -87,11 +95,10 @@ export default function Layout({ children }) {
                   key={link.path}
                   to={link.path}
                   data-testid={`nav-${link.path.split('/').pop()}`}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                    isActive
-                      ? 'bg-gradient-to-r from-cyan-400 to-cyan-600 text-white shadow-lg'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
+                    ? 'bg-gradient-to-r from-cyan-400 to-cyan-600 text-white shadow-lg'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   <span className="font-medium">{link.label}</span>
@@ -117,7 +124,7 @@ export default function Layout({ children }) {
             {t('logout')}
           </Button>
         </header>
-        
+
         {/* Page Content */}
         <div className="flex-1 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
           {children}

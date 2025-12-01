@@ -24,28 +24,39 @@ const Appointment = sequelize.define('Appointment', {
       key: 'id'
     }
   },
-  appointment_date: {
-    type: DataTypes.DATEONLY,
-    allowNull: false
+  schedule_time: {
+    type: DataTypes.DATE,
+    allowNull: true
   },
-  appointment_time: {
-    type: DataTypes.TIME,
-    allowNull: false
+  type: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
+  status: {
+    type: DataTypes.STRING(20),
+    defaultValue: 'pending'
+  },
+  total_fee: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
   },
   symptoms: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  status: {
-    type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'completed'),
-    defaultValue: 'pending'
+  ai_diagnosis: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  final_diagnosis: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   timestamps: true,
   tableName: 'appointments'
 });
 
-Appointment.belongsTo(User, { as: 'Patient', foreignKey: 'patient_id' });
-Appointment.belongsTo(User, { as: 'Doctor', foreignKey: 'doctor_id' });
+
 
 module.exports = Appointment;

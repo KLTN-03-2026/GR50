@@ -41,7 +41,7 @@ exports.getPaymentById = async (req, res) => {
     const userId = req.user.id;
 
     const payment = await Payment.findOne({
-      where: { 
+      where: {
         payment_id: id,
         patient_id: userId
       },
@@ -69,7 +69,8 @@ exports.getPaymentById = async (req, res) => {
       payment_method: payment.payment_method,
       transaction_id: payment.transaction_id,
       created_at: payment.createdAt,
-      payment_date: payment.payment_date
+      payment_date: payment.payment_date,
+      doctor_id: payment.Appointment?.doctor_id
     });
 
   } catch (error) {
@@ -85,7 +86,7 @@ exports.processPayment = async (req, res) => {
     const userId = req.user.id;
 
     const payment = await Payment.findOne({
-      where: { 
+      where: {
         payment_id: id,
         patient_id: userId
       }

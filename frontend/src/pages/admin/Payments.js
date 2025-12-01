@@ -68,6 +68,16 @@ export default function AdminPayments() {
     );
   }
 
+  if (!data) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6 flex items-center justify-center">
+          <p className="text-red-500">Không thể tải dữ liệu. Vui lòng thử lại sau.</p>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">

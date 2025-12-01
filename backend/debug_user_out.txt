@@ -1,0 +1,6 @@
+Starting user debug...
+Fetching user by id: 4
+User found: doctor2
+Fetching user by email...
+Admin found: admin
+Done.

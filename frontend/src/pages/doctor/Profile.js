@@ -91,13 +91,12 @@ export default function DoctorProfile() {
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{user?.full_name}</h2>
                 <p className="text-gray-600 dark:text-gray-300">{user?.email}</p>
                 {profile && (
-                  <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                    profile.status === 'approved' ? 'bg-green-100 text-green-800' :
+                  <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${profile.status === 'approved' ? 'bg-green-100 text-green-800' :
                     profile.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {profile.status === 'approved' ? 'Đã duyệt' : 
-                     profile.status === 'pending' ? 'Chờ duyệt' : 'Đã từ chối'}
+                      'bg-red-100 text-red-800'
+                    }`}>
+                    {profile.status === 'approved' ? 'Đã duyệt' :
+                      profile.status === 'pending' ? 'Chờ duyệt' : 'Đã từ chối'}
                   </span>
                 )}
               </div>
@@ -162,6 +161,51 @@ export default function DoctorProfile() {
                 {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
               </Button>
             </form>
+          </div>
+
+          {/* Reviews Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 mt-8">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Đánh giá từ bệnh nhân</h2>
+
+            {profile?.reviews && profile.reviews.length > 0 ? (
+              <div className="space-y-6">
+                {profile.reviews.map((review) => (
+                  <div key={review.id} className="border-b border-gray-100 dark:border-gray-700 pb-6 last:border-0 last:pb-0">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                        {review.Patient?.avatar ? (
+                          <img src={review.Patient.avatar} alt={review.Patient.full_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-6 h-6 text-gray-500" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-bold text-gray-900 dark:text-white">{review.Patient?.full_name || 'Người dùng ẩn danh'}</h4>
+                            <div className="flex items-center gap-1 mt-1">
+                              {[...Array(5)].map((_, i) => (
+                                <svg key={i} className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                </svg>
+                              ))}
+                            </div>
+                          </div>
+                          <span className="text-sm text-gray-500">
+                            {new Date(review.createdAt).toLocaleDateString('vi-VN')}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-gray-600 dark:text-gray-300">{review.comment}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                Chưa có đánh giá nào từ bệnh nhân.
+              </div>
+            )}
           </div>
         </div>
       </div>

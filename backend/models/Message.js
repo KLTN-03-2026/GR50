@@ -7,9 +7,17 @@ const Message = sequelize.define('Message', {
     primaryKey: true,
     autoIncrement: true
   },
+  consultation_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'consultations',
+      key: 'id'
+    }
+  },
   conversation_id: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
     references: {
       model: 'conversations',
       key: 'id'
@@ -23,17 +31,13 @@ const Message = sequelize.define('Message', {
       key: 'id'
     }
   },
-  message: {
+  content: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  image_url: {
-    type: DataTypes.STRING,
+  type: {
+    type: DataTypes.STRING(20),
     allowNull: true
-  },
-  is_read: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
   }
 }, {
   timestamps: true,

@@ -43,6 +43,14 @@ const User = sequelize.define('User', {
   role: {
     type: DataTypes.ENUM('patient', 'doctor', 'department_head', 'admin'),
     defaultValue: 'patient'
+  },
+  status: {
+    type: DataTypes.STRING(20),
+    defaultValue: 'active'
+  },
+  avatar: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   timestamps: true,
@@ -50,3 +58,4 @@ const User = sequelize.define('User', {
 });
 
 module.exports = User;
+// Force reload

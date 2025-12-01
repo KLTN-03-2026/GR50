@@ -25,6 +25,7 @@ function AIChatTab() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -46,6 +47,31 @@ function AIChatTab() {
     } catch (error) {
       console.error('AI Chat error:', error);
       setMessages(prev => [...prev, { role: 'assistant', content: 'Xin lỗi, tôi đang gặp sự cố kết nối. Vui lòng thử lại sau.' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    if (!input.trim() || loading) return;
+
+    const userMessage = input.trim();
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const response = await axios.post(
+        `${API}/ai/analyze`,
+        { symptoms: userMessage },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const result = response.data.result;
+      setMessages(prev => [...prev, { role: 'assistant', content: result, isDiagnosis: true }]);
+    } catch (error) {
+      console.error('AI Analyze error:', error);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Xin lỗi, không thể phân tích lúc này.' }]);
     } finally {
       setLoading(false);
     }
@@ -85,11 +111,21 @@ function AIChatTab() {
             </div>
             <div className={`
               max-w-[80%] rounded-2xl px-6 py-3 text-base leading-relaxed
-              ${msg.role === 'user' 
-                ? 'bg-blue-600 text-white rounded-tr-none' 
+              ${msg.role === 'user'
+                ? 'bg-blue-600 text-white rounded-tr-none'
                 : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700 rounded-tl-none'}
             `}>
-              {msg.content}
+              <div className="whitespace-pre-wrap">{msg.content}</div>
+              {msg.isDiagnosis && (
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Button
+                    onClick={() => navigate('/patient/search-doctors', { state: { aiDiagnosis: msg.content } })}
+                    className="w-full bg-teal-500 hover:bg-teal-600 text-white"
+                  >
+                    Đặt lịch khám với kết quả này
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -107,21 +143,35 @@ function AIChatTab() {
 
       {/* Input */}
       <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-        <form onSubmit={handleSend} className="flex gap-3">
-          <Input 
+        <div className="flex gap-3">
+          <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Hỏi về triệu chứng, sức khỏe..."
+            placeholder="Mô tả triệu chứng để AI phân tích..."
             className="flex-1 h-12 text-base focus-visible:ring-teal-500"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend(e);
+              }
+            }}
           />
-          <Button 
-            type="submit" 
+          <Button
+            onClick={handleAnalyze}
+            disabled={!input.trim() || loading}
+            className="h-12 px-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl whitespace-nowrap"
+            title="Phân tích triệu chứng"
+          >
+            Phân tích
+          </Button>
+          <Button
+            onClick={handleSend}
             disabled={!input.trim() || loading}
             className="h-12 w-12 bg-teal-500 hover:bg-teal-600 text-white rounded-xl"
           >
             <Send className="w-5 h-5" />
           </Button>
-        </form>
+        </div>
       </div>
     </div>
   );
@@ -176,7 +226,7 @@ function DoctorConversationsTab() {
         { doctor_id: doctorId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       toast.success('Đã tạo cuộc hội thoại mới!');
       setShowDoctorSelector(false);
       navigate(`/patient/conversation/${response.data.id}`);
@@ -219,7 +269,7 @@ function DoctorConversationsTab() {
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Danh sách hội thoại</h2>
         <Dialog open={showDoctorSelector} onOpenChange={setShowDoctorSelector}>
           <DialogTrigger asChild>
-            <Button 
+            <Button
               onClick={openDoctorSelector}
               className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600"
             >
@@ -231,7 +281,7 @@ function DoctorConversationsTab() {
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold">Chọn bác sĩ để trò chuyện</DialogTitle>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -242,10 +292,10 @@ function DoctorConversationsTab() {
                   className="pl-10"
                 />
               </div>
-              
+
               <div className="max-h-[400px] overflow-y-auto space-y-2">
                 {filteredDoctors.map(doctor => (
-                  <div 
+                  <div
                     key={doctor.id}
                     className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-all border border-transparent hover:border-teal-500"
                     onClick={() => !creatingChat && handleNewConversation(doctor.id)}
@@ -295,7 +345,7 @@ function DoctorConversationsTab() {
       ) : (
         <div className="grid gap-4">
           {conversations.map(conversation => (
-            <div 
+            <div
               key={conversation.id}
               className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 hover:shadow-lg transition-all cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-teal-500"
               onClick={() => navigate(`/patient/conversation/${conversation.id}`)}
@@ -355,11 +405,10 @@ export default function PatientUnifiedChat() {
           <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-700 pb-1">
             <button
               onClick={() => setActiveTab('doctor')}
-              className={`pb-3 px-4 font-medium transition-all relative ${
-                activeTab === 'doctor' 
-                  ? 'text-teal-600 dark:text-teal-400' 
+              className={`pb-3 px-4 font-medium transition-all relative ${activeTab === 'doctor'
+                  ? 'text-teal-600 dark:text-teal-400'
                   : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
-              }`}
+                }`}
             >
               Trò chuyện với Bác sĩ
               {activeTab === 'doctor' && (
@@ -368,11 +417,10 @@ export default function PatientUnifiedChat() {
             </button>
             <button
               onClick={() => setActiveTab('ai')}
-              className={`pb-3 px-4 font-medium transition-all relative ${
-                activeTab === 'ai' 
-                  ? 'text-teal-600 dark:text-teal-400' 
+              className={`pb-3 px-4 font-medium transition-all relative ${activeTab === 'ai'
+                  ? 'text-teal-600 dark:text-teal-400'
                   : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
-              }`}
+                }`}
             >
               Trợ lý AI
               {activeTab === 'ai' && (

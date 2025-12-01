@@ -4,15 +4,23 @@ import { AuthContext } from '@/contexts/AuthContext';
 import { API } from '@/config';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MessageSquare } from 'lucide-react';
+import { Calendar, Clock, MessageSquare, Video } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { toast } from 'sonner';
+
+import ReviewDialog from '@/components/ReviewDialog';
+import { Star } from 'lucide-react';
 
 export default function PatientAppointments() {
   const navigate = useNavigate();
   const { token } = useContext(AuthContext);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [reviewDialog, setReviewDialog] = useState({
+    open: false,
+    doctorId: null,
+    doctorName: ''
+  });
 
   useEffect(() => {
     fetchAppointments();
@@ -29,6 +37,14 @@ export default function PatientAppointments() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOpenReview = (doctorId, doctorName) => {
+    setReviewDialog({
+      open: true,
+      doctorId,
+      doctorName
+    });
   };
 
   return (
@@ -56,17 +72,29 @@ export default function PatientAppointments() {
           ) : (
             <div className="space-y-4">
               {appointments.map(apt => (
-                <AppointmentCard key={apt.id} appointment={apt} navigate={navigate} />
+                <AppointmentCard
+                  key={apt.id}
+                  appointment={apt}
+                  navigate={navigate}
+                  onReview={() => handleOpenReview(apt.doctor_id, apt.doctor_name)}
+                />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      <ReviewDialog
+        open={reviewDialog.open}
+        onOpenChange={(open) => setReviewDialog(prev => ({ ...prev, open }))}
+        doctorId={reviewDialog.doctorId}
+        doctorName={reviewDialog.doctorName}
+      />
     </Layout>
   );
 }
 
-function AppointmentCard({ appointment, navigate }) {
+function AppointmentCard({ appointment, navigate, onReview }) {
   const statusColors = {
     pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
     confirmed: 'bg-green-100 text-green-800 border-green-200',
@@ -91,7 +119,7 @@ function AppointmentCard({ appointment, navigate }) {
               {statusText[appointment.status]}
             </span>
           </div>
-          
+
           <div className="space-y-2 mb-4">
             <p className="text-gray-600 dark:text-gray-300">
               <Calendar className="w-4 h-4 inline mr-2" />
@@ -111,17 +139,39 @@ function AppointmentCard({ appointment, navigate }) {
             )}
           </div>
         </div>
-        
-        {appointment.appointment_type === 'online' && (appointment.status === 'confirmed' || appointment.status === 'completed') && (
-          <Button 
-            data-testid={`chat-btn-${appointment.id}`}
-            onClick={() => navigate(`/patient/chat/${appointment.id}`)} 
-            className="bg-gradient-to-r from-teal-500 to-cyan-500"
-          >
-            <MessageSquare className="w-4 h-4 mr-2" />
-            Chat
-          </Button>
-        )}
+
+        <div className="flex flex-col gap-2">
+          {appointment.status === 'completed' && (
+            <Button
+              onClick={onReview}
+              variant="outline"
+              className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+            >
+              <Star className="w-4 h-4 mr-2" />
+              Đánh giá
+            </Button>
+          )}
+
+          {appointment.appointment_type === 'online' && (appointment.status === 'confirmed' || appointment.status === 'completed') && (
+            <>
+              <Button
+                data-testid={`chat-btn-${appointment.id}`}
+                onClick={() => navigate(`/patient/chat/${appointment.id}`)}
+                className="bg-gradient-to-r from-teal-500 to-cyan-500"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Chat
+              </Button>
+              <Button
+                onClick={() => window.open(`https://meet.jit.si/bookingcare-appointment-${appointment.id}`, '_blank')}
+                className="bg-gradient-to-r from-purple-500 to-pink-500"
+              >
+                <Video className="w-4 h-4 mr-2" />
+                Gọi Video
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

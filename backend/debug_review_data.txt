@@ -1,0 +1,6 @@
+Checking data for review...
+Doctor found: ID 1, UserID 3
+Patient found: ID 23, Name Phùng Vương Triều
+Found 2 appointments.
+- Appt ID 130, Status: confirmed
+- Appt ID 131, Status: pending

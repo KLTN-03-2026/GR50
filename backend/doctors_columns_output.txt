@@ -1,0 +1,1 @@
+Columns in doctors table: ["id","user_id","specialty_id","experience_years","bio","status","available_slots","createdAt","updatedAt","fee","rating"]

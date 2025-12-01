@@ -1,0 +1,1 @@
+Columns in users table: ["id","email","username","password","full_name","phone","date_of_birth","address","role","createdAt","updatedAt","avatar","status"]

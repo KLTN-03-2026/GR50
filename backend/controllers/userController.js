@@ -18,7 +18,7 @@ exports.updateProfile = async (req, res) => {
 
     await User.update(updateData, { where: { id: userId } });
     const updatedUser = await User.findByPk(userId);
-    
+
     const userDict = updatedUser.toJSON();
     delete userDict.password;
 
@@ -47,7 +47,35 @@ exports.changePassword = async (req, res) => {
 
     res.json({ message: 'Đổi mật khẩu thành công' });
   } catch (error) {
-    console.error('Change password error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+};
+
+exports.uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ detail: 'Vui lòng chọn ảnh' });
+    }
+
+    const userId = req.user.id;
+    // Construct full URL or relative path. Relative path is better for flexibility.
+    // Assuming server runs on same domain or we handle base URL in frontend.
+    // Let's store relative path.
+    const avatarUrl = `/uploads/${req.file.filename}`;
+
+    await User.update({ avatar: avatarUrl }, { where: { id: userId } });
+
+    const updatedUser = await User.findByPk(userId);
+    const userDict = updatedUser.toJSON();
+    delete userDict.password;
+
+    res.json({
+      message: 'Cập nhật ảnh đại diện thành công',
+      user: userDict,
+      avatar: avatarUrl
+    });
+  } catch (error) {
+    console.error('Upload avatar error:', error);
     res.status(500).json({ detail: 'Internal server error' });
   }
 };

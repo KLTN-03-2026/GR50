@@ -5,9 +5,21 @@ import { API } from '@/config';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, MessageSquare } from 'lucide-react';
+import { Calendar, Clock, MessageSquare, Bot } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+
+import CreateMedicalRecordDialog from '@/components/CreateMedicalRecordDialog';
+import { FileText } from 'lucide-react';
 
 export default function DoctorAppointments() {
   const navigate = useNavigate();
@@ -16,6 +28,10 @@ export default function DoctorAppointments() {
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [medicalRecordDialog, setMedicalRecordDialog] = useState({
+    open: false,
+    appointment: null
+  });
 
   useEffect(() => {
     fetchAppointments();
@@ -49,7 +65,7 @@ export default function DoctorAppointments() {
 
   const handleStatusChange = async (appointmentId, newStatus) => {
     try {
-      await axios.put(`${API}/appointments/${appointmentId}/status`, 
+      await axios.put(`${API}/appointments/${appointmentId}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -58,6 +74,13 @@ export default function DoctorAppointments() {
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Cập nhật thất bại');
     }
+  };
+
+  const handleOpenMedicalRecord = (appointment) => {
+    setMedicalRecordDialog({
+      open: true,
+      appointment
+    });
   };
 
   return (
@@ -91,22 +114,29 @@ export default function DoctorAppointments() {
           ) : (
             <div className="space-y-4">
               {filteredAppointments.map(apt => (
-                <AppointmentCard 
-                  key={apt.id} 
-                  appointment={apt} 
+                <AppointmentCard
+                  key={apt.id}
+                  appointment={apt}
                   onStatusChange={handleStatusChange}
                   navigate={navigate}
+                  onOpenMedicalRecord={() => handleOpenMedicalRecord(apt)}
                 />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      <CreateMedicalRecordDialog
+        open={medicalRecordDialog.open}
+        onOpenChange={(open) => setMedicalRecordDialog(prev => ({ ...prev, open }))}
+        appointment={medicalRecordDialog.appointment}
+      />
     </Layout>
   );
 }
 
-function AppointmentCard({ appointment, onStatusChange, navigate }) {
+function AppointmentCard({ appointment, onStatusChange, navigate, onOpenMedicalRecord }) {
   const statusColors = {
     pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
     confirmed: 'bg-green-100 text-green-800 border-green-200',
@@ -131,7 +161,7 @@ function AppointmentCard({ appointment, onStatusChange, navigate }) {
               {statusText[appointment.status]}
             </span>
           </div>
-          
+
           <div className="space-y-2 mb-4">
             <p className="text-gray-600 dark:text-gray-300">
               <Calendar className="w-4 h-4 inline mr-2" />
@@ -157,16 +187,16 @@ function AppointmentCard({ appointment, onStatusChange, navigate }) {
       <div className="flex gap-3">
         {appointment.status === 'pending' && (
           <>
-            <Button 
+            <Button
               data-testid={`confirm-${appointment.id}`}
-              onClick={() => onStatusChange(appointment.id, 'confirmed')} 
+              onClick={() => onStatusChange(appointment.id, 'confirmed')}
               className="flex-1 bg-green-600 hover:bg-green-700"
             >
               Xác nhận
             </Button>
-            <Button 
+            <Button
               data-testid={`cancel-${appointment.id}`}
-              onClick={() => onStatusChange(appointment.id, 'cancelled')} 
+              onClick={() => onStatusChange(appointment.id, 'cancelled')}
               variant="outline"
               className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
             >
@@ -175,18 +205,31 @@ function AppointmentCard({ appointment, onStatusChange, navigate }) {
           </>
         )}
         {appointment.status === 'confirmed' && (
-          <Button 
+          <Button
             data-testid={`complete-${appointment.id}`}
-            onClick={() => onStatusChange(appointment.id, 'completed')} 
+            onClick={() => onStatusChange(appointment.id, 'completed')}
             className="flex-1 bg-blue-600 hover:bg-blue-700"
           >
             Đánh dấu hoàn thành
           </Button>
         )}
+        {(appointment.status === 'confirmed' || appointment.status === 'completed') && (
+          <>
+            <DiagnosisDialog appointment={appointment} onUpdate={() => window.location.reload()} />
+            <Button
+              onClick={onOpenMedicalRecord}
+              variant="outline"
+              className="flex-1 border-teal-300 text-teal-600 hover:bg-teal-50"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Tạo HSBA
+            </Button>
+          </>
+        )}
         {appointment.appointment_type === 'online' && (appointment.status === 'confirmed' || appointment.status === 'completed') && (
-          <Button 
+          <Button
             data-testid={`chat-${appointment.id}`}
-            onClick={() => navigate(`/doctor/chat/${appointment.id}`)} 
+            onClick={() => navigate(`/doctor/chat/${appointment.id}`)}
             className="flex-1 bg-gradient-to-r from-teal-500 to-cyan-500"
           >
             <MessageSquare className="w-4 h-4 mr-2" />
@@ -195,5 +238,73 @@ function AppointmentCard({ appointment, onStatusChange, navigate }) {
         )}
       </div>
     </div>
+  );
+}
+
+function DiagnosisDialog({ appointment, onUpdate }) {
+  const { token } = useContext(AuthContext);
+  const [open, setOpen] = useState(false);
+  const [finalDiagnosis, setFinalDiagnosis] = useState(appointment.final_diagnosis || '');
+  const [loading, setLoading] = useState(false);
+
+  const handleUpdate = async () => {
+    setLoading(true);
+    try {
+      await axios.put(`${API}/appointments/${appointment.id}/diagnosis`,
+        { final_diagnosis: finalDiagnosis },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Cập nhật chẩn đoán thành công');
+      setOpen(false);
+      onUpdate();
+    } catch (error) {
+      toast.error('Cập nhật thất bại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="flex-1 border-purple-300 text-purple-600 hover:bg-purple-50">
+          Chẩn đoán
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Chẩn đoán & Kết luận</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          {appointment.ai_diagnosis && (
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+              <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                <Bot className="w-4 h-4" />
+                Gợi ý từ AI
+              </h4>
+              <p className="text-sm text-blue-700 whitespace-pre-wrap">{appointment.ai_diagnosis}</p>
+            </div>
+          )}
+
+          <div>
+            <Label>Chẩn đoán của bác sĩ</Label>
+            <Textarea
+              value={finalDiagnosis}
+              onChange={(e) => setFinalDiagnosis(e.target.value)}
+              placeholder="Nhập kết luận khám bệnh..."
+              className="mt-2 min-h-[150px]"
+            />
+          </div>
+
+          <Button
+            onClick={handleUpdate}
+            disabled={loading}
+            className="w-full bg-purple-600 hover:bg-purple-700"
+          >
+            {loading ? 'Đang lưu...' : 'Lưu chẩn đoán'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,14 +1,16 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom"; // 🟢 Thêm dòng này
+import { BrowserRouter } from "react-router-dom";
 import "@/index.css";
 import App from "@/App";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <BrowserRouter> {/* 🟢 Bọc App trong Router */}
+    {/* 🟢 Bọc App trong Router */}
+    <BrowserRouter>
       <App />
     </BrowserRouter>
   </React.StrictMode>
 );
+

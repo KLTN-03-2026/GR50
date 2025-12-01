@@ -9,5 +9,8 @@ router.get('/department-heads', authMiddleware, doctorController.getDepartmentHe
 router.put('/profile', authMiddleware, doctorController.updateProfile);
 router.put('/schedule', authMiddleware, doctorController.updateSchedule);
 router.get('/:id', doctorController.getProfile);
+router.post('/:id/reviews', authMiddleware, doctorController.addReview);
+router.put('/:id/reviews', authMiddleware, doctorController.updateReview);
+router.get('/:id/review', authMiddleware, doctorController.getReviewByPatient);
 
 module.exports = router;

@@ -29,8 +29,12 @@ const Doctor = sequelize.define('Doctor', {
     type: DataTypes.INTEGER,
     defaultValue: 0
   },
-  consultation_fee: {
+  fee: {
     type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0.00
+  },
+  rating: {
+    type: DataTypes.DECIMAL(3, 2),
     defaultValue: 0.00
   },
   bio: {
@@ -50,7 +54,6 @@ const Doctor = sequelize.define('Doctor', {
   tableName: 'doctors'
 });
 
-Doctor.belongsTo(User, { foreignKey: 'user_id' });
-Doctor.belongsTo(Specialty, { foreignKey: 'specialty_id' });
+
 
 module.exports = Doctor;

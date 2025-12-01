@@ -13,7 +13,7 @@ const Payment = sequelize.define('Payment', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Appointment,
+      model: 'appointments',
       key: 'id'
     }
   },
@@ -21,7 +21,7 @@ const Payment = sequelize.define('Payment', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: User,
+      model: 'users',
       key: 'id'
     }
   },
@@ -30,11 +30,11 @@ const Payment = sequelize.define('Payment', {
     allowNull: false
   },
   payment_method: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: true
   },
   transaction_id: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: true
   },
   status: {
@@ -50,7 +50,6 @@ const Payment = sequelize.define('Payment', {
   tableName: 'payments'
 });
 
-Payment.belongsTo(Appointment, { foreignKey: 'appointment_id' });
-Payment.belongsTo(User, { as: 'Patient', foreignKey: 'patient_id' });
+
 
 module.exports = Payment;

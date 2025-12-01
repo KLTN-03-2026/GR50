@@ -12,6 +12,8 @@ import Layout from '@/components/Layout';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
 
+import ReviewDialog from '@/components/ReviewDialog';
+
 export default function PaymentProcess() {
   const navigate = useNavigate();
   const { paymentId } = useParams();
@@ -21,6 +23,7 @@ export default function PaymentProcess() {
   const [processing, setProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('mock_card');
   const [copied, setCopied] = useState(false);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [formData, setFormData] = useState({
     card_number: '4111111111111111',
     card_holder: 'NGUYEN VAN A',
@@ -67,9 +70,7 @@ export default function PaymentProcess() {
 
       if (response.data.status === 'completed') {
         toast.success('Thanh toán thành công!');
-        setTimeout(() => {
-          navigate('/patient/appointments');
-        }, 2000);
+        setShowReviewDialog(true);
       } else {
         toast.error('Thanh toán thất bại!');
       }
@@ -78,6 +79,10 @@ export default function PaymentProcess() {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handleReviewSuccess = () => {
+    navigate('/patient/appointments');
   };
 
   const copyToClipboard = (text) => {
@@ -93,7 +98,7 @@ export default function PaymentProcess() {
     const bankCode = '970422'; // VietinBank code
     const amount = payment?.amount || 0;
     const description = `HD${paymentId.slice(-8)}`;
-    
+
     // VietQR format: https://img.vietqr.io/image/[BANK]-[ACCOUNT]-[TEMPLATE].jpg?amount=[AMOUNT]&addInfo=[DESCRIPTION]
     return `https://img.vietqr.io/image/${bankCode}-${bankAccount}-compact.jpg?amount=${amount}&addInfo=${description}&accountName=DAT_LICH_KHAM_BENH`;
   };
@@ -132,8 +137,8 @@ export default function PaymentProcess() {
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 p-6">
         <div className="max-w-4xl mx-auto">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => navigate('/patient/payments')}
             className="mb-6"
           >
@@ -280,7 +285,7 @@ export default function PaymentProcess() {
 
                       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg mb-4 inline-block">
                         <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border-4 border-teal-500">
-                          <img 
+                          <img
                             src={generateVietQRData()}
                             alt="VietQR Code"
                             className="w-64 h-64 mx-auto"
@@ -290,8 +295,8 @@ export default function PaymentProcess() {
                               e.target.nextSibling.style.display = 'block';
                             }}
                           />
-                          <div style={{display: 'none'}}>
-                            <QRCodeSVG 
+                          <div style={{ display: 'none' }}>
+                            <QRCodeSVG
                               value={`VietQR|970422|1017592879600097|${payment.amount}|HD${paymentId.slice(-8)}|DAT_LICH_KHAM_BENH`}
                               size={256}
                               level="H"
@@ -320,7 +325,7 @@ export default function PaymentProcess() {
                           <Building className="w-5 h-5 text-blue-600" />
                           Thông tin chuyển khoản
                         </h3>
-                        
+
                         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600 dark:text-gray-300">Ngân hàng:</span>
@@ -382,8 +387,8 @@ export default function PaymentProcess() {
                     </div>
                   )}
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={processing}
                     className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-lg py-6"
                   >
@@ -392,7 +397,7 @@ export default function PaymentProcess() {
                     ) : (
                       <>
                         <CheckCircle className="w-5 h-5 mr-2" />
-                        {paymentMethod === 'mock_bank' || paymentMethod === 'mock_wallet' 
+                        {paymentMethod === 'mock_bank' || paymentMethod === 'mock_wallet'
                           ? 'Hoàn tất thanh toán'
                           : `Thanh toán ${payment.amount.toLocaleString()} VNĐ`
                         }
@@ -405,6 +410,17 @@ export default function PaymentProcess() {
           </div>
         </div>
       </div>
+
+      <ReviewDialog
+        open={showReviewDialog}
+        onOpenChange={(open) => {
+          if (!open) handleReviewSuccess();
+          setShowReviewDialog(open);
+        }}
+        doctorId={payment.doctor_id}
+        doctorName={payment.doctor_name}
+        onSuccess={handleReviewSuccess}
+      />
     </Layout>
   );
 }
@@ -414,11 +430,10 @@ function PaymentMethodButton({ icon, label, value, selected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`p-4 rounded-xl border-2 transition-all ${
-        selected
+      className={`p-4 rounded-xl border-2 transition-all ${selected
           ? 'border-teal-500 bg-teal-50'
           : 'border-gray-200 hover:border-teal-300'
-      }`}
+        }`}
     >
       <div className={`${selected ? 'text-teal-600' : 'text-gray-600'}`}>
         {icon}

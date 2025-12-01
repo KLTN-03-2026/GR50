@@ -23,3 +23,17 @@ exports.create = async (req, res) => {
     res.status(500).json({ detail: 'Internal server error' });
   }
 };
+
+exports.getById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const specialty = await Specialty.findByPk(id);
+    if (!specialty) {
+      return res.status(404).json({ detail: 'Specialty not found' });
+    }
+    res.json(specialty);
+  } catch (error) {
+    console.error('Get specialty error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+};

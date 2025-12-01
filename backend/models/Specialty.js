@@ -10,10 +10,14 @@ const Specialty = sequelize.define('Specialty', {
   name: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true
+    unique: 'unique_specialty_name'   // 🔥 Quan trọng: đặt tên index
   },
   description: {
     type: DataTypes.TEXT,
+    allowNull: true
+  },
+  image: {
+    type: DataTypes.STRING,
     allowNull: true
   }
 }, {

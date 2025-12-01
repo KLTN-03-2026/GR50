@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "@/contexts/AuthContext";
 import { API } from "@/config";
 import axios from "axios";
@@ -23,9 +23,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Search, MapPin, Star, Calendar } from "lucide-react";
 import Layout from "@/components/Layout";
+import BookingDialog from "@/components/BookingDialog";
 
 export default function SearchDoctors() {
   const { token } = useContext(AuthContext);
+  const location = useLocation(); // Add useLocation
   const [specialties, setSpecialties] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [filteredDoctors, setFilteredDoctors] = useState([]);
@@ -34,14 +36,17 @@ export default function SearchDoctors() {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [showBooking, setShowBooking] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [aiDiagnosis, setAiDiagnosis] = useState(null); // State for AI diagnosis
 
   useEffect(() => {
     fetchData();
-  }, []);
+    if (location.state?.aiDiagnosis) {
+      setAiDiagnosis(location.state.aiDiagnosis);
+      toast.info("Đã nhận kết quả phân tích từ AI. Hãy chọn bác sĩ để đặt lịch.");
+    }
+  }, [location.state]);
 
-  useEffect(() => {
-    filterDoctors();
-  }, [selectedSpecialty, searchQuery, doctors]);
+  // ... (rest of fetchData and filterDoctors)
 
   const fetchData = async () => {
     try {
@@ -167,6 +172,7 @@ export default function SearchDoctors() {
             setSelectedDoctor(null);
           }}
           token={token}
+          aiDiagnosis={aiDiagnosis} // Pass AI diagnosis
         />
       )}
     </Layout>
@@ -174,6 +180,7 @@ export default function SearchDoctors() {
 }
 
 function DoctorCard({ doctor, onBook }) {
+  const navigate = useNavigate();
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6">
       <div className="flex items-start gap-4 mb-4">
@@ -211,152 +218,24 @@ function DoctorCard({ doctor, onBook }) {
         )}
       </div>
 
-      <Button
-        data-testid={`book-doctor-${doctor.user_id}`}
-        onClick={() => onBook(doctor)}
-        className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600"
-      >
-        Đặt lịch khám
-      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant="outline"
+          onClick={() => navigate(`/patient/doctor/${doctor.user_id}`)}
+          className="w-full"
+        >
+          Xem chi tiết
+        </Button>
+        <Button
+          data-testid={`book-doctor-${doctor.user_id}`}
+          onClick={() => onBook(doctor)}
+          className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600"
+        >
+          Đặt lịch khám
+        </Button>
+      </div>
     </div>
   );
 }
 
-function BookingDialog({ doctor, open, onClose, token }) {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    appointment_type: "in_person",
-    appointment_date: "",
-    appointment_time: "",
-    symptoms: "",
-  });
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const appointmentRes = await axios.post(
-        `${API}/appointments`,
-        {
-          ...formData,
-          doctor_id: doctor.user_id,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      toast.success("Đặt lịch thành công! Vui lòng thanh toán để xác nhận.");
-      onClose();
-
-      // Redirect to payment page if payment_id is available
-      if (appointmentRes.data.payment_id) {
-        navigate(`/patient/payment/${appointmentRes.data.payment_id}`);
-      } else {
-        navigate("/patient/appointments");
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.detail || "Đặt lịch thất bại");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Đặt lịch với {doctor.full_name}</DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label>Loại hình khám</Label>
-            <Select
-              value={formData.appointment_type}
-              onValueChange={(v) =>
-                setFormData({ ...formData, appointment_type: v })
-              }
-            >
-              <SelectTrigger
-                data-testid="appointment-type-select"
-                className="mt-2"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="in_person">Khám trực tiếp</SelectItem>
-                <SelectItem value="online">Tư vấn online</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label>Ngày khám</Label>
-            <Input
-              data-testid="appointment-date-input"
-              type="date"
-              value={formData.appointment_date}
-              onChange={(e) =>
-                setFormData({ ...formData, appointment_date: e.target.value })
-              }
-              required
-              className="mt-2"
-              min={new Date().toISOString().split("T")[0]}
-            />
-          </div>
-
-          <div>
-            <Label>Giờ khám</Label>
-            <Input
-              data-testid="appointment-time-input"
-              type="time"
-              value={formData.appointment_time}
-              onChange={(e) =>
-                setFormData({ ...formData, appointment_time: e.target.value })
-              }
-              required
-              className="mt-2"
-            />
-          </div>
-
-          <div>
-            <Label>Triệu chứng</Label>
-            <Textarea
-              data-testid="symptoms-input"
-              value={formData.symptoms}
-              onChange={(e) =>
-                setFormData({ ...formData, symptoms: e.target.value })
-              }
-              placeholder="Mô tả triệu chứng của bạn..."
-              className="mt-2"
-              rows={3}
-            />
-          </div>
-
-          <div className="flex gap-3">
-            <Button
-              data-testid="cancel-booking-btn"
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
-            >
-              Hủy
-            </Button>
-            <Button
-              data-testid="confirm-booking-btn"
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-gradient-to-r from-teal-500 to-cyan-500"
-            >
-              {loading ? "Đang xử lý..." : "Xác nhận"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}

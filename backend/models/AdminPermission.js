@@ -45,6 +45,6 @@ const AdminPermission = sequelize.define('AdminPermission', {
   tableName: 'admin_permissions'
 });
 
-AdminPermission.belongsTo(User, { foreignKey: 'user_id' });
+
 
 module.exports = AdminPermission;

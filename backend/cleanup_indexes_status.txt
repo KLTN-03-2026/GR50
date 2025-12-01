@@ -1,0 +1,1 @@
+Dropped 61 duplicate indexes.
