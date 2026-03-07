@@ -1,6 +1,0 @@
-Starting review debug...
-Doctor UserID: 3, Patient ID: 23
-Found completed appointment ID: 134
-Simulating addReview...
-Review created successfully: ID 2
-Full review fetched: {"id":2,"appointment_id":134,"patient_id":23,"doctor_id":3,"rating":5,"comment":"Test review from debug script","createdAt":"2025-11-29T06:02:52.000Z","updatedAt":"2025-11-29T06:02:52.000Z","Patient":{"full_name":"Phùng Vương Triều","avatar":null}}

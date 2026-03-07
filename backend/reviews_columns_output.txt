@@ -1,1 +1,0 @@
-Columns in reviews table: ["id","patient_id","doctor_id","rating","comment","createdAt","updatedAt","appointment_id"]

@@ -1,4 +1,0 @@
-Starting raw query debug...
-Executing SQL: SELECT `id`, `email`, `username`, `password`, `full_name`, `phone`, `date_of_birth`, `address`, `role`, `createdAt`, `updatedAt` FROM `users` AS `User` WHERE (`User`.`email` = 'admin@medischedule.com' OR `User`.`username` = 'admin@medischedule.com') LIMIT 1;
-Query successful. Results: [{"id":1,"email":"admin@medischedule.com","username":"admin","password":"$2a$10$j6pEw7loGIlM4ZjVbyuQre2FtEjA56hdePXw4IbajtIEs3a6xK05C","full_name":"Quản Trị Viên","phone":"0901234567","date_of_birth":null,"address":"Hà Nội, Việt Nam","role":"admin","createdAt":"2025-11-26T02:33:54.000Z","updatedAt":"2025-11-26T03:34:49.000Z"}]
-Done.

@@ -9,7 +9,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8002';
 
 export default function CreateAccounts() {
   const { t } = useLanguage();
@@ -49,13 +49,13 @@ export default function CreateAccounts() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate role selection
     if (!selectedRole) {
       toast.error(t('pleaseSelectRole') || 'Vui lòng chọn loại tài khoản');
       return;
     }
-    
+
     try {
       const token = localStorage.getItem('token');
       const payload = {
@@ -82,7 +82,7 @@ export default function CreateAccounts() {
       );
 
       toast.success(t('accountCreatedSuccess'));
-      
+
       // Reset form
       setSelectedRole('');
       setFormData({
@@ -106,11 +106,10 @@ export default function CreateAccounts() {
   const RoleCard = ({ icon: Icon, title, role, selected, onClick }) => (
     <div
       onClick={onClick}
-      className={`flex flex-col items-center p-6 border-2 rounded-lg cursor-pointer transition-all ${
-        selected
+      className={`flex flex-col items-center p-6 border-2 rounded-lg cursor-pointer transition-all ${selected
           ? 'border-blue-500 bg-blue-50'
           : 'border-gray-200 hover:border-gray-300'
-      }`}
+        }`}
     >
       <Icon className={`w-12 h-12 ${selected ? 'text-blue-500' : 'text-gray-400'}`} />
       <span className={`mt-2 font-semibold ${selected ? 'text-blue-700' : 'text-gray-600'}`}>

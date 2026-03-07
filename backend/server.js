@@ -14,6 +14,9 @@ app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
 // Routes
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is running' });
+});
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/specialties', require('./routes/specialtyRoutes'));
 app.use('/api/doctors', require('./routes/doctorRoutes'));
@@ -29,13 +32,30 @@ app.use('/api/medical-records', require('./routes/medicalRecordRoutes'));
 app.use('/api/system', require('./routes/systemRoutes'));
 
 // Database connection and server start
-sequelize.sync({ force: false })   // 🔥 FIX: Không dùng alter nữa
-  .then(() => {
-    console.log('Database connected and synced...');
+const fs = require('fs');
+const logFile = 'server_debug.log';
+
+sequelize.sync({ force: true })   // Use force:true to recreate SQLite DB every time
+  .then(async () => {
+    console.log('Database connected and synced (SQLite in-memory)...');
+    fs.appendFileSync(logFile, `[${new Date().toISOString()}] Database connected and synced...\n`);
+
+    // Auto-seed data
+    console.log('Starting data injection (seeding)...');
+    const seed = require('./seed');
+    try {
+      await seed();
+      console.log('Data injection completed.');
+    } catch (seedErr) {
+      console.error('Data injection failed:', seedErr);
+    }
+
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      fs.appendFileSync(logFile, `[${new Date().toISOString()}] Server running on port ${PORT}\n`);
     });
   })
   .catch(err => {
     console.error('Error connecting to database:', err);
+    fs.appendFileSync(logFile, `[${new Date().toISOString()}] Error connecting to database: ${err.message}\n${err.stack}\n`);
   });

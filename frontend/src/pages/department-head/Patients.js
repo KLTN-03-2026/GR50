@@ -7,7 +7,7 @@ import Layout from '../../components/Layout';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8002';
 
 export default function Patients() {
   const { t } = useLanguage();
@@ -121,8 +121,8 @@ export default function Patients() {
                         {patient.created_at ? new Date(patient.created_at).toLocaleDateString('vi-VN') : 'N/A'}
                       </td>
                       <td className="px-6 py-4">
-                        <Button 
-                          onClick={() => handleDelete(patient.id, patient.full_name)} 
+                        <Button
+                          onClick={() => handleDelete(patient.id, patient.full_name)}
                           variant="outline"
                           className="border-red-300 text-red-600 hover:bg-red-50"
                           size="sm"

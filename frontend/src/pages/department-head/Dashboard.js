@@ -5,7 +5,7 @@ import { Users, UserCheck, UserPlus, Calendar, ClipboardCheck, TrendingUp } from
 import { useLanguage } from '../../contexts/LanguageContext';
 import Layout from '../../components/Layout';
 
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8002';
 
 export default function DepartmentHeadDashboard() {
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ export default function DepartmentHeadDashboard() {
   };
 
   const StatCard = ({ icon: Icon, title, value, subtitle, color, onClick }) => (
-    <div 
+    <div
       className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
@@ -75,7 +75,7 @@ export default function DepartmentHeadDashboard() {
               color="bg-gradient-to-br from-teal-500 to-cyan-500"
               onClick={() => navigate('/department-head/doctors')}
             />
-            
+
             <StatCard
               icon={UserCheck}
               title={t('approvedDoctors')}
@@ -84,7 +84,7 @@ export default function DepartmentHeadDashboard() {
               color="bg-gradient-to-br from-green-500 to-emerald-500"
               onClick={() => navigate('/department-head/doctors')}
             />
-            
+
             <StatCard
               icon={UserPlus}
               title={t('totalPatients')}
@@ -92,25 +92,25 @@ export default function DepartmentHeadDashboard() {
               color="bg-gradient-to-br from-purple-500 to-pink-500"
               onClick={() => navigate('/department-head/patients')}
             />
-            
+
             <StatCard
               icon={Calendar}
               title={t('totalAppointments')}
               value={stats?.total_appointments || 0}
               color="bg-gradient-to-br from-orange-500 to-red-500"
             />
-            
+
             <StatCard
               icon={ClipboardCheck}
               title={t('completedAppointments')}
               value={stats?.completed_appointments || 0}
               color="bg-gradient-to-br from-teal-500 to-blue-500"
             />
-            
+
             <StatCard
               icon={TrendingUp}
               title={t('successRate')}
-              value={stats?.total_appointments > 0 
+              value={stats?.total_appointments > 0
                 ? `${Math.round((stats?.completed_appointments / stats?.total_appointments) * 100)}%`
                 : '0%'}
               color="bg-gradient-to-br from-indigo-500 to-purple-500"
@@ -128,7 +128,7 @@ export default function DepartmentHeadDashboard() {
                 <UserPlus className="w-5 h-5" />
                 <span>{t('createAccount')}</span>
               </button>
-              
+
               <button
                 onClick={() => navigate('/department-head/doctors')}
                 className="flex items-center justify-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-3 px-6 rounded-xl transition-all shadow-md hover:shadow-lg"
@@ -136,7 +136,7 @@ export default function DepartmentHeadDashboard() {
                 <Users className="w-5 h-5" />
                 <span>{t('manageDoctors')}</span>
               </button>
-              
+
               <button
                 onClick={() => navigate('/department-head/patients')}
                 className="flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-3 px-6 rounded-xl transition-all shadow-md hover:shadow-lg"

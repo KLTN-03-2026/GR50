@@ -8,7 +8,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8002';
 
 export default function Doctors() {
   const { t } = useLanguage();
@@ -152,13 +152,13 @@ export default function Doctors() {
           ) : (
             <div className="space-y-4">
               {filteredDoctors.map(doctor => (
-                <DoctorCard 
-                  key={doctor.user_id} 
-                  doctor={doctor} 
+                <DoctorCard
+                  key={doctor.user_id}
+                  doctor={doctor}
                   onApprove={handleApprove}
                   onReject={handleReject}
-                  onDelete={handleDelete} 
-                  t={t} 
+                  onDelete={handleDelete}
+                  t={t}
                 />
               ))}
             </div>
@@ -214,20 +214,20 @@ function DoctorCard({ doctor, onApprove, onReject, onDelete, t }) {
             </div>
           </div>
         </div>
-        
+
         <div className="flex gap-2">
           {doctor.status === 'pending' && (
             <>
-              <Button 
-                onClick={() => onApprove(doctor.user_id)} 
+              <Button
+                onClick={() => onApprove(doctor.user_id)}
                 className="bg-green-600 hover:bg-green-700"
                 size="sm"
               >
                 <CheckCircle className="w-4 h-4 mr-1" />
                 {t('approve')}
               </Button>
-              <Button 
-                onClick={() => onReject(doctor.user_id)} 
+              <Button
+                onClick={() => onReject(doctor.user_id)}
                 variant="outline"
                 className="border-red-300 text-red-600 hover:bg-red-50"
                 size="sm"
@@ -237,8 +237,8 @@ function DoctorCard({ doctor, onApprove, onReject, onDelete, t }) {
               </Button>
             </>
           )}
-          <Button 
-            onClick={() => handleDelete(doctor.user_id)} 
+          <Button
+            onClick={() => handleDelete(doctor.user_id)}
             variant="outline"
             className="border-red-300 text-red-600 hover:bg-red-50"
             size="sm"
@@ -250,7 +250,7 @@ function DoctorCard({ doctor, onApprove, onReject, onDelete, t }) {
       </div>
     </div>
   );
-  
+
   function handleDelete(userId) {
     if (!window.confirm(t('confirmDeleteDoctor'))) return;
     onDelete(userId);
