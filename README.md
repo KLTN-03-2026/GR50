@@ -84,6 +84,8 @@ Xem file **[README_LOCALHOST.md](./README_LOCALHOST.md)** để:
 - Troubleshooting
 - Database queries
 
+**🔗 Đường dẫn truy cập khi chạy local:** [http://localhost:3050](http://localhost:3050)
+
 ### Development
 ```bash
 # Backend
