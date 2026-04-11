@@ -1,30 +1,38 @@
-const { User } = require('../models');
+const { NguoiDung } = require('../models');
 const bcrypt = require('bcryptjs');
 
 exports.updateProfile = async (req, res) => {
   try {
     const { full_name, phone, date_of_birth, address } = req.body;
-    const userId = req.user.id;
+    const userId = req.user.id; // comes from req.user mapping id
 
     const updateData = {};
-    if (full_name) updateData.full_name = full_name;
-    if (phone) updateData.phone = phone;
-    if (date_of_birth) updateData.date_of_birth = date_of_birth;
-    if (address) updateData.address = address;
+    if (full_name) {
+      const parts = full_name.split(' ');
+      updateData.Ten = parts.pop();
+      updateData.Ho = parts.join(' ');
+    }
+    if (phone) updateData.SoDienThoai = phone;
+    if (date_of_birth) updateData.NgaySinh = date_of_birth;
 
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ detail: 'Không có thông tin nào để cập nhật' });
     }
 
-    await User.update(updateData, { where: { id: userId } });
-    const updatedUser = await User.findByPk(userId);
+    await NguoiDung.update(updateData, { where: { Id_NguoiDung: userId } });
 
-    const userDict = updatedUser.toJSON();
-    delete userDict.password;
+    // Refresh user context dict matching expected payload
+    const updatedUser = await NguoiDung.findByPk(userId);
 
     res.json({
       message: 'Cập nhật thông tin thành công',
-      user: userDict
+      user: {
+        id: updatedUser.Id_NguoiDung,
+        email: updatedUser.Email,
+        full_name: `${updatedUser.Ho} ${updatedUser.Ten}`,
+        phone: updatedUser.SoDienThoai,
+        avatar: updatedUser.AnhDaiDien
+      }
     });
   } catch (error) {
     console.error('Update profile error:', error);
@@ -37,13 +45,13 @@ exports.changePassword = async (req, res) => {
     const { current_password, new_password } = req.body;
     const userId = req.user.id;
 
-    const user = await User.findByPk(userId);
-    if (!await bcrypt.compare(current_password, user.password)) {
+    const user = await NguoiDung.findByPk(userId);
+    if (!await bcrypt.compare(current_password, user.MatKhau)) {
       return res.status(400).json({ detail: 'Mật khẩu hiện tại không đúng' });
     }
 
     const hashedPassword = await bcrypt.hash(new_password, 10);
-    await User.update({ password: hashedPassword }, { where: { id: userId } });
+    await NguoiDung.update({ MatKhau: hashedPassword }, { where: { Id_NguoiDung: userId } });
 
     res.json({ message: 'Đổi mật khẩu thành công' });
   } catch (error) {
@@ -58,20 +66,21 @@ exports.uploadAvatar = async (req, res) => {
     }
 
     const userId = req.user.id;
-    // Construct full URL or relative path. Relative path is better for flexibility.
-    // Assuming server runs on same domain or we handle base URL in frontend.
-    // Let's store relative path.
     const avatarUrl = `/uploads/${req.file.filename}`;
 
-    await User.update({ avatar: avatarUrl }, { where: { id: userId } });
+    await NguoiDung.update({ AnhDaiDien: avatarUrl }, { where: { Id_NguoiDung: userId } });
 
-    const updatedUser = await User.findByPk(userId);
-    const userDict = updatedUser.toJSON();
-    delete userDict.password;
+    const updatedUser = await NguoiDung.findByPk(userId);
 
     res.json({
       message: 'Cập nhật ảnh đại diện thành công',
-      user: userDict,
+      user: {
+        id: updatedUser.Id_NguoiDung,
+        email: updatedUser.Email,
+        full_name: `${updatedUser.Ho} ${updatedUser.Ten}`,
+        phone: updatedUser.SoDienThoai,
+        avatar: avatarUrl
+      },
       avatar: avatarUrl
     });
   } catch (error) {

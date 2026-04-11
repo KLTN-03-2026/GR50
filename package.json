@@ -8,5 +8,8 @@
     "dev:backend": "cd backend && npm run dev",
     "build": "cd frontend && npm run build",
     "install:all": "cd frontend && npm install && cd ../backend && npm install"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1"
   }
 }

@@ -1,49 +1,42 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MapPin, Phone, Clock, Star } from 'lucide-react';
-
-// Mock data for facilities (matching LandingPage.js)
-const facilitiesData = {
-    1: {
-        id: 1,
-        name: 'Bệnh viện Đa khoa Quốc tế',
-        image: 'https://images.unsplash.com/photo-1533042789716-e9a9c97cf4ee',
-        address: 'Số 1, Đại Cồ Việt, Hai Bà Trưng, Hà Nội',
-        phone: '1900-1111',
-        hours: '7:00 - 17:00 (Thứ 2 - Thứ 7)',
-        description: 'Bệnh viện Đa khoa Quốc tế là một trong những cơ sở y tế hàng đầu tại Việt Nam, cung cấp dịch vụ khám chữa bệnh chất lượng cao với đội ngũ bác sĩ giỏi và trang thiết bị hiện đại.',
-        specialties: ['Tim mạch', 'Thần kinh', 'Cơ xương khớp', 'Nhi khoa', 'Sản phụ khoa']
-    },
-    2: {
-        id: 2,
-        name: 'Phòng khám Đa khoa Gia đình',
-        image: 'https://images.unsplash.com/photo-1597807037496-c56a1d8bc29a',
-        address: 'Số 10, Nguyễn Văn Linh, Quận 7, TP.HCM',
-        phone: '1900-2222',
-        hours: '8:00 - 20:00 (Cả tuần)',
-        description: 'Phòng khám Đa khoa Gia đình mang đến dịch vụ chăm sóc sức khỏe toàn diện cho mọi thành viên trong gia đình bạn. Không gian thân thiện, dịch vụ chuyên nghiệp.',
-        specialties: ['Nhi khoa', 'Tai Mũi Họng', 'Da liễu', 'Nội tổng quát']
-    },
-    3: {
-        id: 3,
-        name: 'Trung tâm Y tế chuyên sâu',
-        image: 'https://images.unsplash.com/photo-1587351021759-3e566b6af7cc',
-        address: 'Số 5, Lê Duẩn, Đống Đa, Hà Nội',
-        phone: '1900-3333',
-        hours: '7:30 - 16:30 (Thứ 2 - Thứ 6)',
-        description: 'Trung tâm Y tế chuyên sâu tập trung vào chẩn đoán và điều trị các bệnh lý phức tạp. Chúng tôi hợp tác với các chuyên gia đầu ngành để mang lại hiệu quả điều trị tốt nhất.',
-        specialties: ['Ung bướu', 'Tiêu hóa', 'Hô hấp', 'Nội tiết']
-    }
-};
+import { ArrowLeft, MapPin, Phone, Clock, Star, User } from 'lucide-react';
+import { API } from '@/config';
+import axios from 'axios';
 
 export default function FacilityDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const facility = facilitiesData[id];
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    if (!facility) {
+    useEffect(() => {
+        const fetchFacility = async () => {
+            try {
+                const response = await axios.get(`${API}/facilities/${id}`);
+                setData(response.data);
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching facility details:', error);
+                setLoading(false);
+            }
+        };
+        fetchFacility();
+    }, [id]);
+
+    if (loading) {
+        return (
+            <Layout>
+                <div className="min-h-screen flex items-center justify-center">
+                    <p>Đang tải thông tin...</p>
+                </div>
+            </Layout>
+        );
+    }
+
+    if (!data || !data.facility) {
         return (
             <Layout>
                 <div className="min-h-screen flex items-center justify-center flex-col">
@@ -54,13 +47,17 @@ export default function FacilityDetail() {
         );
     }
 
+    const { facility, doctors } = data;
+    // Derive specialities from doctors
+    const specialties = Array.from(new Set(doctors.map(d => d.specialty_name).filter(Boolean)));
+
     return (
         <Layout>
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
                 {/* Hero Section */}
                 <div className="relative h-[400px] w-full overflow-hidden">
                     <img
-                        src={facility.image}
+                        src={facility.image || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d'}
                         alt={facility.name}
                         className="w-full h-full object-cover"
                     />
@@ -74,7 +71,7 @@ export default function FacilityDetail() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Clock className="w-5 h-5" />
-                                    <span>{facility.hours}</span>
+                                    <span>8:00 - 17:00 (Thứ 2 - Thứ 7)</span>
                                 </div>
                             </div>
                         </div>
@@ -82,7 +79,7 @@ export default function FacilityDetail() {
                     <Button
                         variant="ghost"
                         className="absolute top-4 left-4 text-white hover:bg-white/20"
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate(-1)}
                     >
                         <ArrowLeft className="w-6 h-6 mr-2" /> Quay lại
                     </Button>
@@ -96,28 +93,54 @@ export default function FacilityDetail() {
                             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Giới thiệu</h2>
                                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                                    {facility.description}
+                                    {facility.description || 'Chưa có thông tin giới thiệu.'}
                                 </p>
                             </div>
 
+                            {specialties.length > 0 && (
+                                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Chuyên khoa nổi bật</h2>
+                                    <div className="flex flex-wrap gap-2">
+                                        {specialties.map((spec, index) => (
+                                            <span
+                                                key={index}
+                                                className="px-4 py-2 bg-cyan-50 text-cyan-700 rounded-full font-medium text-sm"
+                                            >
+                                                {spec}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Doctors List */}
                             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Chuyên khoa</h2>
-                                <div className="flex flex-wrap gap-2">
-                                    {facility.specialties.map((spec, index) => (
-                                        <span
-                                            key={index}
-                                            className="px-4 py-2 bg-cyan-50 text-cyan-700 rounded-full font-medium text-sm"
-                                        >
-                                            {spec}
-                                        </span>
-                                    ))}
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Danh sách bác sĩ ({doctors.length})</h2>
+                                <div className="space-y-4">
+                                    {doctors.length === 0 ? (
+                                        <p className="text-gray-500">Chưa có bác sĩ nào thuộc cơ sở này.</p>
+                                    ) : (
+                                        doctors.map((doctor) => (
+                                            <div key={doctor.id} className="flex items-center gap-4 p-4 border border-gray-100 rounded-lg hover:shadow-md transition bg-gray-50 dark:bg-gray-800/50 dark:border-gray-700">
+                                                <div className="h-16 w-16 bg-blue-100 rounded-full flex-shrink-0 overflow-hidden">
+                                                    <img src={doctor.avatar} alt={doctor.full_name} className="h-full w-full object-cover" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">{doctor.full_name}</h3>
+                                                    <p className="text-cyan-600 text-sm font-medium">{doctor.specialty_name}</p>
+                                                    <p className="text-gray-500 text-sm mt-1">{doctor.experience_years} năm kinh nghiệm</p>
+                                                </div>
+                                                <Button onClick={() => navigate(`/doctor/${doctor.id}`)} variant="outline">Xem hồ sơ</Button>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         </div>
 
                         {/* Sidebar */}
                         <div className="space-y-6">
-                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 sticky top-24">
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Thông tin liên hệ</h3>
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3">
@@ -126,7 +149,7 @@ export default function FacilityDetail() {
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-500">Hotline</p>
-                                            <p className="font-bold text-gray-900 dark:text-white">{facility.phone}</p>
+                                            <p className="font-bold text-gray-900 dark:text-white">1900-1111</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
@@ -139,9 +162,6 @@ export default function FacilityDetail() {
                                         </div>
                                     </div>
                                 </div>
-                                <Button className="w-full mt-6 bg-gradient-to-r from-cyan-500 to-blue-500 text-white">
-                                    Đặt lịch khám
-                                </Button>
                             </div>
                         </div>
                     </div>

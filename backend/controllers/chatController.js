@@ -1,80 +1,70 @@
-const { Message, Consultation, User, Appointment } = require('../models');
+const { DatLich, KhamOnline, TinNhanKham, NguoiDung } = require('../models');
 
 exports.getMessagesByAppointment = async (req, res) => {
-    try {
-        const { appointmentId } = req.params;
-        console.log(`[Chat] Fetching messages for appointment: ${appointmentId}`);
+  try {
+    const { appointmentId } = req.params;
 
-        // Find consultation
-        const consultation = await Consultation.findOne({ where: { appointment_id: appointmentId } });
-
-        if (!consultation) {
-            console.log(`[Chat] No consultation found for appointment: ${appointmentId}`);
-            return res.json([]); // No messages yet
-        }
-        console.log(`[Chat] Found consultation: ${consultation.id}`);
-
-        const messages = await Message.findAll({
-            where: { consultation_id: consultation.id },
-            include: [
-                { model: User, as: 'Sender', attributes: ['id', 'full_name', 'avatar'] }
-            ],
-            order: [['createdAt', 'ASC']]
-        });
-
-        console.log(`[Chat] Found ${messages.length} messages`);
-
-        const result = messages.map(msg => ({
-            id: msg.id,
-            message: (msg.type === 'text' || !msg.type) ? msg.content : null,
-            image_url: msg.type === 'image' ? msg.content : null,
-            sender_id: msg.sender_id,
-            sender_name: msg.Sender ? msg.Sender.full_name : 'Unknown',
-            created_at: msg.createdAt
-        }));
-
-        res.json(result);
-    } catch (error) {
-        console.error('Get messages error:', error);
-        res.status(500).json({ error: 'Server error' });
+    // Find or create KhamOnline wrapper around DatLich
+    let ko = await KhamOnline.findOne({ where: { Id_DatLich: appointmentId } });
+    if (!ko) {
+      ko = await KhamOnline.create({ Id_DatLich: appointmentId, LoaiTuVan: 'Chat', TrangThai: 'DangKham' });
     }
+
+    const messages = await TinNhanKham.findAll({
+      where: { Id_KhamOnline: ko.Id_KhamOnline },
+      order: [['ThoiGianGui', 'ASC']],
+      include: [{ model: NguoiDung }]
+    });
+
+    res.json(messages.map(m => ({
+      id: m.Id_TinNhan,
+      content: m.NoiDung,
+      createdAt: m.ThoiGianGui,
+      sender: { id: m.Id_NguoiGui, full_name: `${m.NguoiDung.Ho} ${m.NguoiDung.Ten}`, avatar: m.NguoiDung.AnhDaiDien },
+      sender_id: m.Id_NguoiGui,
+      is_mine: m.Id_NguoiGui === req.user.id
+    })));
+  } catch (error) {
+    console.error('Get messages error:', error);
+    res.status(500).json({ detail: 'Internal error' });
+  }
 };
 
 exports.sendMessageByAppointment = async (req, res) => {
-    try {
-        const { appointment_id, message, image_url } = req.body;
-        const sender_id = req.user.id;
+  try {
+    const { appointmentId } = req.params;
+    const { content } = req.body;
+    let fileUrl = null;
 
-        console.log(`[Chat] Sending message for appointment: ${appointment_id}, sender: ${sender_id}`);
-
-        // Find or create consultation
-        let consultation = await Consultation.findOne({ where: { appointment_id } });
-        if (!consultation) {
-            console.log(`[Chat] Creating new consultation for appointment: ${appointment_id}`);
-            consultation = await Consultation.create({ appointment_id });
-        }
-
-        if (message) {
-            await Message.create({
-                consultation_id: consultation.id,
-                sender_id,
-                content: message,
-                type: 'text'
-            });
-        }
-
-        if (image_url) {
-            await Message.create({
-                consultation_id: consultation.id,
-                sender_id,
-                content: image_url,
-                type: 'image'
-            });
-        }
-
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Send message error:', error);
-        res.status(500).json({ error: 'Server error' });
+    if (req.file) {
+      fileUrl = `/ uploads / chat / ${req.file.filename}`;
     }
+
+    let ko = await KhamOnline.findOne({ where: { Id_DatLich: appointmentId } });
+    if (!ko) {
+      ko = await KhamOnline.create({ Id_DatLich: appointmentId, LoaiTuVan: 'Chat', TrangThai: 'DangKham' });
+    }
+
+    const msg = await TinNhanKham.create({
+      Id_KhamOnline: ko.Id_KhamOnline,
+      Id_NguoiGui: req.user.id,
+      LoaiTinNhan: req.file ? 'Image' : 'Text',
+      NoiDung: content || '',
+      TapDinhKem: fileUrl
+    });
+
+    const sender = await NguoiDung.findByPk(req.user.id);
+
+    res.json({
+      id: msg.Id_TinNhan,
+      content: msg.NoiDung,
+      createdAt: msg.ThoiGianGui,
+      file_url: fileUrl,
+      is_mine: true,
+      sender_id: req.user.id,
+      sender: { full_name: `${sender.Ho} ${sender.Ten}` }
+    });
+  } catch (error) {
+    res.status(500).json({ detail: 'Error' });
+  }
 };

@@ -54,6 +54,10 @@ export default function PatientConversationChat() {
   };
 
   const fetchConversation = async (silent = false) => {
+    if (conversationId === 'ai') {
+      setConversation({ other_user_name: 'Trợ lý AI y tế', last_message_at: new Date() });
+      return;
+    }
     try {
       const response = await axios.get(`${API}/conversations/my`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -69,6 +73,24 @@ export default function PatientConversationChat() {
   };
 
   const fetchMessages = async (silent = false) => {
+    if (conversationId === 'ai') {
+      // Load AI History
+      try {
+        const res = await axios.get(`${API}/ai/history`, { headers: { Authorization: `Bearer ${token}` } });
+        setMessages([
+          { id: 'welcome', message: 'Tôi là trợ lý AI, bạn hãy nhập triệu chứng để tôi tư vấn nhé.', sender_id: 'ai', sender_name: 'Trợ lý AI', createdAt: new Date() },
+          ...res.data.map(h => ({
+            id: `ai-${h.id}`,
+            message: `Hỏi: ${h.symptoms}\n\nTrợ lý: ${h.diagnosis}`,
+            sender_id: 'ai',
+            sender_name: 'Trợ lý AI',
+            createdAt: new Date()
+          }))
+        ]);
+      } catch (err) { }
+      setLoading(false);
+      return;
+    }
     try {
       const response = await axios.get(`${API}/conversations/${conversationId}/messages`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -144,6 +166,20 @@ export default function PatientConversationChat() {
 
     setSending(true);
 
+    if (conversationId === 'ai') {
+      const userMsg = newMessage.trim();
+      setMessages(prev => [...prev, { id: Date.now(), message: userMsg, sender_id: user?.id, sender_name: 'Bạn', createdAt: new Date() }]);
+      setNewMessage('');
+      try {
+        const response = await axios.post(`${API}/ai/chat`, { message: userMsg }, { headers: { Authorization: `Bearer ${token}` } });
+        setMessages(prev => [...prev, { id: Date.now() + 1, message: response.data.result, sender_id: 'ai', sender_name: 'Trợ lý AI', createdAt: new Date() }]);
+      } catch (err) {
+        toast.error('Có lỗi từ AI');
+      }
+      setSending(false);
+      return;
+    }
+
     try {
       let imageUrl = null;
 
@@ -179,10 +215,7 @@ export default function PatientConversationChat() {
   };
 
   const handleVideoCall = () => {
-    const roomName = `bookingcare-conversation-${conversationId}`;
-    const domain = 'meet.jit.si';
-    const url = `https://${domain}/${roomName}`;
-    window.open(url, '_blank');
+    navigate(`/video/${conversationId}`);
   };
 
   if (loading) {
@@ -345,8 +378,8 @@ function MessageBubble({ message, currentUserId }) {
 
         <div
           className={`rounded-2xl px-4 py-2 ${isOwn
-              ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-tr-none'
-              : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md rounded-tl-none'
+            ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-tr-none'
+            : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md rounded-tl-none'
             }`}
         >
           {message.image_url && (

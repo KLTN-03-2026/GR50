@@ -26,19 +26,19 @@ export const translations = {
     back: 'Quay lại',
     next: 'Tiếp theo',
     confirm: 'Xác nhận',
-    
+
     // Navigation
     home: 'Trang chủ',
     dashboard: 'Bảng điều khiển',
     profile: 'Hồ sơ',
     settings: 'Cài đặt',
-    
+
     // Roles
     patient: 'Bệnh nhân',
     doctor: 'Bác sĩ',
     admin: 'Quản trị viên',
     departmentHead: 'Trưởng khoa',
-    
+
     // Admin Dashboard
     adminDashboard: 'Bảng điều khiển Admin',
     welcomeAdmin: 'Xin chào, Admin',
@@ -53,7 +53,17 @@ export const translations = {
     statisticsDesc: 'Xem báo cáo và thống kê hệ thống',
     manageAdmins: 'Quản lý Admin',
     manageAdminsDesc: 'Tạo và quản lý tài khoản admin',
-    
+    paymentsConfig: 'Thanh toán',
+    paymentsConfigDesc: 'Quản lý doanh thu và giao dịch',
+    reportsConfig: 'Báo cáo',
+    reportsConfigDesc: 'Xem các báo cáo hoạt động',
+    aiDiagnosesConfig: 'Chẩn đoán AI',
+    aiDiagnosesConfigDesc: 'Xem lịch sử chẩn đoán AI',
+    specialtiesConfig: 'Chuyên khoa',
+    specialtiesConfigDesc: 'Quản lý các chuyên khoa',
+    systemSettingsConfig: 'Cài đặt hệ thống',
+    systemSettingsConfigDesc: 'Cấu hình và quản lý cơ sở y tế',
+
     // Create Account Page
     selectAccountType: 'Chọn loại tài khoản',
     accountInfo: 'Thông tin',
@@ -73,7 +83,7 @@ export const translations = {
     canManageSpecialties: 'Quản lý chuyên khoa',
     canCreateAdmins: 'Tạo và quản lý admin khác',
     creating: 'Đang tạo...',
-    
+
     // Admin Management
     adminManagement: 'Quản lý Admin',
     adminManagementDesc: 'Quản lý tài khoản và phân quyền admin',
@@ -83,7 +93,7 @@ export const translations = {
     you: 'Bạn',
     created: 'Tạo',
     editPermissions: 'Chỉnh sửa phân quyền',
-    
+
     // Messages
     createSuccess: 'Tạo thành công!',
     createError: 'Không thể tạo',
@@ -93,7 +103,7 @@ export const translations = {
     updateError: 'Không thể cập nhật',
     loadError: 'Không thể tải dữ liệu',
     confirmDelete: 'Bạn có chắc muốn xóa',
-    
+
     // Login Page
     welcomeBack: 'Chào mừng trở lại',
     loginToContinue: 'Đăng nhập để tiếp tục',
@@ -105,7 +115,10 @@ export const translations = {
     loginSuccess: 'Đăng nhập thành công!',
     loginFailed: 'Đăng nhập thất bại. Vui lòng thử lại!',
     invalidCredentials: 'Email hoặc mật khẩu không đúng!',
-    
+    orLoginWith: 'Hoặc đăng nhập với',
+    orRegisterWith: 'Hoặc đăng ký với',
+    socialLoginNeedsConfig: 'Tính năng này đang chờ cấu hình OAuth2 API (Google/Facebook).',
+
     // Register Page
     registerAccount: 'Đăng ký tài khoản',
     username: 'Tên đăng nhập',
@@ -116,7 +129,7 @@ export const translations = {
     registerFailed: 'Đăng ký thất bại',
     minPasswordLength: 'Tối thiểu 8 ký tự',
     optional: 'không bắt buộc',
-    
+
     // Landing Page
     welcomeToMediSchedule: 'Chào mừng đến với Đặt Lịch Khám Bệnh',
     landingTitle: 'Đặt lịch khám với bác sĩ dễ dàng hơn bao giờ hết',
@@ -139,13 +152,13 @@ export const translations = {
     feature3Desc: 'Thông tin của bạn được bảo vệ tuyệt đối',
     readyToStart: 'Sẵn sàng bắt đầu?',
     registerFree: 'Đăng ký miễn phí',
-    
+
     // Forgot Password
     resetPassword: 'Đặt lại mật khẩu',
     enterEmailReset: 'Nhập email để đặt lại mật khẩu',
     sendResetLink: 'Gửi liên kết đặt lại',
     backToLogin: 'Quay lại đăng nhập',
-    
+
     // Patient Dashboard
     greeting: 'Xin chào',
     welcomeToMediSchedule: 'Chào mừng trở lại với Đặt Lịch Khám Bệnh',
@@ -162,11 +175,11 @@ export const translations = {
     noAppointmentsYet: 'Bạn chưa có lịch hẹn nào',
     bookNow: 'Đặt lịch ngay',
     bookAppointment: 'Đặt lịch khám',
-    
+
     // Doctor
     schedule: 'Lịch làm việc',
     myAppointments: 'Lịch hẹn của tôi',
-    
+
     // Payments
     payments: 'Thanh toán',
     paymentHistory: 'Lịch sử thanh toán',
@@ -179,7 +192,7 @@ export const translations = {
     paymentMethod: 'Phương thức thanh toán',
     paymentStatus: 'Trạng thái thanh toán',
     paymentDate: 'Ngày thanh toán',
-    
+
     // Specialties
     cardiology: 'Tim mạch',
     pediatrics: 'Nhi khoa',
@@ -189,7 +202,7 @@ export const translations = {
     neurology: 'Thần kinh',
     dermatology: 'Da liễu',
     ent: 'Tai mũi họng',
-    
+
     // Doctors Management
     doctorManagement: 'Quản lý bác sĩ',
     doctorList: 'Danh sách bác sĩ',
@@ -206,12 +219,12 @@ export const translations = {
     experience: 'Kinh nghiệm',
     years: 'năm',
     fee: 'Phí khám',
-    
+
     // Patients Management
     patientManagement: 'Quản lý bệnh nhân',
     searchPatients: 'Tìm kiếm bệnh nhân...',
     registeredDate: 'Ngày đăng ký',
-    
+
     // Stats Page
     systemStatistics: 'Thống kê hệ thống',
     overview: 'Tổng quan',
@@ -229,7 +242,7 @@ export const translations = {
     doctorsByStatus: 'Bác sĩ theo trạng thái',
     pendingDoctors: 'Chờ duyệt',
     approvedDoctors: 'Đã duyệt',
-    
+
     // Common Actions
     viewDetails: 'Xem chi tiết',
     actions: 'Hành động',
@@ -237,14 +250,14 @@ export const translations = {
     confirmDeleteUser: 'Bạn có chắc muốn xóa người dùng này?',
     userDeleted: 'Đã xóa người dùng',
     cannotDeleteUser: 'Không thể xóa người dùng',
-    
+
     // Sidebar Navigation
     createAccounts: 'Tạo tài khoản',
     doctors: 'Bác sĩ',
     patients: 'Bệnh nhân',
     stats: 'Thống kê',
     admins: 'Quản lý Admin',
-    
+
     // Department Head
     departmentHeadDashboard: 'Bảng điều khiển Trưởng khoa',
     welcomeBack: 'Chào mừng trở lại',
@@ -291,7 +304,7 @@ export const translations = {
     departmentHeadInfo: 'Thông tin Trưởng khoa',
     departmentHeadInfoText: 'Bạn có quyền quản lý bác sĩ và bệnh nhân trong hệ thống. Bạn có thể tạo tài khoản mới, phê duyệt bác sĩ và xem thống kê.'
   },
-  
+
   en: {
     // Common
     login: 'Login',
@@ -315,19 +328,19 @@ export const translations = {
     back: 'Back',
     next: 'Next',
     confirm: 'Confirm',
-    
+
     // Navigation
     home: 'Home',
     dashboard: 'Dashboard',
     profile: 'Profile',
     settings: 'Settings',
-    
+
     // Roles
     patient: 'Patient',
     doctor: 'Doctor',
     admin: 'Administrator',
     departmentHead: 'Department Head',
-    
+
     // Admin Dashboard
     adminDashboard: 'Admin Dashboard',
     welcomeAdmin: 'Welcome, Admin',
@@ -342,7 +355,17 @@ export const translations = {
     statisticsDesc: 'View system reports and statistics',
     manageAdmins: 'Manage Admins',
     manageAdminsDesc: 'Create and manage admin accounts',
-    
+    paymentsConfig: 'Payments',
+    paymentsConfigDesc: 'Manage revenue and transactions',
+    reportsConfig: 'Reports',
+    reportsConfigDesc: 'View system activity reports',
+    aiDiagnosesConfig: 'AI Diagnoses',
+    aiDiagnosesConfigDesc: 'View AI diagnoses history',
+    specialtiesConfig: 'Specialties',
+    specialtiesConfigDesc: 'Manage medical specialties',
+    systemSettingsConfig: 'System Settings',
+    systemSettingsConfigDesc: 'Configure and manage facilities',
+
     // Create Account Page
     selectAccountType: 'Select account type',
     accountInfo: 'Information',
@@ -362,7 +385,7 @@ export const translations = {
     canManageSpecialties: 'Manage specialties',
     canCreateAdmins: 'Create and manage other admins',
     creating: 'Creating...',
-    
+
     // Admin Management
     adminManagement: 'Admin Management',
     adminManagementDesc: 'Manage admin accounts and permissions',
@@ -372,7 +395,7 @@ export const translations = {
     you: 'You',
     created: 'Created',
     editPermissions: 'Edit Permissions',
-    
+
     // Messages
     createSuccess: 'Created successfully!',
     createError: 'Cannot create',
@@ -382,7 +405,7 @@ export const translations = {
     updateError: 'Cannot update',
     loadError: 'Cannot load data',
     confirmDelete: 'Are you sure you want to delete',
-    
+
     // Login Page
     welcomeBack: 'Welcome Back',
     loginToContinue: 'Login to continue',
@@ -394,7 +417,10 @@ export const translations = {
     loginSuccess: 'Login successful!',
     loginFailed: 'Login failed. Please try again!',
     invalidCredentials: 'Invalid email or password!',
-    
+    orLoginWith: 'Or login with',
+    orRegisterWith: 'Or register with',
+    socialLoginNeedsConfig: 'This feature awaits OAuth2 API configuration (Google/Facebook).',
+
     // Register Page
     registerAccount: 'Register Account',
     username: 'Username',
@@ -405,7 +431,7 @@ export const translations = {
     registerFailed: 'Registration failed',
     minPasswordLength: 'Minimum 8 characters',
     optional: 'optional',
-    
+
     // Landing Page
     welcomeToMediSchedule: 'Welcome to Medical Appointment System',
     landingTitle: 'Book appointments with doctors easier than ever',
@@ -428,13 +454,13 @@ export const translations = {
     feature3Desc: 'Your information is absolutely protected',
     readyToStart: 'Ready to start?',
     registerFree: 'Register for free',
-    
+
     // Forgot Password
     resetPassword: 'Reset Password',
     enterEmailReset: 'Enter your email to reset password',
     sendResetLink: 'Send reset link',
     backToLogin: 'Back to login',
-    
+
     // Patient Dashboard
     greeting: 'Hello',
     welcomeToMediSchedule: 'Welcome back to Medical Appointment System',
@@ -451,11 +477,11 @@ export const translations = {
     noAppointmentsYet: 'You have no appointments yet',
     bookNow: 'Book Now',
     bookAppointment: 'Book Appointment',
-    
+
     // Doctor
     schedule: 'Schedule',
     myAppointments: 'My Appointments',
-    
+
     // Payments
     payments: 'Payments',
     paymentHistory: 'Payment History',
@@ -468,7 +494,7 @@ export const translations = {
     paymentMethod: 'Payment Method',
     paymentStatus: 'Payment Status',
     paymentDate: 'Payment Date',
-    
+
     // Specialties
     cardiology: 'Cardiology',
     pediatrics: 'Pediatrics',
@@ -478,7 +504,7 @@ export const translations = {
     neurology: 'Neurology',
     dermatology: 'Dermatology',
     ent: 'ENT',
-    
+
     // Doctors Management
     doctorManagement: 'Doctor Management',
     doctorList: 'Doctor List',
@@ -495,12 +521,12 @@ export const translations = {
     experience: 'Experience',
     years: 'years',
     fee: 'Fee',
-    
+
     // Patients Management
     patientManagement: 'Patient Management',
     searchPatients: 'Search patients...',
     registeredDate: 'Registered Date',
-    
+
     // Stats Page
     systemStatistics: 'System Statistics',
     overview: 'Overview',
@@ -518,7 +544,7 @@ export const translations = {
     doctorsByStatus: 'Doctors by Status',
     pendingDoctors: 'Pending',
     approvedDoctors: 'Approved',
-    
+
     // Common Actions
     viewDetails: 'View Details',
     actions: 'Actions',
@@ -526,14 +552,14 @@ export const translations = {
     confirmDeleteUser: 'Are you sure you want to delete this user?',
     userDeleted: 'User deleted',
     cannotDeleteUser: 'Cannot delete user',
-    
+
     // Sidebar Navigation
     createAccounts: 'Create Accounts',
     doctors: 'Doctors',
     patients: 'Patients',
     stats: 'Statistics',
     admins: 'Manage Admins',
-    
+
     // Department Head
     departmentHeadDashboard: 'Department Head Dashboard',
     welcomeBack: 'Welcome back',

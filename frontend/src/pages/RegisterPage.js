@@ -26,8 +26,7 @@ export default function RegisterPage() {
     full_name: '',
     phone: '',
     date_of_birth: '',
-    role: 'patient',
-    specialty_id: ''
+    role: 'patient'
   });
 
   // Fetch specialties when component mounts
@@ -50,25 +49,14 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Validate specialty for doctor
-      if (formData.role === 'doctor' && !formData.specialty_id) {
-        toast.error(language === 'vi' ? 'Vui lòng chọn chuyên khoa' : 'Please select a specialty');
-        setLoading(false);
-        return;
-      }
-
-      // Prepare data - remove specialty_id if not doctor
       const submitData = { ...formData };
-      if (formData.role !== 'doctor') {
-        delete submitData.specialty_id;
-      }
 
       const response = await axios.post(`${API}/auth/register`, submitData);
       const { token, user } = response.data;
-      
+
       login(token, user);
       toast.success(t('registerSuccess'));
-      
+
       if (user.role === 'patient') navigate('/patient/dashboard');
       else if (user.role === 'doctor') navigate('/doctor/dashboard');
       else if (user.role === 'department_head') navigate('/department-head/dashboard');
@@ -81,6 +69,13 @@ export default function RegisterPage() {
     }
   };
 
+  const handleSocialAuth = () => {
+    toast.info(t('socialLoginNeedsConfig'), {
+      icon: '🔐',
+      duration: 4000
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-6 transition-colors duration-300">
       <div className="w-full max-w-md">
@@ -88,7 +83,7 @@ export default function RegisterPage() {
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('backToHome')}
         </Button>
-        
+
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8">
           <div className="flex items-center justify-center gap-2 mb-8">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
@@ -192,48 +187,53 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div>
-              <Label htmlFor="role" className="dark:text-gray-200">{t('accountType')}</Label>
-              <Select 
-                value={formData.role} 
-                onValueChange={(value) => setFormData({ ...formData, role: value, specialty_id: '' })}
-              >
-                <SelectTrigger data-testid="role-select" className="mt-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-gray-700 dark:border-gray-600">
-                  <SelectItem data-testid="role-patient" value="patient" className="dark:text-white">{t('patient')}</SelectItem>
-                  <SelectItem data-testid="role-doctor" value="doctor" className="dark:text-white">{t('doctor')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Show specialty selection only for doctors */}
-            {formData.role === 'doctor' && (
-              <div>
-                <Label htmlFor="specialty" className="dark:text-gray-200">{t('specialty')}</Label>
-                <Select 
-                  value={formData.specialty_id} 
-                  onValueChange={(value) => setFormData({ ...formData, specialty_id: value })}
-                >
-                  <SelectTrigger data-testid="specialty-select" className="mt-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <SelectValue placeholder={t('selectSpecialty')} />
-                  </SelectTrigger>
-                  <SelectContent className="dark:bg-gray-700 dark:border-gray-600">
-                    {specialties.map((specialty) => (
-                      <SelectItem key={specialty.id} value={specialty.id} className="dark:text-white">
-                        {specialty.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            {/* Removed Account Type and Specialty selections */}
 
             <Button data-testid="submit-register-btn" type="submit" disabled={loading} className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600">
               {loading ? t('loading') : t('register')}
             </Button>
           </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-medium">
+                  {t('orRegisterWith')}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSocialAuth}
+                className="w-full flex items-center justify-center gap-2 border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                </svg>
+                Google
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSocialAuth}
+                className="w-full flex items-center justify-center gap-2 border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 hover:text-[#1877F2]"
+              >
+                <svg className="w-5 h-5 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+                Facebook
+              </Button>
+            </div>
+          </div>
 
           <p className="mt-6 text-center text-gray-600 dark:text-gray-300">
             {t('alreadyHaveAccount')}{' '}

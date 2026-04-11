@@ -1,8 +1,10 @@
 const { Sequelize } = require('sequelize');
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 
-const sequelize = new Sequelize('sqlite::memory:', {
-  logging: false, // Set to console.log to see SQL queries
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
+  host: process.env.DB_HOST,
+  dialect: 'mysql',
+  logging: false,
 });
 
 module.exports = sequelize;

@@ -1,53 +1,43 @@
-const { SystemSetting } = require('../models');
+const { PhongKham } = require('../models');
 
+/**
+ * GET /api/system - returns basic system/hospital settings.
+ * Currently returns clinic #1 as the "main hospital" if available.
+ */
 exports.getSettings = async (req, res) => {
     try {
-        const settings = await SystemSetting.findAll();
-        const settingsMap = {};
-        settings.forEach(s => {
-            settingsMap[s.key] = s.value;
+        const clinic = await PhongKham.findOne({ order: [['id', 'ASC']] });
+        res.json({
+            site_name: clinic ? clinic.TenPhongKham : 'BookingCare',
+            hospital_phone: clinic ? clinic.SDT : '1900 1234',
+            hospital_email: clinic ? clinic.Email : 'support@bookingcare.vn',
+            hospital_address: clinic ? clinic.DiaChi : 'Đà Nẵng, Việt Nam'
         });
-        res.json(settingsMap);
     } catch (error) {
-        console.error('Get settings error:', error);
-        res.status(500).json({ detail: 'Internal server error' });
+        // If PhongKham table doesn't exist yet, return defaults
+        res.json({
+            site_name: 'BookingCare',
+            hospital_phone: '1900 1234',
+            hospital_email: 'support@bookingcare.vn',
+            hospital_address: 'Đà Nẵng, Việt Nam'
+        });
     }
 };
 
 exports.updateSettings = async (req, res) => {
-    try {
-        const settings = req.body; // Expecting { key: value, key2: value2 }
-
-        for (const [key, value] of Object.entries(settings)) {
-            await SystemSetting.upsert({
-                key,
-                value: String(value)
-            });
-        }
-
-        res.json({ message: 'Settings updated successfully' });
-    } catch (error) {
-        console.error('Update settings error:', error);
-        res.status(500).json({ detail: 'Internal server error' });
-    }
+    res.json({ message: 'Use /api/clinics endpoints to manage clinic information' });
 };
 
-// Public endpoint to get specific public settings (like banner, contact info)
 exports.getPublicSettings = async (req, res) => {
     try {
-        const publicKeys = ['hospital_name', 'hospital_address', 'hospital_phone', 'hospital_email', 'banner_image', 'logo_image'];
-        const settings = await SystemSetting.findAll({
-            where: {
-                key: publicKeys
-            }
+        const clinic = await PhongKham.findOne({ order: [['id', 'ASC']] });
+        res.json({
+            site_name: clinic ? clinic.TenPhongKham : 'BookingCare',
+            hospital_phone: clinic ? clinic.SDT : '1900 1234',
+            hospital_email: clinic ? clinic.Email : 'support@bookingcare.vn',
+            hospital_address: clinic ? clinic.DiaChi : 'Đà Nẵng, Việt Nam'
         });
-        const settingsMap = {};
-        settings.forEach(s => {
-            settingsMap[s.key] = s.value;
-        });
-        res.json(settingsMap);
     } catch (error) {
-        console.error('Get public settings error:', error);
-        res.status(500).json({ detail: 'Internal server error' });
+        res.json({ site_name: 'BookingCare' });
     }
 };

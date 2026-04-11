@@ -44,26 +44,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 // Mock data cơ sở y tế
 // Mock data cơ sở y tế
-const facilities = [
-  {
-    id: 1,
-    name: 'Bệnh viện Đa khoa Quốc tế Đà Nẵng',
-    image: 'https://images.unsplash.com/photo-1533042789716-e9a9c97cf4ee',
-    address: 'Hải Châu, Đà Nẵng',
-  },
-  {
-    id: 2,
-    name: 'Phòng khám Đa khoa Gia đình',
-    image: 'https://images.unsplash.com/photo-1597807037496-c56a1d8bc29a',
-    address: 'Thanh Khê, Đà Nẵng',
-  },
-  {
-    id: 3,
-    name: 'Trung tâm Y tế chuyên sâu',
-    image: 'https://images.unsplash.com/photo-1587351021759-3e566b6af7cc',
-    address: 'Sơn Trà, Đà Nẵng',
-  },
-];
+
 
 // Dịch vụ toàn diện
 const comprehensiveServices = [
@@ -89,12 +70,22 @@ export default function LandingPage() {
   const [systemSettings, setSystemSettings] = useState({});
   const [doctors, setDoctors] = useState([]);
   const [specialties, setSpecialties] = useState([]);
+  const [facilities, setFacilities] = useState([]);
 
   useEffect(() => {
     fetchSystemSettings();
     fetchDoctors();
     fetchSpecialties();
+    fetchFacilities();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') navigate('/admin/dashboard', { replace: true });
+      else if (user.role === 'doctor') navigate('/doctor/dashboard', { replace: true });
+      else if (user.role === 'department_head') navigate('/department-head/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const fetchSpecialties = async () => {
     try {
@@ -102,6 +93,15 @@ export default function LandingPage() {
       setSpecialties(res.data.slice(0, 10)); // Limit to 10 like mock data
     } catch (error) {
       console.error("Failed to fetch specialties", error);
+    }
+  };
+
+  const fetchFacilities = async () => {
+    try {
+      const res = await axios.get(`${API}/clinics`);
+      setFacilities(res.data.slice(0, 3));
+    } catch (error) {
+      console.error("Failed to fetch facilities", error);
     }
   };
 
@@ -193,13 +193,13 @@ export default function LandingPage() {
 
             {/* Navigation Menu */}
             <nav className="hidden md:flex items-center gap-6">
-              <a href="#dich-vu" className="text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition">Dịch vụ</a>
-              <a href="#chuyen-khoa" className="text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition">Chuyên khoa</a>
-              <a href="#bac-si" className="text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition">Bác sĩ</a>
-              <a href="#co-so" className="text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition">Cơ sở y tế</a>
+              <a href="#dich-vu" className="text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition font-bold">Dịch vụ</a>
+              <a href="#chuyen-khoa" className="text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition font-bold">Chuyên khoa</a>
+              <a href="#bac-si" className="text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition font-bold">Bác sĩ</a>
+              <a href="#co-so" className="text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition font-bold">Cơ sở y tế</a>
               <button
-                onClick={() => user ? navigate('/patient/ai-consultation') : navigate('/login')}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-violet-50 text-violet-600 hover:bg-violet-100 font-medium transition-colors dark:bg-violet-900/30 dark:text-violet-300 dark:hover:bg-violet-900/50"
+                onClick={() => window.dispatchEvent(new Event('toggle-floating-chat'))}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-violet-50 text-violet-600 hover:bg-violet-100 font-bold transition-colors dark:bg-violet-900/30 dark:text-violet-300 dark:hover:bg-violet-900/50"
               >
                 <Brain className="w-4 h-4" />
                 <span>Tư vấn AI</span>
@@ -324,7 +324,7 @@ export default function LandingPage() {
 
               <div className="mt-8 flex justify-center animate-in slide-in-from-bottom-5 fade-in duration-700 delay-200">
                 <Button
-                  onClick={() => user ? navigate('/patient/ai-consultation') : navigate('/login')}
+                  onClick={() => window.dispatchEvent(new Event('toggle-floating-chat'))}
                   className="relative overflow-hidden bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-xl hover:shadow-2xl hover:shadow-violet-500/30 transform hover:-translate-y-1 transition-all duration-300 text-lg px-8 py-6 h-auto rounded-full group border-0"
                 >
                   <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 skew-x-12 -translate-x-full"></div>
@@ -470,22 +470,25 @@ export default function LandingPage() {
             {facilities.map((facility) => (
               <div
                 key={facility.id}
-                onClick={() => navigate(`/facility/${facility.id}`)}
+                onClick={() => facility.GoogleMapUrl ? window.open(facility.GoogleMapUrl, '_blank') : null}
                 className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-xl transition cursor-pointer"
               >
                 <div className="aspect-video relative overflow-hidden">
                   <img
-                    src={facility.image}
-                    alt={facility.name}
+                    src={facility.UrlBanner || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d'}
+                    alt={facility.TenPhongKham}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="p-6">
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">{facility.name}</h3>
+                  <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">{facility.TenPhongKham}</h3>
                   <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
-                    {facility.address}
+                    {facility.DiaChi}
                   </p>
+                  {facility.GoogleMapUrl && (
+                    <p className="text-sm text-cyan-600 mt-2 font-medium">Bấm để xem trên Google Maps</p>
+                  )}
                 </div>
               </div>
             ))}

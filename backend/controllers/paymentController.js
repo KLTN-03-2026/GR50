@@ -1,36 +1,26 @@
-const { Payment, Appointment, User } = require('../models');
+const { ThanhToan, DatLich, BenhNhan, NguoiDung, LichKham, BacSi } = require('../models');
 
 exports.getMyPayments = async (req, res) => {
   try {
     const userId = req.user.id;
-    const payments = await Payment.findAll({
-      where: { patient_id: userId },
-      include: [
-        {
-          model: Appointment,
-          include: [
-            { model: User, as: 'Doctor', attributes: ['full_name'] }
-          ]
-        }
-      ],
+    const bn = await BenhNhan.findOne({ where: { Id_NguoiDung: userId } });
+    if (!bn) return res.json([]);
+
+    const payments = await ThanhToan.findAll({
+      where: { Id_BenhNhan: bn.Id_BenhNhan },
       order: [['createdAt', 'DESC']]
     });
 
-    // Format data for frontend
-    const formattedPayments = payments.map(p => ({
-      payment_id: p.payment_id,
-      status: p.status,
-      doctor_name: p.Appointment?.Doctor?.full_name || 'Unknown Doctor',
-      amount: parseFloat(p.amount),
-      payment_method: p.payment_method,
-      transaction_id: p.transaction_id,
+    res.json(payments.map(p => ({
+      payment_id: p.Id_ThanhToan,
+      status: p.TrangThai === 'ThanhCong' ? 'completed' : 'pending',
+      amount: parseFloat(p.SoTien),
+      payment_method: p.PhuongThuc,
+      transaction_id: p.MaGiaoDich,
       created_at: p.createdAt,
-      payment_date: p.payment_date
-    }));
-
-    res.json(formattedPayments);
+      payment_date: p.createdAt
+    })));
   } catch (error) {
-    console.error('Get payments error:', error);
     res.status(500).json({ detail: 'Internal server error' });
   }
 };
@@ -38,43 +28,52 @@ exports.getMyPayments = async (req, res) => {
 exports.getPaymentById = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
-
-    const payment = await Payment.findOne({
-      where: {
-        payment_id: id,
-        patient_id: userId
-      },
+    const payment = await ThanhToan.findByPk(id, {
       include: [
         {
-          model: Appointment,
+          model: DatLich,
           include: [
-            { model: User, as: 'Doctor', attributes: ['full_name'] },
-            { model: User, as: 'Patient', attributes: ['full_name'] }
+            {
+              model: BenhNhan,
+              include: [{ model: NguoiDung }]
+            },
+            {
+              model: LichKham,
+              include: [{ model: BacSi, include: [{ model: NguoiDung }] }]
+            }
           ]
         }
       ]
     });
 
-    if (!payment) {
-      return res.status(404).json({ detail: 'Payment not found' });
+    if (!payment) return res.status(404).json({ detail: 'Payment not found' });
+
+    let patient_name = 'Bệnh Nhân';
+    let doctor_name = 'Bác Sĩ';
+
+    if (payment.DatLich) {
+      if (payment.DatLich.BenhNhan?.NguoiDung) {
+        patient_name = payment.DatLich.BenhNhan.NguoiDung.Ho + ' ' + payment.DatLich.BenhNhan.NguoiDung.Ten;
+      }
+      if (payment.DatLich.LichKham?.BacSi?.NguoiDung) {
+        doctor_name = payment.DatLich.LichKham.BacSi.NguoiDung.Ho + ' ' + payment.DatLich.LichKham.BacSi.NguoiDung.Ten;
+      }
     }
 
     res.json({
-      payment_id: payment.payment_id,
-      status: payment.status,
-      doctor_name: payment.Appointment?.Doctor?.full_name || 'Unknown Doctor',
-      patient_name: payment.Appointment?.Patient?.full_name || 'Unknown Patient',
-      amount: parseFloat(payment.amount),
-      payment_method: payment.payment_method,
-      transaction_id: payment.transaction_id,
+      payment_id: payment.Id_ThanhToan,
+      status: payment.TrangThai === 'ThanhCong' ? 'completed' : 'pending',
+      amount: parseFloat(payment.SoTien),
+      payment_method: payment.PhuongThuc,
+      transaction_id: payment.MaGiaoDich,
       created_at: payment.createdAt,
-      payment_date: payment.payment_date,
-      doctor_id: payment.Appointment?.doctor_id
+      payment_date: payment.createdAt,
+      doctor_name: doctor_name,
+      patient_name: patient_name
     });
 
   } catch (error) {
-    console.error('Get payment details error:', error);
+    console.error(error);
     res.status(500).json({ detail: 'Internal server error' });
   }
 };
@@ -83,41 +82,17 @@ exports.processPayment = async (req, res) => {
   try {
     const { id } = req.params;
     const { payment_method } = req.body;
-    const userId = req.user.id;
 
-    const payment = await Payment.findOne({
-      where: {
-        payment_id: id,
-        patient_id: userId
-      }
-    });
+    const payment = await ThanhToan.findByPk(id);
+    if (!payment) return res.status(404).json({ detail: 'Payment not found' });
 
-    if (!payment) {
-      return res.status(404).json({ detail: 'Payment not found' });
-    }
-
-    if (payment.status === 'completed') {
-      return res.status(400).json({ detail: 'Payment already completed' });
-    }
-
-    // Mock processing
-    payment.status = 'completed';
-    payment.payment_method = payment_method;
-    payment.transaction_id = `TXN-${Date.now()}`;
-    payment.payment_date = new Date();
+    payment.TrangThai = 'ThanhCong';
+    payment.PhuongThuc = payment_method === 'credit_card' ? 'VNPay' : 'Momo';
+    payment.MaGiaoDich = `TXN-${Date.now()}`;
     await payment.save();
 
-    // Update appointment status to confirmed if it was pending
-    const appointment = await Appointment.findByPk(payment.appointment_id);
-    if (appointment && appointment.status === 'pending') {
-      appointment.status = 'confirmed';
-      await appointment.save();
-    }
-
-    res.json({ status: 'completed', transaction_id: payment.transaction_id });
-
+    res.json({ status: 'completed', transaction_id: payment.MaGiaoDich });
   } catch (error) {
-    console.error('Process payment error:', error);
     res.status(500).json({ detail: 'Internal server error' });
   }
 };

@@ -6,9 +6,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import FloatingChatButton from "@/components/FloatingChatButton";
+import FloatingChatButton from '@/components/FloatingChatButton';
+
 import PatientDashboard from "@/pages/patient/Dashboard";
-import AIConsultation from "@/pages/patient/AIConsultation";
 import AIHistory from "@/pages/patient/AIHistory";
 import SearchDoctors from "@/pages/patient/SearchDoctors";
 import PatientAppointments from "@/pages/patient/Appointments";
@@ -31,6 +31,7 @@ import DoctorConversationChat from "@/pages/doctor/ConversationChat";
 import PatientMedicalRecords from "@/pages/patient/MedicalRecords";
 import DoctorMedicalRecords from "@/pages/doctor/MedicalRecords";
 import DoctorAIDiagnoses from "@/pages/doctor/AIDiagnoses";
+import VideoConsultation from "@/pages/VideoConsultation";
 
 // Admin Pages
 // Admin Pages
@@ -44,6 +45,7 @@ import AdminPayments from "@/pages/admin/Payments";
 import AdminReports from "@/pages/admin/Reports";
 import SystemSettings from "@/pages/admin/SystemSettings";
 import AIDiagnoses from "@/pages/admin/AIDiagnoses";
+import AdminSpecialties from "@/pages/admin/Specialties";
 
 // Department Head Pages
 import DepartmentHeadDashboard from "@/pages/department-head/Dashboard";
@@ -138,11 +140,11 @@ function App() {
 
               {/* Patient Routes */}
               <Route path="/patient/dashboard" element={user?.role === "patient" ? <PatientDashboard /> : <Navigate to="/login" />} />
+              <Route path="/video/:conversationId" element={user ? <VideoConsultation /> : <Navigate to="/login" />} />
               <Route path="/patient/search-doctors" element={user?.role === "patient" ? <SearchDoctors /> : <Navigate to="/login" />} />
               <Route path="/patient/appointments" element={user?.role === "patient" ? <PatientAppointments /> : <Navigate to="/login" />} />
               <Route path="/patient/chat" element={user?.role === "patient" ? <PatientChatList /> : <Navigate to="/login" />} />
               <Route path="/patient/chat/:appointmentId" element={user?.role === "patient" ? <PatientChat /> : <Navigate to="/login" />} />
-              <Route path="/patient/ai-consultation" element={user?.role === "patient" ? <AIConsultation /> : <Navigate to="/login" />} />
               <Route path="/patient/ai-history" element={user?.role === "patient" ? <AIHistory /> : <Navigate to="/login" />} />
               <Route path="/patient/conversations" element={user?.role === "patient" ? <PatientConversations /> : <Navigate to="/login" />} />
               <Route path="/patient/conversation/:conversationId" element={user?.role === "patient" ? <PatientConversationChat /> : <Navigate to="/login" />} />
@@ -175,6 +177,7 @@ function App() {
               <Route path="/admin/reports" element={user?.role === "admin" ? <AdminReports /> : <Navigate to="/login" />} />
               <Route path="/admin/settings" element={user?.role === "admin" ? <SystemSettings /> : <Navigate to="/login" />} />
               <Route path="/admin/ai-diagnoses" element={user?.role === "admin" ? <AIDiagnoses /> : <Navigate to="/login" />} />
+              <Route path="/admin/specialties" element={user?.role === "admin" ? <AdminSpecialties /> : <Navigate to="/login" />} />
 
               {/* Department Head Routes */}
               <Route path="/department-head/dashboard" element={user?.role === "department_head" ? <DepartmentHeadDashboard /> : <Navigate to="/login" />} />

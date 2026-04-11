@@ -179,10 +179,7 @@ export default function DoctorConversationChat() {
   };
 
   const handleVideoCall = () => {
-    const roomName = `bookingcare-conversation-${conversationId}`;
-    const domain = 'meet.jit.si';
-    const url = `https://${domain}/${roomName}`;
-    window.open(url, '_blank');
+    navigate(`/video/${conversationId}`);
   };
 
   if (loading) {
@@ -345,8 +342,8 @@ function MessageBubble({ message, currentUserId }) {
 
         <div
           className={`rounded-2xl px-4 py-2 ${isOwn
-              ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-tr-none'
-              : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md rounded-tl-none'
+            ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-tr-none'
+            : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md rounded-tl-none'
             }`}
         >
           {message.image_url && (

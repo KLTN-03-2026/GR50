@@ -8,6 +8,7 @@ import { BarChart, DollarSign, Users, Calendar } from 'lucide-react';
 export default function AdminReports() {
     const [stats, setStats] = useState(null);
     const [payments, setPayments] = useState(null);
+    const [reports, setReports] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -16,13 +17,15 @@ export default function AdminReports() {
                 const token = localStorage.getItem('token');
                 const headers = { Authorization: `Bearer ${token}` };
 
-                const [statsRes, paymentsRes] = await Promise.all([
+                const [statsRes, paymentsRes, reportsRes] = await Promise.all([
                     axios.get(`${API}/admin/stats`, { headers }),
-                    axios.get(`${API}/admin/payments`, { headers })
+                    axios.get(`${API}/admin/payments`, { headers }),
+                    axios.get(`${API}/admin/reports`, { headers })
                 ]);
 
                 setStats(statsRes.data);
                 setPayments(paymentsRes.data);
+                setReports(reportsRes.data);
             } catch (error) {
                 console.error('Error fetching reports:', error);
             } finally {

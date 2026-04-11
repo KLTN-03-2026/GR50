@@ -19,6 +19,8 @@ app.get('/api/health', (req, res) => {
 });
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/specialties', require('./routes/specialtyRoutes'));
+app.use('/api/clinics', require('./routes/clinicRoutes'));
+app.use('/api/facilities', require('./routes/facilityRoutes'));
 app.use('/api/doctors', require('./routes/doctorRoutes'));
 app.use('/api/profile', require('./routes/userRoutes'));
 app.use('/api/appointments', require('./routes/appointmentRoutes'));
@@ -30,17 +32,19 @@ app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/medical-records', require('./routes/medicalRecordRoutes'));
 app.use('/api/system', require('./routes/systemRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 // Database connection and server start
 const fs = require('fs');
 const logFile = 'server_debug.log';
 
-sequelize.sync({ force: true })   // Use force:true to recreate SQLite DB every time
+sequelize.sync({ force: false })
   .then(async () => {
-    console.log('Database connected and synced (SQLite in-memory)...');
+    console.log('Database connected and synced (MySQL)...');
     fs.appendFileSync(logFile, `[${new Date().toISOString()}] Database connected and synced...\n`);
 
-    // Auto-seed data
+    // Auto-seed data disabled
+    /*
     console.log('Starting data injection (seeding)...');
     const seed = require('./seed');
     try {
@@ -49,6 +53,7 @@ sequelize.sync({ force: true })   // Use force:true to recreate SQLite DB every 
     } catch (seedErr) {
       console.error('Data injection failed:', seedErr);
     }
+    */
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

@@ -1,229 +1,78 @@
-const { sequelize, User, Specialty, Doctor, Patient, Appointment, AdminPermission, Payment } = require('./models');
-const { fakerVI: faker } = require('@faker-js/faker');
 const bcrypt = require('bcryptjs');
+const {
+  sequelize,
+  VaiTro,
+  NguoiDung,
+  NguoiDung_VaiTro,
+  ChuyenKhoa,
+  BacSi,
+  BenhNhan
+} = require('./models');
 
 async function seed() {
+  console.log('Seeding Database...');
+
   try {
-    await sequelize.query('PRAGMA foreign_keys = OFF');
-    await sequelize.sync({ force: true }); // Reset database
-    await sequelize.query('PRAGMA foreign_keys = ON');
-    console.log('Database synced!');
+    await sequelize.sync({ force: true });
+    console.log('Database synced');
 
-    // Specialties
-    const specialtiesData = [
-      { name: 'Tim mạch', description: 'Chuyên khoa về tim và mạch máu', image: 'https://placehold.co/600x400/ffe4e1/000000?text=Tim+mach' },
-      { name: 'Nội khoa', description: 'Chuyên khoa nội tổng quát', image: 'https://placehold.co/600x400/e6e6fa/000000?text=Noi+khoa' },
-      { name: 'Ngoại khoa', description: 'Phẫu thuật và điều trị ngoại khoa', image: 'https://placehold.co/600x400/f0f8ff/000000?text=Ngoai+khoa' },
-      { name: 'Nhi khoa', description: 'Chăm sóc sức khỏe trẻ em', image: 'https://placehold.co/600x400/fff0f5/000000?text=Nhi+khoa' },
-      { name: 'Sản phụ khoa', description: 'Sức khỏe phụ nữ và sinh sản', image: 'https://placehold.co/600x400/ffe4b5/000000?text=San+phu+khoa' },
-      { name: 'Răng hàm mặt', description: 'Nha khoa và phẫu thuật hàm mặt', image: 'https://placehold.co/600x400/f0ffff/000000?text=Rang+ham+mat' },
-      { name: 'Da liễu', description: 'Các bệnh về da', image: 'https://placehold.co/600x400/faebd7/000000?text=Da+lieu' },
-      { name: 'Mắt', description: 'Nhãn khoa', image: 'https://placehold.co/600x400/f5f5dc/000000?text=Mat' },
-      { name: 'Tai Mũi Họng', description: 'Bệnh lý tai mũi họng', image: 'https://placehold.co/600x400/fff8dc/000000?text=Tai+mui+hong' },
-      { name: 'Thần kinh', description: 'Bệnh lý hệ thần kinh', image: 'https://placehold.co/600x400/fdf5e6/000000?text=Than+kinh' }
+    // 1. Roles (VaiTrò)
+    const rolesData = [
+      { MaVaiTro: 'admin', TenVaiTro: 'Quản trị viên', MoTa: 'Toàn quyền hệ thống' },
+      { MaVaiTro: 'doctor', TenVaiTro: 'Bác sĩ', MoTa: 'Chẩn đoán và khám bệnh' },
+      { MaVaiTro: 'patient', TenVaiTro: 'Bệnh nhân', MoTa: 'Đăng ký khám' },
+      { MaVaiTro: 'department_head', TenVaiTro: 'Trưởng khoa', MoTa: 'Quản lý chuyên khoa' }
     ];
+    const roles = await VaiTro.bulkCreate(rolesData);
 
-    const specialties = await Specialty.bulkCreate(specialtiesData);
-    console.log('Specialties created');
+    const adminRole = roles.find(r => r.MaVaiTro === 'admin');
+    const patientRole = roles.find(r => r.MaVaiTro === 'patient');
+    const doctorRole = roles.find(r => r.MaVaiTro === 'doctor');
 
-    const passwordHash = await bcrypt.hash('12345678', 10);
+    // 2. Chuyên khoa (Specialties)
+    const specialtiesData = [
+      { TenChuyenKhoa: 'Cơ Xương Khớp', MoTa: 'Bệnh lý về hệ thần kinh, hệ cơ và xương.', TrangThai: 'HoatDong' },
+      { TenChuyenKhoa: 'Thần Kinh', MoTa: 'Bệnh lý hệ thần kinh.', TrangThai: 'HoatDong' },
+      { TenChuyenKhoa: 'Tiêu Hóa', MoTa: 'Bệnh lý ống tiêu hoá.', TrangThai: 'HoatDong' },
+      { TenChuyenKhoa: 'Tim Mạch', MoTa: 'Bệnh lý về hệ tim mạch.', TrangThai: 'HoatDong' }
+    ];
+    const specialties = await ChuyenKhoa.bulkCreate(specialtiesData);
 
-    // Admin
-    const adminUser = await User.create({
-      email: 'admin@medischedule.com',
-      username: 'admin',
-      password: passwordHash,
-      full_name: 'Quản Trị Viên',
-      role: 'admin',
-      phone: '0901234567',
-      address: 'Hà Nội, Việt Nam',
-      avatar: 'https://ui-avatars.com/api/?name=Quan+Tri+Vien&background=random'
+    // 3. Người dùng Admin
+    const hashedPassword = await bcrypt.hash('12345678', 10);
+    const adminUser = await NguoiDung.create({
+      Ho: 'Quản',
+      Ten: 'Trị',
+      Email: 'admin@medischedule.com',
+      MatKhau: hashedPassword,
+      TrangThai: 'HoatDong'
     });
+    await NguoiDung_VaiTro.create({ Id_NguoiDung: adminUser.Id_NguoiDung, Id_VaiTro: adminRole.Id_VaiTro });
 
-    await AdminPermission.create({
-      user_id: adminUser.id,
-      can_manage_doctors: true,
-      can_manage_patients: true,
-      can_manage_appointments: true,
-      can_view_stats: true,
-      can_manage_specialties: true,
-      can_create_admins: true
-    });
-    console.log('Admin created');
+    // 4. Bác sĩ (Doctors)
+    const doctorUsers = await NguoiDung.bulkCreate([
+      { Ho: 'Nguyễn', Ten: 'Lân Việt', Email: 'bs.viet@hospital.com', MatKhau: hashedPassword, TrangThai: 'HoatDong' },
+      { Ho: 'Phạm', Ten: 'Minh Thông', Email: 'bs.thong@hospital.com', MatKhau: hashedPassword, TrangThai: 'HoatDong' },
+      { Ho: 'Ngô', Ten: 'Quý Châu', Email: 'bs.chau@hospital.com', MatKhau: hashedPassword, TrangThai: 'HoatDong' }
+    ]);
 
-    // Department Head
-    await User.create({
-      email: 'departmenthead@test.com',
-      username: 'depthead',
-      password: passwordHash,
-      full_name: 'Trưởng Khoa',
-      role: 'department_head',
-      phone: '0909999999',
-      address: 'Hà Nội, Việt Nam',
-      avatar: 'https://ui-avatars.com/api/?name=Truong+Khoa&background=random'
-    });
-    console.log('Department Head created');
-
-    // Doctors
-    const doctors = [];
-    for (let i = 0; i < 20; i++) {
-      const firstName = faker.person.firstName();
-      const lastName = faker.person.lastName();
-      const fullName = `BS. ${lastName} ${firstName}`;
-      const specialty = specialties[Math.floor(Math.random() * specialties.length)];
-
-      const user = await User.create({
-        email: `doctor${i + 1}@test.com`,
-        username: `doctor${i + 1}`,
-        password: passwordHash,
-        full_name: fullName,
-        role: 'doctor',
-        phone: faker.phone.number('09########'),
-        address: faker.location.streetAddress(),
-        date_of_birth: faker.date.birthdate({ min: 30, max: 60, mode: 'age' }),
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random`
-      });
-
-      const doctor = await Doctor.create({
-        user_id: user.id,
-        specialty_id: specialty.id,
-        experience_years: faker.number.int({ min: 2, max: 30 }),
-        fee: faker.number.int({ min: 200, max: 1000 }) * 1000,
-        bio: `Bác sĩ ${fullName} là một chuyên gia hàng đầu trong lĩnh vực ${specialty.name} với nhiều năm kinh nghiệm.`,
-        status: 'approved'
-      });
-      doctors.push(doctor);
-    }
-    console.log('Doctors created');
-
-    // Patients
-    const patients = [];
-    for (let i = 0; i < 50; i++) {
-      const firstName = faker.person.firstName();
-      const lastName = faker.person.lastName();
-
-      const user = await User.create({
-        email: `patient${i + 1}@test.com`,
-        username: `patient${i + 1}`,
-        password: passwordHash,
-        full_name: `${lastName} ${firstName}`,
-        role: 'patient',
-        phone: faker.phone.number('09########'),
-        address: faker.location.streetAddress(),
-        date_of_birth: faker.date.birthdate({ min: 18, max: 80, mode: 'age' }),
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(lastName + ' ' + firstName)}&background=random`
-      });
-
-      const patient = await Patient.create({
-        user_id: user.id
-      });
-      patients.push(patient);
-    }
-    console.log('Patients created');
-
-    // Appointments
-    for (let i = 0; i < 100; i++) {
-      const patient = patients[Math.floor(Math.random() * patients.length)];
-      const doctor = doctors[Math.floor(Math.random() * doctors.length)];
-
-      // Random date within last month and next month
-      const date = faker.date.between({ from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), to: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
-
-      // Random time between 8:00 and 17:00
-      const hour = faker.number.int({ min: 8, max: 16 });
-      const minute = faker.number.int({ min: 0, max: 1 }) * 30; // 00 or 30
-      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
-
-      let status = 'pending';
-      if (date < new Date()) {
-        status = faker.helpers.arrayElement(['completed', 'cancelled']);
-      } else {
-        status = faker.helpers.arrayElement(['pending', 'confirmed']);
-      }
-
-      const symptomsList = [
-        'Đau đầu, chóng mặt',
-        'Sốt cao, ho nhiều',
-        'Đau bụng dữ dội',
-        'Mệt mỏi, chán ăn',
-        'Khó thở, tức ngực',
-        'Đau nhức xương khớp',
-        'Nổi mẩn ngứa',
-        'Mất ngủ kéo dài',
-        'Đau răng, sưng lợi',
-        'Mờ mắt, đau mắt'
-      ];
-
-      await Appointment.create({
-        patient_id: patient.user_id,
-        doctor_id: doctor.user_id,
-        appointment_date: date,
-        appointment_time: time,
-        symptoms: faker.helpers.arrayElement(symptomsList),
-        status: status
-      });
-    }
-    console.log('Appointments created');
-
-    // Payments
-    const allAppointments = await Appointment.findAll();
-    for (const appt of allAppointments) {
-      if (appt.status === 'completed' || appt.status === 'confirmed') {
-        const doctor = await Doctor.findOne({ where: { user_id: appt.doctor_id } });
-        const feeAmount = doctor && doctor.fee ? parseFloat(doctor.fee) : 500000;
-
-        // 70% chance of having a payment record
-        if (Math.random() > 0.3) {
-          await Payment.create({
-            appointment_id: appt.id,
-            patient_id: appt.patient_id,
-            amount: feeAmount,
-            payment_method: faker.helpers.arrayElement(['mock_card', 'mock_wallet', 'mock_bank']),
-            transaction_id: faker.string.uuid(),
-            status: appt.status === 'completed' ? 'completed' : 'pending',
-            payment_date: appt.status === 'completed' ? appt.appointment_date : null
-          });
-        }
-      }
-    }
-    console.log('Payments created');
-
-    // Conversations & Messages
-    const { Conversation, Message } = require('./models');
-
-    // Create a conversation between patient1 and doctor1
-    const patient1 = patients[0];
-    const doctor1 = doctors[0];
-
-    if (patient1 && doctor1) {
-      const conversation = await Conversation.create({
-        patient_id: patient1.user_id,
-        doctor_id: doctor1.user_id,
-        status: 'active'
-      });
-
-      await Message.create({
-        conversation_id: conversation.id,
-        sender_id: doctor1.user_id,
-        message: `Xin chào ${patient1.User?.full_name || 'bạn'}, tôi có thể giúp gì cho bạn?`,
-        is_read: true
-      });
-
-      await Message.create({
-        conversation_id: conversation.id,
-        sender_id: patient1.user_id,
-        message: 'Chào bác sĩ, tôi muốn hỏi về lịch khám.',
-        is_read: true
-      });
-
-      console.log('Sample conversation created');
+    for (const doct of doctorUsers) {
+      await NguoiDung_VaiTro.create({ Id_NguoiDung: doct.Id_NguoiDung, Id_VaiTro: doctorRole.Id_VaiTro });
     }
 
-    console.log('Seeding completed successfully!');
-  } catch (error) {
-    console.error('Seeding failed:', error);
-    throw error;
+    const doctorsData = [
+      { Id_NguoiDung: doctorUsers[0].Id_NguoiDung, Id_ChuyenKhoa: specialties[0].Id_ChuyenKhoa, SoNamKinhNghiem: 30, HocHamHocVi: 'Tiến sĩ', NoiLamViec: 'Bệnh viện Bạch Mai - 21.002008, 105.840785', PhiTuVan: 500000, TrangThai: 'HoatDong' },
+      { Id_NguoiDung: doctorUsers[1].Id_NguoiDung, Id_ChuyenKhoa: specialties[1].Id_ChuyenKhoa, SoNamKinhNghiem: 25, HocHamHocVi: 'Phó Giáo sư', NoiLamViec: 'Bệnh viện Chợ Rẫy - 10.757049, 106.658253', PhiTuVan: 400000, TrangThai: 'HoatDong' },
+      { Id_NguoiDung: doctorUsers[2].Id_NguoiDung, Id_ChuyenKhoa: specialties[2].Id_ChuyenKhoa, SoNamKinhNghiem: 40, HocHamHocVi: 'Giáo sư', NoiLamViec: 'Bệnh viện Đại học Y Dược TP.HCM - 10.755452, 106.666324', PhiTuVan: 600000, TrangThai: 'HoatDong' }
+    ];
+    await BacSi.bulkCreate(doctorsData);
+
+    console.log('Seeding Database Completed Successfully!');
+  } catch (err) {
+    console.error('Seeding error:', err);
+  } finally {
+    process.exit();
   }
 }
 
-module.exports = seed;
+seed();

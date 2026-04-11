@@ -1,0 +1,347 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>Bảng Mô Tả Chi Tiết Giao Diện MediSchedule</title>
+<style>
+  body { font-family: "Times New Roman", Times, serif; font-size: 12pt; margin: 20px; }
+  h1 { text-align: center; font-size: 18pt; color: #1a3a5c; }
+  h2 { font-size: 14pt; color: #2e74b5; background-color: #dce6f1; padding: 5px 8px; margin-top: 24px; }
+  h3 { font-size: 12pt; color: #1f4e79; margin-top:16px; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 20px; page-break-inside: avoid; }
+  th { background-color: #1f4e79; color: white; padding: 8px; text-align: center; font-size: 11pt; }
+  td { border: 1px solid #aaa; padding: 7px 10px; vertical-align: top; font-size: 11pt; }
+  tr:nth-child(even) { background-color: #f2f7fd; }
+  .section-header td { background-color: #2e74b5; color: white; font-weight: bold; font-size: 12pt; }
+  .code { font-family: Consolas, monospace; font-size: 10pt; background: #f0f0f0; padding: 1px 4px; border-radius: 3px; }
+  p { font-size: 11.5pt; }
+  .note { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 8px 12px; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<h1>BẢNG MÔ TẢ CHI TIẾT THÀNH PHẦN GIAO DIỆN<br>HỆ THỐNG MEDISCHEDULE</h1>
+<p style="text-align:center;font-style:italic;">Tài liệu thiết kế UI/UX – Describe toàn bộ: màu sắc, font chữ, icon, nút bấm, bố cục các giao diện</p>
+<p style="text-align:center;font-size:11pt;">Dự án: MediSched AI – Hệ thống Telemedicine | Framework: React.js + Tailwind CSS (shadcn/ui)</p>
+<hr/>
+
+<!--===================== DESIGN SYSTEM =====================-->
+<h2>A. HỆ THỐNG THIẾT KẾ TOÀN CỤC (Design System)</h2>
+
+<h3>A.1 – Bảng Màu Sắc Chính (Color Palette)</h3>
+<table>
+  <tr><th>Vai trò màu</th><th>Tên màu</th><th>Mã HEX</th><th>Sử dụng ở đâu</th></tr>
+  <tr><td>Primary (Chính)</td><td>Teal 500</td><td class="code">#14b8a6</td><td>Nút chính, header gradient, icon active</td></tr>
+  <tr><td>Primary Dark</td><td>Teal 600</td><td class="code">#0d9488</td><td>Hover trên nút primary</td></tr>
+  <tr><td>Secondary</td><td>Cyan 500</td><td class="code">#06b6d4</td><td>Gradient kết hợp teal, badge dịch vụ</td></tr>
+  <tr><td>Accent Purple</td><td>Purple 600</td><td class="code">#9333ea</td><td>Nút AI chat, badge trạng thái đặc biệt</td></tr>
+  <tr><td>Success</td><td>Green 500</td><td class="code">#22c55e</td><td>Badge "Đã hoàn thành", "Đã xác nhận"</td></tr>
+  <tr><td>Warning</td><td>Amber 400</td><td class="code">#fbbf24</td><td>Badge "Chờ xác nhận", thông báo chú ý</td></tr>
+  <tr><td>Danger</td><td>Red 500</td><td class="code">#ef4444</td><td>Badge "Đã hủy", nút xóa, cảnh báo</td></tr>
+  <tr><td>Blue Info</td><td>Blue 500</td><td class="code">#3b82f6</td><td>Badge "Đã xác nhận", thống kê màu xanh</td></tr>
+  <tr><td>Background Light</td><td>Gray 50</td><td class="code">#f9fafb</td><td>Nền trang, nền sidebar nhạt</td></tr>
+  <tr><td>Background Dark</td><td>Gray 900</td><td class="code">#111827</td><td>Nền dark mode, sidebar dark</td></tr>
+  <tr><td>Card Background</td><td>White</td><td class="code">#ffffff</td><td>Nền thẻ card, form, modal</td></tr>
+  <tr><td>Text Primary</td><td>Gray 900</td><td class="code">#111827</td><td>Tiêu đề, nội dung chính</td></tr>
+  <tr><td>Text Secondary</td><td>Gray 500</td><td class="code">#6b7280</td><td>Mô tả phụ, placeholder</td></tr>
+  <tr><td>Border</td><td>Gray 200</td><td class="code">#e5e7eb</td><td>Viền card, đường phân cách</td></tr>
+</table>
+
+<h3>A.2 – Font Chữ (Typography)</h3>
+<table>
+  <tr><th>Cấp độ</th><th>Font Family</th><th>Kích thước</th><th>Font Weight</th><th>Sử dụng</th></tr>
+  <tr><td>H1 – Tiêu đề trang</td><td>Inter / System UI</td><td>30px (1.875rem)</td><td>Bold 700</td><td>Heading chính của mỗi trang</td></tr>
+  <tr><td>H2 – Tiêu đề mục</td><td>Inter / System UI</td><td>24px (1.5rem)</td><td>Bold 700</td><td>Tiêu đề section, card header</td></tr>
+  <tr><td>H3 – Tiêu đề nhỏ</td><td>Inter / System UI</td><td>20px (1.25rem)</td><td>Semibold 600</td><td>Tiêu đề component, modal heading</td></tr>
+  <tr><td>Body – Nội dung chính</td><td>Inter / System UI</td><td>14px (0.875rem)</td><td>Normal 400</td><td>Đoạn văn bản thông thường</td></tr>
+  <tr><td>Small – Chữ phụ</td><td>Inter / System UI</td><td>12px (0.75rem)</td><td>Normal 400</td><td>Badge, label nhỏ, mô tả hover</td></tr>
+  <tr><td>Button – Nhãn nút</td><td>Inter / System UI</td><td>14px</td><td>Medium 500</td><td>Nhãn nút bấm, link</td></tr>
+  <tr><td>Code / Mono</td><td>Consolas / JetBrains Mono</td><td>13px</td><td>Normal 400</td><td>Mã giao dịch, ID hệ thống</td></tr>
+</table>
+
+<h3>A.3 – Thư viện Icon</h3>
+<table>
+  <tr><th>Thư viện</th><th>Cách dùng</th><th>Các icon thường dùng</th></tr>
+  <tr><td>Lucide React</td><td><span class="code">import { IconName } from 'lucide-react'</span></td><td>Home, User, Calendar, Clock, DollarSign, MessageSquare, Video, Bell, Settings, ChevronRight, Search, Plus, Edit, Trash2, Check, X, Brain, Activity, Stethoscope, Heart, FileText, LogOut, Menu, Moon, Sun, Eye, EyeOff, Star, MapPin, Phone, Mail, Shield</td></tr>
+</table>
+
+<h3>A.4 – Các loại Nút Bấm (Button Variants)</h3>
+<table>
+  <tr><th>Kiểu nút</th><th>Class CSS / Variant</th><th>Màu sắc</th><th>Sử dụng khi nào</th></tr>
+  <tr><td>Primary CTA</td><td>bg-gradient-to-r from-teal-500 to-cyan-500</td><td>Teal → Cyan gradient</td><td>Hành động chính: Đặt lịch, Đăng nhập, Lưu</td></tr>
+  <tr><td>Outline</td><td>variant="outline" border-gray-300</td><td>Viền xám, nền trắng</td><td>Hành động phụ: Google/Facebook Login, Hủy</td></tr>
+  <tr><td>Destructive</td><td>variant="destructive" bg-red-500</td><td>Đỏ</td><td>Xóa, từ chối, hủy lịch nguy hiểm</td></tr>
+  <tr><td>Ghost</td><td>variant="ghost"</td><td>Trong suốt, hover nhạt</td><td>Icon buttons trong danh sách, sidebar</td></tr>
+  <tr><td>Secondary</td><td>variant="secondary" bg-gray-100</td><td>Xám nhạt</td><td>Bộ lọc, tab không active</td></tr>
+  <tr><td>Success</td><td>bg-green-500 text-white</td><td>Xanh lá</td><td>Duyệt hồ sơ, xác nhận lịch hẹn bác sĩ</td></tr>
+</table>
+
+<h3>A.5 – Layout tổng thể (Layout Structure)</h3>
+<table>
+  <tr><th>Vùng</th><th>Mô tả</th><th>Chiều rộng / Chiều cao</th></tr>
+  <tr><td>Sidebar (Bảo mật)</td><td>Navigation dọc cho trang authenticated (Admin/Doctor/Patient/DeptHead)</td><td>256px (w-64) cố định trái</td></tr>
+  <tr><td>Main Content</td><td>Khu vực nội dung chính, tự co giãn</td><td>Chiếm phần còn lại (flex-1)</td></tr>
+  <tr><td>Top Header</td><td>Thanh tiêu đề: Bell, Avatar, Theme Toggle, Logout</td><td>100% width, h-16 (64px)</td></tr>
+  <tr><td>Public Navbar</td><td>Thanh điều hướng trang công khai</td><td>100% width, h-16, sticky top</td></tr>
+  <tr><td>Card Grid</td><td>Grid các thẻ nội dung</td><td>grid-cols-1 / 2 / 3 / 4 tùy màn hình</td></tr>
+  <tr><td>Modal/Dialog</td><td>Hộp thoại popup thêm/sửa dữ liệu</td><td>max-w-md / max-w-lg, centered</td></tr>
+  <tr><td>Toast Notification</td><td>Thông báo góc trên phải</td><td>max-w-sm, 5s tự tắt</td></tr>
+</table>
+
+<!--===================== PUBLIC UIs =====================-->
+<h2>B. GIAO DIỆN CÔNG KHAI (Public UIs)</h2>
+
+<table>
+  <tr><th width="12%">Mã UI</th><th width="15%">Tên màn hình</th><th width="18%">Bố cục</th><th width="20%">Màu sắc chính</th><th width="18%">Nút bấm & Icon</th><th width="17%">Hình ảnh & Font</th></tr>
+
+  <tr class="section-header"><td colspan="6">UI-PUB-01 – LANDING PAGE (Trang chủ)</td></tr>
+  <tr>
+    <td>UI-PUB-01</td>
+    <td>LandingPage</td>
+    <td>Công khai toàn màn hình, không sidebar. Sections xếp dọc: Navbar → Hero → Services → Specialties → Doctors → Facilities → CTA → Footer</td>
+    <td>Navbar: white/dark. Hero: cyan-50 → teal-50 → blue-50 gradient. Section nền xen kẽ white và gray-50. CTA section: teal-600 bg.</td>
+    <td>Nút: "Đặt lịch ngay" (teal primary), "Tư vấn AI miễn phí" (purple gradient), "Xem tất cả" (outline). Icon: Search, Stethoscope, Heart, Activity</td>
+    <td>Ảnh bác sĩ tròn avatar. Ảnh chuyên khoa card. Font: Bold 30px heading hero, 14px body</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PUB-02/03 – ĐĂNG NHẬP / ĐĂNG KÝ</td></tr>
+  <tr>
+    <td>UI-PUB-02/03</td>
+    <td>LoginPage / RegisterPage</td>
+    <td>Toàn trang gradient nền, card trắng căn giữa, không có sidebar/navbar chuẩn</td>
+    <td>Nền: from-cyan-50 via-teal-50 to-blue-50. Card: white. Input border: gray-300. Focus: teal-500 ring</td>
+    <td>Nút submit: teal→cyan gradient full-width. Social: Google (logo 4 màu), Facebook (blue #1877F2) outline. Eye/EyeOff cho password. Checkbox</td>
+    <td>Icon lịch trong teal circle. Font H2 bold cho "Đăng nhập". Body 14px. Label xám 500</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PUB-04 – QUÊN MẬT KHẨU</td></tr>
+  <tr>
+    <td>UI-PUB-04</td>
+    <td>ForgotPasswordPage</td>
+    <td>Giống LoginPage, 1 card căn giữa đơn giản</td>
+    <td>Cùng gradient nền teal-cyan. Card white</td>
+    <td>Nút "Gửi liên kết đặt lại" teal full-width. Link back "← Quay lại đăng nhập"</td>
+    <td>Icon Mail trong teal circle. Font giống Login</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PUB-05/06 – DỊCH VỤ & CHI TIẾT DỊCH VỤ</td></tr>
+  <tr>
+    <td>UI-PUB-05/06</td>
+    <td>Services / ServiceDetail</td>
+    <td>Navbar + Breadcrumb + Grid 2x4 card. Detail: Navbar + hero banner + 2 cột (Mô tả | Sidebar)</td>
+    <td>Service cards: gradient icon (teal/purple/blue/orange/green). Chi tiết: nền white, hero banner gradient teal</td>
+    <td>Nút "Xem chi tiết" outline. Nút "Đặt lịch ngay" teal. Icon tương ứng từng chuyên ngành</td>
+    <td>Banner image. Icon SVG gradient cho mỗi dịch vụ. Font: bold 24px tên dịch vụ</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PUB-07/08 – CHUYÊN KHOA & CHI TIẾT CHUYÊN KHOA</td></tr>
+  <tr>
+    <td>UI-PUB-07/08</td>
+    <td>Specialties / SpecialtyDetail</td>
+    <td>Grid 2x5 specialty cards. Detail: Hero + Doctor list grid bên dưới</td>
+    <td>Card: image overlay gradient dark. Detail: teal accent, white card bác sĩ</td>
+    <td>Nút "Xem bác sĩ" trên card. Nút "Đặt lịch" trên doctor card. Icon Users, Stethoscope</td>
+    <td>Ảnh thumbnail chuyên khoa. Ảnh avatar bác sĩ tròn. Font overlay white bold</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PUB-09/10 – CƠ SỞ Y TẾ & CHI TIẾT</td></tr>
+  <tr>
+    <td>UI-PUB-09/10</td>
+    <td>Facilities / FacilityDetail</td>
+    <td>Grid 3 clinics card. Detail: Banner + Google Maps iframe + Doctor list</td>
+    <td>Card nền white. Banner gradient overlay. Map iframe border teal</td>
+    <td>Nút "Xem trên Google Maps" (teal link + MapPin icon). Nút "Xem bản đồ". Icon MapPin, Phone, Mail</td>
+    <td>Ảnh banner bệnh viện. Google Maps chiếm 100% chiều rộng. Font bold tên cơ sở</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PUB-11 – DANH SÁCH BÁC SĨ CÔNG KHAI</td></tr>
+  <tr>
+    <td>UI-PUB-11</td>
+    <td>Doctors (Public)</td>
+    <td>Navbar + SearchBar + Grid 3 cột doctor cards</td>
+    <td>Card white. Star rating: amber-400. Specialty badge: teal-100 text-teal-700</td>
+    <td>Nút "Xem hồ sơ" teal outline. Icon Search, Star, DollarSign, Clock</td>
+    <td>Avatar tròn 80px. Font bold tên, 12px chuyên khoa. Pagination bottom</td>
+  </tr>
+</table>
+
+<!--===================== PATIENT UIs =====================-->
+<h2>C. GIAO DIỆN BỆNH NHÂN (Patient UIs)</h2>
+
+<table>
+  <tr><th width="12%">Mã UI</th><th width="15%">Tên màn hình</th><th width="18%">Bố cục</th><th width="20%">Màu sắc chính</th><th width="18%">Nút bấm & Icon</th><th width="17%">Hình ảnh & Font</th></tr>
+
+  <tr class="section-header"><td colspan="6">UI-PAT-01 – PATIENT DASHBOARD</td></tr>
+  <tr>
+    <td>UI-PAT-01</td>
+    <td>PatientDashboard</td>
+    <td>Sidebar trái 256px + Header 64px + Main grid: Banner welcome → 4 QuickAction cards → Bảng lịch hẹn gần đây</td>
+    <td>Banner: teal-500→cyan-600 gradient. QuickAction card: white shadow. Main bg: gray-50. Dark mode: gray-900</td>
+    <td>Icon: Home, Search, Calendar, CreditCard, FileText, Brain, History, MessageSquare. Nút: "Đặt lịch" teal</td>
+    <td>Avatar user tròn 40px header. Font welcome: bold 24px. Table: font normal 14px</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PAT-02 – TÌM KIẾM BÁC SĨ</td></tr>
+  <tr>
+    <td>UI-PAT-02</td>
+    <td>SearchDoctors</td>
+    <td>Sidebar + FilterBar + Grid 3 cols doctor cards + Pagination</td>
+    <td>Filter bar: white card. Specialty dropdown. Doctor card: white, teal hover border</td>
+    <td>Nút "Đặt lịch" (teal primary) mỗi card. Icon: Search, Filter, Star, DollarSign, Clock</td>
+    <td>Avatar tròn 80px. Rating stars amber. Badge chuyên khoa teal. Font bold tên BS</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PAT-03 – QUẢN LÝ LỊCH HẸN BỆNH NHÂN</td></tr>
+  <tr>
+    <td>UI-PAT-03</td>
+    <td>PatientAppointments</td>
+    <td>Sidebar + Tab filter bar + danh sách appointment cards dọc</td>
+    <td>Tab active: teal underline. Card nền white. Status badges màu theo trạng thái</td>
+    <td>Nút: "Chat" (blue), "Thanh toán" (teal), "Hủy lịch" (red outline), "Xem chi tiết" (outline). Icon Calendar, Clock, MessageSquare</td>
+    <td>Avatar BS tròn 48px. Badge trạng thái pill: yellow/green/red/blue. Font date bold</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PAT-04 – CHI TIẾT BÁC SĨ & ĐẶT LỊCH</td></tr>
+  <tr>
+    <td>UI-PAT-04</td>
+    <td>PatientDoctorDetails</td>
+    <td>Sidebar + Hero bác sĩ ngang + 2 cột: (Thông tin BS | Booking panel bên phải)</td>
+    <td>Hero: gradient teal nền. Booking panel: white card sticky. Slot grid: teal active, gray inactive</td>
+    <td>Nút "Đặt lịch hẹn" teal full-width. Icon Star, Award, DollarSign, ClipboardList</td>
+    <td>Ảnh bác sĩ large. Slot time grid buttons. Calendar DatePicker. Font bold tên, 14px bio</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PAT-05 – LỊCH SỬ THANH TOÁN</td></tr>
+  <tr>
+    <td>UI-PAT-05</td>
+    <td>PatientPayments</td>
+    <td>Sidebar + Stats cards 3 cột trên + Bảng hóa đơn bên dưới</td>
+    <td>Stats: white card. Total: teal text bold. Badge: green completed, yellow pending</td>
+    <td>Icon DollarSign, CheckCircle, Clock. Nút xem chi tiết (outline). Sort/Filter bảng</td>
+    <td>Font tiền VND bold teal. Table striped. Badge status pill</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PAT-06 – THANH TOÁN LỊCH HẸN</td></tr>
+  <tr>
+    <td>UI-PAT-06</td>
+    <td>PaymentProcess</td>
+    <td>Sidebar + 2 cột: (Tóm tắt lịch hẹn | Form thanh toán)</td>
+    <td>Summary card: gray-50 border. Payment methods: radio button cards. QR: white center</td>
+    <td>Radio buttons thanh toán. Nút "Xác nhận thanh toán" teal full-width. Icon QrCode, CreditCard, Smartphone</td>
+    <td>QR Code image trung tâm. Logo VNPay/Momo. Số tiền bold teal 28px</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PAT-07 – HỒ SƠ BỆNH ÁN ĐIỆN TỬ</td></tr>
+  <tr>
+    <td>UI-PAT-07</td>
+    <td>PatientMedicalRecords</td>
+    <td>Sidebar + SearchBar + danh sách Record cards dọc</td>
+    <td>Card: white. Header card: teal-50 bg. Badge chẩn đoán: blue-100</td>
+    <td>Icon FileText, Download, Pill. Nút "Tải PDF" (outline). Nút expand xem chi tiết</td>
+    <td>Font mã ICD bold blue. Toa thuốc list. Ngày tháng gray-500</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PAT-08/09 – CHAT (LỊCH HẸN)</td></tr>
+  <tr>
+    <td>UI-PAT-08/09</td>
+    <td>PatientChatList / PatientChat</td>
+    <td>ChatList: Sidebar + danh sách cuộc hội thoại. Chat: 3 cột: (Sidebar | Danh sách | Khung chat)</td>
+    <td>ChatList: white. Chat bubble user: teal-100. Chat bubble BS: gray-100. Header: white border-b</td>
+    <td>Icon MessageSquare, Send, Paperclip, Image. Avatar tròn. Badge unread count</td>
+    <td>Avatar tròn 40px. Font tin nhắn 14px. Time stamp gray-400 12px. Attachment preview</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PAT-10/11/12 – CONVERSATIONS & UNIFIED CHAT</td></tr>
+  <tr>
+    <td>UI-PAT-10/11/12</td>
+    <td>Conversations / ConversationChat / UnifiedChat</td>
+    <td>Cấu trúc tương tự ChatList/Chat nhưng tổng hợp hơn</td>
+    <td>Giống PatientChat. UnifiedChat có thêm tab selector trên cùng</td>
+    <td>Tab: Tất cả / Theo lịch hẹn. Icon Inbox, MessagesSquare. Nút "Tin nhắn mới"</td>
+    <td>Grouped by date header. Bold tên người gửi. Font italic cho tin nhắn preview</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PAT-13 – LỊCH SỬ TƯ VẤN AI</td></tr>
+  <tr>
+    <td>UI-PAT-13</td>
+    <td>AIHistory</td>
+    <td>Sidebar + list lịch sử AI session cards + modal xem lại hội thoại</td>
+    <td>Card: white. AI bubble: purple-50. User bubble: teal-50. Header: purple gradient</td>
+    <td>Icon Brain (purple), History, ChevronRight. Nút "Xem lại" outline. Nút "Bắt đầu mới" purple</td>
+    <td>AI avatar: brain purple circle. Font: 14px conversation. Date gray stamp</td>
+  </tr>
+
+  <tr class="section-header"><td colspan="6">UI-PAT-14 – TƯ VẤN VIDEO</td></tr>
+  <tr>
+    <td>UI-PAT-14</td>
+    <td>VideoConsultation</td>
+    <td>Toàn màn hình video. Controls bar dưới đáy. Panel chat phải</td>
+    <td>Nền: dark gray-900. Controls bar: black semitransparent. Chat panel: white</td>
+    <td>Icon Mic/MicOff, Video/VideoOff, PhoneOff (red), ScreenShare, Chat. Tất cả icon white</td>
+    <td>Video feed full screen. PiP camera nhỏ góc dưới phải. Font white trên nền dark</td>
+  </tr>
+</table>
+
+<!--===================== DOCTOR UIs =====================-->
+<h2>D. GIAO DIỆN BÁC SĨ (Doctor UIs)</h2>
+
+<table>
+  <tr><th width="12%">Mã UI</th><th width="15%">Tên màn hình</th><th width="18%">Bố cục</th><th width="20%">Màu sắc chính</th><th width="18%">Nút bấm & Icon</th><th width="17%">Hình ảnh & Font</th></tr>
+
+  <tr><td>UI-DOC-01</td><td>DoctorDashboard</td><td>Sidebar + Header + Stats 4 cards + Appointment list today + Quick links</td><td>Stats: blue/yellow/green/purple cards. Teal header sidebar. Gray-50 main bg</td><td>Nút "Xác nhận" green, "Từ chối" red. Icon Activity, Users, CheckCircle, Star</td><td>Avatar user header. Font stats bold 32px. Table appointment 14px</td></tr>
+  <tr><td>UI-DOC-02</td><td>DoctorProfile</td><td>Sidebar + Form 2 cột: (Thông tin cá nhân | Chuyên môn & Phí)</td><td>Form card white. Banner gradient teal khi xem hồ sơ. Input focus teal ring</td><td>Nút "Lưu thay đổi" teal. Camera icon upload ảnh. Icon Award, GraduationCap, DollarSign</td><td>Avatar upload circle 128px. Badge chuyên khoa. Font bold tên BS 20px</td></tr>
+  <tr><td>UI-DOC-03</td><td>DoctorSchedule</td><td>Sidebar + Weekly calendar view + Time slot grid</td><td>Slot available: teal-100. Slot occupied: gray-200. Selected: teal-500 text white. Ngày header: teal</td><td>Toggle slot available/unavailable. Nút "Lưu lịch" teal. Icon Clock, CalendarDays</td><td>Calendar grid table. Font day name bold. Time slot 14px mono</td></tr>
+  <tr><td>UI-DOC-04</td><td>DoctorAppointments</td><td>Sidebar + Tab status filter + Appointment cards list</td><td>Giống PatientAppointments nhưng có thêm action của bác sĩ. Badge giống nhau</td><td>Nút: "Xác nhận" (green), "Từ chối" (red), "Khám xong" (blue), "Chat" (outline). Icon CheckCircle, XCircle</td><td>Avatar bệnh nhân. Font tên BN bold. Phone/Email info gray</td></tr>
+  <tr><td>UI-DOC-05</td><td>DoctorMedicalRecords</td><td>Sidebar + Appointment selector + Form chẩn đoán + Bảng bệnh án cũ</td><td>Form card white. Input teal focus. Chẩn đoán section: blue-50 bg</td><td>Nút "Tạo bệnh án" teal. Nút "Lưu nháp" outline. Icon Clipboard, Pill, Stethoscope, FileText</td><td>ICD code input. Toa thuốc list editor. Font ICD code mono bold</td></tr>
+  <tr><td>UI-DOC-06/07/08/09</td><td>DoctorChat (all)</td><td>Cấu trúc chat 3 cột như PatientChat phía bác sĩ</td><td>BS bubble: blue-100. BN bubble: gray-100. Header teal</td><td>Icon MessageSquare, Send, Paperclip. Giống PatientChat</td><td>Giống PatientChat, avatar BN bên trái</td></tr>
+  <tr><td>UI-DOC-10</td><td>DoctorAIDiagnoses</td><td>Sidebar + Card list AI suggestions theo lịch hẹn</td><td>AI card: purple-50 border-purple-200. Badge AI: purple pill</td><td>Nút "Xem chi tiết" outline. Nút "Dùng gợi ý này" purple. Icon Brain, Lightbulb</td><td>AI icon purple brain 32px. Font gợi ý 13px. Italic AI disclaimer</td></tr>
+</table>
+
+<!--===================== ADMIN UIs =====================-->
+<h2>E. GIAO DIỆN QUẢN TRỊ VIÊN (Admin UIs)</h2>
+
+<table>
+  <tr><th width="12%">Mã UI</th><th width="15%">Tên màn hình</th><th width="18%">Bố cục</th><th width="20%">Màu sắc chính</th><th width="18%">Nút bấm & Icon</th><th width="17%">Hình ảnh & Font</th></tr>
+
+  <tr><td>UI-ADM-01</td><td>AdminDashboard</td><td>Sidebar + Header + Banner welcome + QuickAction Grid 3x3</td><td>Banner: teal gradient. QuickAction card: white hover shadow. Sidebar: white border-r</td><td>QuickAction icons: Users, UserPlus, Activity, DollarSign, BarChart, Brain, BookOpen, Settings. Nút link to page</td><td>Avatar admin header circle. Font bold 28px welcome. Card font semibold 16px</td></tr>
+  <tr><td>UI-ADM-02</td><td>AdminStats</td><td>Sidebar + Stats cards + Biểu đồ Line/Bar</td><td>Stats cards 4 màu: blue/green/purple/teal. Chart: teal line. Grid nền xám nhạt</td><td>Icon BarChart3, TrendingUp, Users, Activity. Date range picker dropdown</td><td>Chart.js / Recharts. Font số liệu bold 36px. Legend 12px</td></tr>
+  <tr><td>UI-ADM-03</td><td>AdminDoctors</td><td>Sidebar + SearchBar + Table bác sĩ full width</td><td>Table header: gray-100. Row hover: teal-50. Badge: green approved / yellow pending</td><td>Nút "Duyệt" (green small), "Từ chối" (red small), "Xóa" (red ghost/icon Trash2). Icon Filter, Search</td><td>Avatar tròn 40px trong table. Badge status pill. Font table 14px</td></tr>
+  <tr><td>UI-ADM-04</td><td>AdminPatients</td><td>Sidebar + SearchBar + Table bệnh nhân</td><td>Giống AdminDoctors. Row hover: blue-50</td><td>Nút "Xem hồ sơ" outline. Icon User, Mail, Phone, ExternalLink</td><td>Avatar bệnh nhân 40px. Font email gray-500. Ngày sinh 14px</td></tr>
+  <tr><td>UI-ADM-05</td><td>CreateAccounts</td><td>Sidebar + Form tạo tài khoản đa bước hoặc single form</td><td>Form card white. Input focus teal. Role select dropdown</td><td>Nút "Tạo tài khoản" teal. Nút "Reset form" outline. Icon UserPlus, Shield, Stethoscope</td><td>Role selector (radio cards). Font label bold 13px. Success toast</td></tr>
+  <tr><td>UI-ADM-06</td><td>AdminsManagement</td><td>Sidebar + Table admin + Modal thêm admin</td><td>Table header blue-50. Modal: white overlay backdrop-blur</td><td>Nút "+ Thêm Admin" teal. Nút "Xóa" red. Icon Shield, UserMinus, UserPlus</td><td>Modal form fields. Font Admin badge: blue pill</td></tr>
+  <tr><td>UI-ADM-07</td><td>AdminPayments</td><td>Sidebar + Stats 3 cards + Table giao dịch + Bộ lọc ngày</td><td>Revenue stat: green bold. Table striped. Badge: green/yellow/red</td><td>Date range filter. Nút "Xuất báo cáo" outline. Icon DollarSign, TrendingUp, Download</td><td>Amount bold VND. Method icon: QR/Card/Momo. Font table 14px</td></tr>
+  <tr><td>UI-ADM-08</td><td>AdminReports</td><td>Sidebar + 4 stat cards + By-month table + Chart</td><td>Giống AdminStats. Highlight teal cho tổng doanh thu</td><td>Nút "Tải xuống báo cáo" outline. Icon BarChart, Calendar, FileText</td><td>Monthly breakdown table. Font month header semibold. Revenue teal bold</td></tr>
+  <tr><td>UI-ADM-09</td><td>SystemSettings</td><td>Sidebar + Table phòng khám + Modal thêm/sửa + Google Map link</td><td>Table nền white. Modal overlay. Button Add: teal. Row hover: gray-50</td><td>Nút "+ Thêm phòng khám" teal. Edit (pencil Lucide), Delete (Trash2). Icon MapPin, Building2</td><td>Modal form: 7 fields. Google Map URL input. Logo URL preview img. Font form label 13px</td></tr>
+  <tr><td>UI-ADM-10</td><td>AdminSpecialties</td><td>Sidebar + Table chuyên khoa + Modal CRUD</td><td>Giống SystemSettings. Badge doctor count: teal pill</td><td>Nút "+ Thêm chuyên khoa" teal. Pencil Edit, Trash Delete. Icon Stethoscope, Hash</td><td>Specialty card có icon. Font tên chuyên khoa bold. Description gray 13px</td></tr>
+  <tr><td>UI-ADM-11</td><td>AIDiagnoses</td><td>Sidebar + Filter + Table lịch sử AI chẩn đoán toàn hệ thống</td><td>AI row: purple-50. Badge AI: purple. Active status: green dot</td><td>Icon Brain, Activity, Eye. Nút "Xem chi tiết" outline. Filter by date/doctor</td><td>AI diagnosis preview text. Font ICD code mono. Date gray stamp</td></tr>
+</table>
+
+<!--===================== DEPT HEAD UIs =====================-->
+<h2>F. GIAO DIỆN TRƯỞNG KHOA (Department Head UIs)</h2>
+
+<table>
+  <tr><th width="12%">Mã UI</th><th width="15%">Tên màn hình</th><th width="18%">Bố cục</th><th width="20%">Màu sắc chính</th><th width="18%">Nút bấm & Icon</th><th width="17%">Hình ảnh & Font</th></tr>
+
+  <tr><td>UI-DPH-01</td><td>DeptHeadDashboard</td><td>Sidebar + Stats 4 cards + Pending doctors table + Activity feed</td><td>Banner teal nhạt. Stats: blue/green/yellow/purple. Approval row: yellow-50 bg</td><td>Nút "Phê duyệt" (green), "Từ chối" (red). Icon Building2, Users, CheckCircle, AlertCircle</td><td>Avatar bác sĩ chờ duyệt. Font role badge "Trưởng Khoa" teal. Stats bold 28px</td></tr>
+  <tr><td>UI-DPH-02</td><td>DeptHeadDoctors</td><td>Sidebar + Table bác sĩ trong khoa + Filter</td><td>Giống AdminDoctors nhưng scope khoa mình</td><td>Nút "Phê duyệt" green, "Xem hồ sơ" outline. Icon Stethoscope, Award</td><td>Table font 14px. Badge chuyên khoa teal</td></tr>
+  <tr><td>UI-DPH-03</td><td>DeptHeadPatients</td><td>Sidebar + Table bệnh nhân trong khoa</td><td>Giống AdminPatients nhưng scope giới hạn</td><td>Icon User, FileText. Nút "Xem bệnh án" outline</td><td>Avatar bệnh nhân 40px. Date stamp gray. Font table 14px</td></tr>
+  <tr><td>UI-DPH-04</td><td>DeptHeadCreateAccount</td><td>Sidebar + Form tạo tài khoản Bác sĩ (giới hạn role)</td><td>Giống CreateAccounts trong Admin nhưng role cố định là Doctor</td><td>Nút "Tạo tài khoản Bác sĩ" teal. Icon UserPlus, Stethoscope</td><td>Form fields tương tự. Specialty select trong khoa mình. Font 14px</td></tr>
+  <tr><td>UI-DPH-05/06</td><td>DeptHeadUnifiedChat / ConvoChat</td><td>3-column chat layout: Sidebar | Conversation list | Chat window</td><td>Giống các chat pages khác</td><td>Icon Inbox, MessageSquare, Send, Paperclip. Tab: Lịch hẹn / Tổng quát</td><td>Avatar tròn. Message bubbles theo role. Font 14px chat</td></tr>
+</table>
+
+<!--===================== FLOATING =====================-->
+<h2>G. THÀNH PHẦN NỔI TOÀN CỤC (Floating Component)</h2>
+
+<table>
+  <tr><th width="12%">Mã</th><th width="15%">Tên</th><th width="18%">Bố cục</th><th width="20%">Màu sắc</th><th width="18%">Nút & Icon</th><th width="17%">Ghi chú</th></tr>
+  <tr>
+    <td>UI-FLT-01</td>
+    <td>FloatingChatButton (AI Chat Popup)</td>
+    <td>Cửa sổ popup góc dưới phải màn hình (fixed position). Mở rộng ra bong bóng chat 380x500px</td>
+    <td>Float button: purple gradient. Chat window: white. User bubble: teal-100. AI bubble: purple-50 dark</td>
+    <td>FAB button tròn gradient purple với icon MessageCircle. Nút minimize (X). Icon Mic (speech2text), Camera (image upload), Send purple. Suggested queries chips teal</td>
+    <td>Hiển thị trên mọi trang Bệnh nhân. Gemini Flash API. Avatar AI: brain circle purple. Typing indicator 3 dots animation</td>
+  </tr>
+</table>
+
+</body>
+</html>

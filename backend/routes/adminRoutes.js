@@ -14,11 +14,13 @@ const adminCheck = (req, res, next) => {
 
 router.get('/stats', authMiddleware, adminCheck, adminController.getStats);
 router.get('/payments', authMiddleware, adminCheck, adminController.getPayments);
+router.get('/reports', authMiddleware, adminCheck, adminController.getReports);
 router.get('/doctors', authMiddleware, adminCheck, adminController.getDoctors);
 router.get('/patients', authMiddleware, adminCheck, adminController.getPatients);
 router.put('/doctors/:id/approve', authMiddleware, adminCheck, adminController.approveDoctor);
 router.delete('/delete-user/:id', authMiddleware, adminCheck, adminController.deleteUser);
 router.get('/admins', authMiddleware, adminCheck, adminController.getAdmins);
+router.post('/create-user', authMiddleware, adminCheck, adminController.createUser);
 router.post('/create-admin', authMiddleware, adminCheck, adminController.createAdmin);
 router.delete('/delete-admin/:id', authMiddleware, adminCheck, adminController.deleteAdmin);
 router.put('/update-permissions', authMiddleware, adminCheck, adminController.updatePermissions);

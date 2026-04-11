@@ -3,7 +3,7 @@ import React, { useContext } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
 import Layout from '../../components/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Users, FileText, BarChart, Shield, UserPlus } from 'lucide-react';
+import { Users, FileText, BarChart, Shield, UserPlus, CreditCard, ClipboardList, Activity, Stethoscope, Settings } from 'lucide-react';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -54,6 +54,36 @@ export default function AdminDashboard() {
                 onClick={() => navigate('/admin/admins')}
               />
             )}
+            <QuickActionCard
+              icon={<CreditCard className="w-8 h-8" />}
+              title={t('paymentsConfig')}
+              description={t('paymentsConfigDesc')}
+              onClick={() => navigate('/admin/payments')}
+            />
+            <QuickActionCard
+              icon={<ClipboardList className="w-8 h-8" />}
+              title={t('reportsConfig')}
+              description={t('reportsConfigDesc')}
+              onClick={() => navigate('/admin/reports')}
+            />
+            <QuickActionCard
+              icon={<Activity className="w-8 h-8" />}
+              title={t('aiDiagnosesConfig')}
+              description={t('aiDiagnosesConfigDesc')}
+              onClick={() => navigate('/admin/ai-diagnoses')}
+            />
+            <QuickActionCard
+              icon={<Stethoscope className="w-8 h-8" />}
+              title={t('specialtiesConfig')}
+              description={t('specialtiesConfigDesc')}
+              onClick={() => navigate('/admin/specialties')}
+            />
+            <QuickActionCard
+              icon={<Settings className="w-8 h-8" />}
+              title={t('systemSettingsConfig')}
+              description={t('systemSettingsConfigDesc')}
+              onClick={() => navigate('/admin/system-settings')}
+            />
           </div>
         </div>
       </div>

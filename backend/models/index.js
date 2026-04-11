@@ -1,123 +1,91 @@
 const sequelize = require('../config/database');
-const User = require('./User');
-const Specialty = require('./Specialty');
-const Doctor = require('./Doctor');
-const Patient = require('./Patient');
-const Appointment = require('./Appointment');
-const AdminPermission = require('./AdminPermission');
-const Payment = require('./Payment');
-const Conversation = require('./Conversation');
-const Message = require('./Message');
-const Review = require('./Review');
-const MedicalRecord = require('./MedicalRecord');
-const DoctorSchedule = require('./DoctorSchedule');
-const Prescription = require('./Prescription');
-const Consultation = require('./Consultation');
-const AISession = require('./AISession');
-const AIModerationContent = require('./AIModerationContent');
-const SystemSetting = require('./SystemSetting');
-const AIDiagnosis = require('./AIDiagnosis');
 
-// Define relationships
+const VaiTro = require('./VaiTro.js');
+const NguoiDung = require('./NguoiDung.js');
+const NguoiDung_VaiTro = require('./NguoiDung_VaiTro.js');
+const BenhNhan = require('./BenhNhan.js');
+const ChuyenKhoa = require('./ChuyenKhoa.js');
+const BacSi = require('./BacSi.js');
+const LichKham = require('./LichKham.js');
+const DatLich = require('./DatLich.js');
+const HoSoBenhAn = require('./HoSoBenhAn.js');
+const DonThuoc = require('./DonThuoc.js');
+const ChiTietDonThuoc = require('./ChiTietDonThuoc.js');
+const ThanhToan = require('./ThanhToan.js');
+const KhamOnline = require('./KhamOnline.js');
+const TinNhanKham = require('./TinNhanKham.js');
+const NoiDungChoDuyet = require('./NoiDungChoDuyet.js');
+const NoiDungDaDuyet = require('./NoiDungDaDuyet.js');
+const ThongBao = require('./ThongBao.js');
+const PhongKham = require('./PhongKham.js');
 
-// User & Roles
-User.hasOne(Doctor, { foreignKey: 'user_id' });
-Doctor.belongsTo(User, { foreignKey: 'user_id' });
+// Define associations
+VaiTro.belongsToMany(NguoiDung, { through: NguoiDung_VaiTro, foreignKey: 'Id_VaiTro', otherKey: 'Id_NguoiDung' });
+NguoiDung.belongsToMany(VaiTro, { through: NguoiDung_VaiTro, foreignKey: 'Id_NguoiDung', otherKey: 'Id_VaiTro' });
 
-// ... (existing relationships)
+NguoiDung.hasMany(ThongBao, { foreignKey: 'Id_NguoiDung' });
+ThongBao.belongsTo(NguoiDung, { foreignKey: 'Id_NguoiDung' });
 
-// AI Diagnoses
-// AI Diagnoses
-AIDiagnosis.belongsTo(User, { foreignKey: 'user_id' });
-User.hasMany(AIDiagnosis, { foreignKey: 'user_id' });
-AIDiagnosis.belongsTo(Doctor, { foreignKey: 'doctor_id' });
-Doctor.hasMany(AIDiagnosis, { foreignKey: 'doctor_id' });
+BenhNhan.belongsTo(NguoiDung, { foreignKey: 'Id_NguoiDung' });
+NguoiDung.hasOne(BenhNhan, { foreignKey: 'Id_NguoiDung' });
 
+BacSi.belongsTo(NguoiDung, { foreignKey: 'Id_NguoiDung' });
+NguoiDung.hasOne(BacSi, { foreignKey: 'Id_NguoiDung' });
 
+BacSi.belongsTo(ChuyenKhoa, { foreignKey: 'Id_ChuyenKhoa' });
+ChuyenKhoa.hasMany(BacSi, { foreignKey: 'Id_ChuyenKhoa' });
 
-User.hasOne(Patient, { foreignKey: 'user_id' });
-Patient.belongsTo(User, { foreignKey: 'user_id' });
+LichKham.belongsTo(BacSi, { foreignKey: 'Id_BacSi' });
+BacSi.hasMany(LichKham, { foreignKey: 'Id_BacSi' });
 
-User.hasOne(AdminPermission, { foreignKey: 'user_id' });
-AdminPermission.belongsTo(User, { foreignKey: 'user_id' });
+DatLich.belongsTo(BenhNhan, { foreignKey: 'Id_BenhNhan' });
+BenhNhan.hasMany(DatLich, { foreignKey: 'Id_BenhNhan' });
+DatLich.belongsTo(LichKham, { foreignKey: 'Id_LichKham' });
+LichKham.hasMany(DatLich, { foreignKey: 'Id_LichKham' });
 
-// Doctor & Specialty
-Doctor.belongsTo(Specialty, { foreignKey: 'specialty_id' });
-Specialty.hasMany(Doctor, { foreignKey: 'specialty_id' });
+HoSoBenhAn.belongsTo(DatLich, { foreignKey: 'Id_DatLich' });
+DatLich.hasOne(HoSoBenhAn, { foreignKey: 'Id_DatLich' });
+HoSoBenhAn.belongsTo(BenhNhan, { foreignKey: 'Id_BenhNhan' });
+HoSoBenhAn.belongsTo(BacSi, { foreignKey: 'Id_BacSi' });
 
-// Doctor Schedule
-Doctor.hasMany(DoctorSchedule, { foreignKey: 'doctor_id' });
-DoctorSchedule.belongsTo(Doctor, { foreignKey: 'doctor_id' });
+DonThuoc.belongsTo(HoSoBenhAn, { foreignKey: 'Id_HoSo' });
+HoSoBenhAn.hasMany(DonThuoc, { foreignKey: 'Id_HoSo' });
 
-// Appointments
-Appointment.belongsTo(User, { as: 'Patient', foreignKey: 'patient_id' });
-Appointment.belongsTo(User, { as: 'Doctor', foreignKey: 'doctor_id' });
-User.hasMany(Appointment, { as: 'PatientAppointments', foreignKey: 'patient_id' });
-User.hasMany(Appointment, { as: 'DoctorAppointments', foreignKey: 'doctor_id' });
+ChiTietDonThuoc.belongsTo(DonThuoc, { foreignKey: 'Id_DonThuoc' });
+DonThuoc.hasMany(ChiTietDonThuoc, { foreignKey: 'Id_DonThuoc' });
 
-// Payments
-Payment.belongsTo(Appointment, { foreignKey: 'appointment_id' });
-Appointment.hasOne(Payment, { foreignKey: 'appointment_id' });
+ThanhToan.belongsTo(DatLich, { foreignKey: 'Id_DatLich' });
+ThanhToan.belongsTo(BenhNhan, { foreignKey: 'Id_BenhNhan' });
 
-// Medical Records
-MedicalRecord.belongsTo(Appointment, { foreignKey: 'appointment_id' });
-Appointment.hasOne(MedicalRecord, { foreignKey: 'appointment_id' });
-MedicalRecord.belongsTo(User, { as: 'Patient', foreignKey: 'patient_id' });
-MedicalRecord.belongsTo(User, { as: 'Doctor', foreignKey: 'doctor_id' });
+KhamOnline.belongsTo(DatLich, { foreignKey: 'Id_DatLich' });
+DatLich.hasOne(KhamOnline, { foreignKey: 'Id_DatLich' });
 
-// Prescriptions
-Prescription.belongsTo(MedicalRecord, { foreignKey: 'record_id' });
-MedicalRecord.hasMany(Prescription, { foreignKey: 'record_id' });
+TinNhanKham.belongsTo(KhamOnline, { foreignKey: 'Id_KhamOnline' });
+KhamOnline.hasMany(TinNhanKham, { foreignKey: 'Id_KhamOnline' });
+TinNhanKham.belongsTo(NguoiDung, { foreignKey: 'Id_NguoiGui' });
 
-// Reviews
-Review.belongsTo(Appointment, { foreignKey: 'appointment_id' });
-Appointment.hasOne(Review, { foreignKey: 'appointment_id' });
-Review.belongsTo(User, { as: 'Patient', foreignKey: 'patient_id' });
-Review.belongsTo(User, { as: 'Doctor', foreignKey: 'doctor_id' });
-User.hasMany(Review, { foreignKey: 'patient_id', as: 'PatientReviews' });
-User.hasMany(Review, { foreignKey: 'doctor_id', as: 'DoctorReviews' });
-
-// Consultations
-Consultation.belongsTo(Appointment, { foreignKey: 'appointment_id' });
-Appointment.hasOne(Consultation, { foreignKey: 'appointment_id' });
-
-// Messages (Linked to Consultation)
-Message.belongsTo(Consultation, { foreignKey: 'consultation_id' });
-Consultation.hasMany(Message, { foreignKey: 'consultation_id' });
-Message.belongsTo(User, { as: 'Sender', foreignKey: 'sender_id' });
-
-// Conversations
-Conversation.belongsTo(User, { as: 'Patient', foreignKey: 'patient_id' });
-Conversation.belongsTo(User, { as: 'Doctor', foreignKey: 'doctor_id' });
-Message.belongsTo(Conversation, { foreignKey: 'conversation_id' });
-Conversation.hasMany(Message, { foreignKey: 'conversation_id' });
-
-// AI Sessions
-AISession.belongsTo(User, { foreignKey: 'user_id' });
-User.hasMany(AISession, { foreignKey: 'user_id' });
-
-// AI Moderation
-AIModerationContent.belongsTo(User, { as: 'Reviewer', foreignKey: 'reviewed_by' });
-AIModerationContent.belongsTo(User, { as: 'User', foreignKey: 'user_id' });
+NoiDungChoDuyet.belongsTo(NguoiDung, { foreignKey: 'Id_QuanTriVien' });
+NoiDungDaDuyet.belongsTo(NguoiDung, { foreignKey: 'NguoiDuyet' });
+NoiDungDaDuyet.belongsTo(NoiDungChoDuyet, { foreignKey: 'Id_NguonChoDuyet' });
 
 module.exports = {
   sequelize,
-  User,
-  Specialty,
-  Doctor,
-  Patient,
-  Appointment,
-  AdminPermission,
-  Payment,
-  Conversation,
-  Message,
-  Review,
-  MedicalRecord,
-  DoctorSchedule,
-  Prescription,
-  Consultation,
-  AISession,
-  AIModerationContent,
-  SystemSetting,
-  AIDiagnosis
+  VaiTro,
+  NguoiDung,
+  NguoiDung_VaiTro,
+  BenhNhan,
+  ChuyenKhoa,
+  BacSi,
+  LichKham,
+  DatLich,
+  HoSoBenhAn,
+  DonThuoc,
+  ChiTietDonThuoc,
+  ThanhToan,
+  KhamOnline,
+  TinNhanKham,
+  NoiDungChoDuyet,
+  NoiDungDaDuyet,
+  ThongBao,
+  PhongKham
 };
