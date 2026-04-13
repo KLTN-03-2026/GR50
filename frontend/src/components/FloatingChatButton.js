@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { MessageSquare, X, Send, Mic, MicOff, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
+import { X, Send, Mic, MicOff, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
 import { AuthContext } from '@/contexts/AuthContext';
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const API_KEY = "AIzaSyDSpCTItZ5Aylr3DEzVNTp3qp1NT31Quhg";
-const genAI = new GoogleGenerativeAI(API_KEY);
+import axios from 'axios';
+import { API } from '@/config';
 
 export default function FloatingChatButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([{
-    id: 1, text: 'Xin chào! Tôi là trợ lý AI y tế BookingCare. Tôi có thể giúp gì cho bạn?', sender: 'ai'
+    id: 1, text: 'Xin chào! Tôi là trợ lý AI y tế MediSched AI. Tôi có thể giúp gì cho bạn?', sender: 'ai'
   }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -105,28 +103,20 @@ export default function FloatingChatButton() {
     setLoading(true);
 
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const promptText = `Bạn là trợ lý ảo y tế của BookingCare.\nNgười dùng nói: "${userMsg || 'Tôi gửi một hình ảnh'}".\nHãy phân tích ngắn gọn, thân thiện. ${imgBase64 ? 'Hãy quan sát hình ảnh và đưa ra nhận định y khoa cơ bản.' : ''}`;
+      const headers = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
 
-      let contents = [promptText];
-
-      if (imgBase64) {
-        const mimeType = imgBase64.split(';')[0].split(':')[1];
-        const base64Data = imgBase64.split(',')[1];
-        contents.push({
-          inlineData: {
-            data: base64Data,
-            mimeType: mimeType
-          }
-        });
-      }
-
-      const result = await model.generateContent(contents);
-      const aiResponse = result.response.text();
+      const response = await axios.post(
+        `${API}/ai/chat`,
+        { message: userMsg, image: imgBase64 || undefined },
+        { headers }
+      );
+      const aiResponse = response.data?.result || 'Không có phản hồi từ AI.';
       setMessages(prev => [...prev, { id: Date.now(), text: aiResponse, sender: 'ai' }]);
     } catch (error) {
-      console.error('Gemini Error:', error);
-      setMessages(prev => [...prev, { id: Date.now(), text: 'Xin lỗi, hệ thống AI hiện đang bảo trì hoặc có lỗi xảy ra.', sender: 'ai' }]);
+      console.error('AI Chat Error:', error);
+      const errMsg = error?.response?.data?.detail || 'Xin lỗi, AI hệ thống hiện đang bảo trì hoặc xảy ra lỗi.';
+      setMessages(prev => [...prev, { id: Date.now(), text: errMsg, sender: 'ai' }]);
     } finally {
       setLoading(false);
     }
@@ -162,21 +152,28 @@ export default function FloatingChatButton() {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-50 text-white hover:ring-4 hover:ring-teal-200"
+        className="fixed bottom-6 right-6 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-50 overflow-hidden border-2 border-teal-500 hover:ring-4 hover:ring-teal-200"
       >
-        {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+        {isOpen ? (
+          <X className="w-8 h-8 text-teal-600" />
+        ) : (
+          <img src="/ai-chat-icon.png" alt="AI Chat" className="w-full h-full object-cover" />
+        )}
       </button>
 
       {isOpen && (
         <div className="fixed bottom-24 right-6 w-[360px] h-[550px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden border border-gray-100 dark:border-gray-700">
           <div className="bg-gradient-to-r from-teal-500 to-cyan-500 p-4 shrink-0 shadow-sm z-10">
             <div className="flex justify-between items-center">
-              <div>
-                <h3 className="font-bold text-white flex items-center gap-2">
-                  Trợ lý AI y tế
-                  {isListening && <span className="flex w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>}
-                </h3>
-                <p className="text-teal-50 text-xs text-opacity-90">Phân tích đa phương tiện 24/7</p>
+              <div className="flex items-center gap-3">
+                <img src="/ai-chat-icon.png" alt="AI Avatar" className="w-10 h-10 rounded-full border border-white/50 object-cover shadow-sm" />
+                <div>
+                  <h3 className="font-bold text-white flex items-center gap-2">
+                    Trợ lý AI y tế
+                    {isListening && <span className="flex w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>}
+                  </h3>
+                  <p className="text-teal-50 text-xs text-opacity-90">Phân tích đa phương tiện 24/7</p>
+                </div>
               </div>
               <button onClick={() => setIsOpen(false)} className="text-white hover:bg-white/20 p-1 rounded-full transition">
                 <X className="w-5 h-5" />

@@ -10,6 +10,7 @@ import FloatingChatButton from '@/components/FloatingChatButton';
 
 import PatientDashboard from "@/pages/patient/Dashboard";
 import AIHistory from "@/pages/patient/AIHistory";
+import AIConsultation from "@/pages/patient/AIConsultation";
 import SearchDoctors from "@/pages/patient/SearchDoctors";
 import PatientAppointments from "@/pages/patient/Appointments";
 import PatientChat from "@/pages/patient/Chat";
@@ -69,11 +70,15 @@ import Services from "@/pages/Services";
 import Specialties from "@/pages/Specialties";
 import Facilities from "@/pages/Facilities";
 import Doctors from "@/pages/Doctors";
+import ForceChangePassword from "@/pages/auth/ForceChangePassword";
+
 
 function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token"));
+  const [mustChangePassword, setMustChangePassword] = useState(localStorage.getItem("mustChangePassword") === "true");
   const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     if (token) {
@@ -92,6 +97,11 @@ function App() {
       });
       console.log("User fetched successfully", response.data);
       setUser(response.data);
+      if (response.data.must_change_password) {
+        setMustChangePassword(true);
+        localStorage.setItem("mustChangePassword", "true");
+      }
+
     } catch (error) {
       console.error("Failed to fetch user", error);
       logout();
@@ -103,19 +113,44 @@ function App() {
 
   const login = (newToken, userData) => {
     localStorage.setItem("token", newToken);
+    if (userData.must_change_password) {
+      localStorage.setItem("mustChangePassword", "true");
+      setMustChangePassword(true);
+    } else {
+      localStorage.removeItem("mustChangePassword");
+      setMustChangePassword(false);
+    }
     setToken(newToken);
     setUser(userData);
   };
 
+
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("mustChangePassword");
     setToken(null);
     setUser(null);
+    setMustChangePassword(false);
   };
+
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
+
+  const ProtectedRoute = ({ children, allowedRoles }) => {
+    if (!token) return <Navigate to="/login" />;
+    if (allowedRoles && !allowedRoles.includes(user?.role)) return <Navigate to="/" />;
+    if (mustChangePassword) return <Navigate to="/force-change-password" />;
+    return children;
+  };
+
+  const ForceChangePasswordRoute = ({ children }) => {
+    if (!token) return <Navigate to="/login" />;
+    if (!mustChangePassword) return <Navigate to="/" />;
+    return children;
+  };
+
 
   return (
     <ThemeProvider>
@@ -127,6 +162,9 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/force-change-password" element={<ForceChangePasswordRoute><ForceChangePassword /></ForceChangePasswordRoute>} />
+
+
 
               <Route path="/services/:slug" element={<ServiceDetail />} />
               <Route path="/specialty/:id" element={<SpecialtyDetail />} />
@@ -139,53 +177,64 @@ function App() {
               <Route path="/doctors" element={<Doctors />} />
 
               {/* Patient Routes */}
-              <Route path="/patient/dashboard" element={user?.role === "patient" ? <PatientDashboard /> : <Navigate to="/login" />} />
-              <Route path="/video/:conversationId" element={user ? <VideoConsultation /> : <Navigate to="/login" />} />
-              <Route path="/patient/search-doctors" element={user?.role === "patient" ? <SearchDoctors /> : <Navigate to="/login" />} />
-              <Route path="/patient/appointments" element={user?.role === "patient" ? <PatientAppointments /> : <Navigate to="/login" />} />
-              <Route path="/patient/chat" element={user?.role === "patient" ? <PatientChatList /> : <Navigate to="/login" />} />
-              <Route path="/patient/chat/:appointmentId" element={user?.role === "patient" ? <PatientChat /> : <Navigate to="/login" />} />
-              <Route path="/patient/ai-history" element={user?.role === "patient" ? <AIHistory /> : <Navigate to="/login" />} />
-              <Route path="/patient/conversations" element={user?.role === "patient" ? <PatientConversations /> : <Navigate to="/login" />} />
-              <Route path="/patient/conversation/:conversationId" element={user?.role === "patient" ? <PatientConversationChat /> : <Navigate to="/login" />} />
-              <Route path="/patient/messages" element={user?.role === "patient" ? <PatientUnifiedChat /> : <Navigate to="/login" />} />
-              <Route path="/patient/payments" element={user?.role === "patient" ? <PatientPayments /> : <Navigate to="/login" />} />
-              <Route path="/patient/payment/:paymentId" element={user?.role === "patient" ? <PaymentProcess /> : <Navigate to="/login" />} />
-              <Route path="/patient/doctor/:id" element={user?.role === "patient" ? <PatientDoctorDetails /> : <Navigate to="/login" />} />
-              <Route path="/patient/medical-records" element={user?.role === "patient" ? <PatientMedicalRecords /> : <Navigate to="/login" />} />
+              <Route path="/patient/dashboard" element={<ProtectedRoute allowedRoles={['patient']}><PatientDashboard /></ProtectedRoute>} />
+              <Route path="/video/:conversationId" element={<ProtectedRoute><VideoConsultation /></ProtectedRoute>} />
+              <Route path="/patient/search-doctors" element={<ProtectedRoute allowedRoles={['patient']}><SearchDoctors /></ProtectedRoute>} />
+              <Route path="/patient/appointments" element={<ProtectedRoute allowedRoles={['patient']}><PatientAppointments /></ProtectedRoute>} />
+              <Route path="/patient/chat" element={<ProtectedRoute allowedRoles={['patient']}><PatientChatList /></ProtectedRoute>} />
+              <Route path="/patient/chat/:appointmentId" element={<ProtectedRoute allowedRoles={['patient']}><PatientChat /></ProtectedRoute>} />
+              <Route path="/patient/ai-consult" element={<ProtectedRoute allowedRoles={['patient']}><AIConsultation /></ProtectedRoute>} />
+              <Route path="/patient/ai-history" element={<ProtectedRoute allowedRoles={['patient']}><AIHistory /></ProtectedRoute>} />
+              <Route path="/patient/conversations" element={<ProtectedRoute allowedRoles={['patient']}><PatientConversations /></ProtectedRoute>} />
+              <Route path="/patient/conversation/:conversationId" element={<ProtectedRoute allowedRoles={['patient']}><PatientConversationChat /></ProtectedRoute>} />
+              <Route path="/patient/messages" element={<ProtectedRoute allowedRoles={['patient']}><PatientUnifiedChat /></ProtectedRoute>} />
+              <Route path="/patient/payments" element={<ProtectedRoute allowedRoles={['patient']}><PatientPayments /></ProtectedRoute>} />
+              <Route path="/patient/payment/:paymentId" element={<ProtectedRoute allowedRoles={['patient']}><PaymentProcess /></ProtectedRoute>} />
+              <Route path="/patient/doctor/:id" element={<ProtectedRoute allowedRoles={['patient']}><PatientDoctorDetails /></ProtectedRoute>} />
+              <Route path="/patient/medical-records" element={<ProtectedRoute allowedRoles={['patient']}><PatientMedicalRecords /></ProtectedRoute>} />
+
 
               {/* Doctor Routes */}
-              <Route path="/doctor/dashboard" element={user?.role === "doctor" ? <DoctorDashboard /> : <Navigate to="/login" />} />
-              <Route path="/doctor/profile" element={user?.role === "doctor" ? <DoctorProfile /> : <Navigate to="/login" />} />
-              <Route path="/doctor/schedule" element={user?.role === "doctor" ? <DoctorSchedule /> : <Navigate to="/login" />} />
-              <Route path="/doctor/appointments" element={user?.role === "doctor" ? <DoctorAppointments /> : <Navigate to="/login" />} />
-              <Route path="/doctor/chat" element={user?.role === "doctor" ? <DoctorChatList /> : <Navigate to="/login" />} />
-              <Route path="/doctor/chat/:appointmentId" element={user?.role === "doctor" ? <DoctorChat /> : <Navigate to="/login" />} />
-              <Route path="/doctor/conversations" element={user?.role === "doctor" ? <DoctorUnifiedChat /> : <Navigate to="/login" />} />
-              <Route path="/doctor/conversation/:conversationId" element={user?.role === "doctor" ? <DoctorConversationChat /> : <Navigate to="/login" />} />
-              <Route path="/doctor/medical-records" element={user?.role === "doctor" ? <DoctorMedicalRecords /> : <Navigate to="/login" />} />
-              <Route path="/doctor/ai-diagnoses" element={user?.role === "doctor" ? <DoctorAIDiagnoses /> : <Navigate to="/login" />} />
+              <Route path="/doctor/dashboard" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />
+
+
+              <Route path="/doctor/profile" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorProfile /></ProtectedRoute>} />
+              <Route path="/doctor/schedule" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorSchedule /></ProtectedRoute>} />
+              <Route path="/doctor/appointments" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorAppointments /></ProtectedRoute>} />
+              <Route path="/doctor/chat" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorChatList /></ProtectedRoute>} />
+              <Route path="/doctor/chat/:appointmentId" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorChat /></ProtectedRoute>} />
+              <Route path="/doctor/conversations" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorUnifiedChat /></ProtectedRoute>} />
+              <Route path="/doctor/conversation/:conversationId" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorConversationChat /></ProtectedRoute>} />
+              <Route path="/doctor/medical-records" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorMedicalRecords /></ProtectedRoute>} />
+              <Route path="/doctor/ai-diagnoses" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorAIDiagnoses /></ProtectedRoute>} />
+
 
               {/* Admin Routes */}
-              <Route path="/admin/dashboard" element={user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />} />
-              <Route path="/admin/doctors" element={user?.role === "admin" ? <AdminDoctors /> : <Navigate to="/login" />} />
-              <Route path="/admin/patients" element={user?.role === "admin" ? <AdminPatients /> : <Navigate to="/login" />} />
-              <Route path="/admin/stats" element={user?.role === "admin" ? <AdminStats /> : <Navigate to="/login" />} />
-              <Route path="/admin/admins" element={user?.role === "admin" ? <AdminsManagement /> : <Navigate to="/login" />} />
-              <Route path="/admin/create-accounts" element={user?.role === "admin" ? <CreateAccounts /> : <Navigate to="/login" />} />
-              <Route path="/admin/payments" element={user?.role === "admin" ? <AdminPayments /> : <Navigate to="/login" />} />
-              <Route path="/admin/reports" element={user?.role === "admin" ? <AdminReports /> : <Navigate to="/login" />} />
-              <Route path="/admin/settings" element={user?.role === "admin" ? <SystemSettings /> : <Navigate to="/login" />} />
-              <Route path="/admin/ai-diagnoses" element={user?.role === "admin" ? <AIDiagnoses /> : <Navigate to="/login" />} />
-              <Route path="/admin/specialties" element={user?.role === "admin" ? <AdminSpecialties /> : <Navigate to="/login" />} />
+              <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+
+
+              <Route path="/admin/doctors" element={<ProtectedRoute allowedRoles={['admin']}><AdminDoctors /></ProtectedRoute>} />
+              <Route path="/admin/patients" element={<ProtectedRoute allowedRoles={['admin']}><AdminPatients /></ProtectedRoute>} />
+              <Route path="/admin/stats" element={<ProtectedRoute allowedRoles={['admin']}><AdminStats /></ProtectedRoute>} />
+              <Route path="/admin/admins" element={<ProtectedRoute allowedRoles={['admin']}><AdminsManagement /></ProtectedRoute>} />
+              <Route path="/admin/create-accounts" element={<ProtectedRoute allowedRoles={['admin']}><CreateAccounts /></ProtectedRoute>} />
+              <Route path="/admin/payments" element={<ProtectedRoute allowedRoles={['admin']}><AdminPayments /></ProtectedRoute>} />
+              <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['admin']}><AdminReports /></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><SystemSettings /></ProtectedRoute>} />
+              <Route path="/admin/ai-diagnoses" element={<ProtectedRoute allowedRoles={['admin']}><AIDiagnoses /></ProtectedRoute>} />
+              <Route path="/admin/specialties" element={<ProtectedRoute allowedRoles={['admin']}><AdminSpecialties /></ProtectedRoute>} />
+
 
               {/* Department Head Routes */}
-              <Route path="/department-head/dashboard" element={user?.role === "department_head" ? <DepartmentHeadDashboard /> : <Navigate to="/login" />} />
-              <Route path="/department-head/create-accounts" element={user?.role === "department_head" ? <DepartmentHeadCreateAccounts /> : <Navigate to="/login" />} />
-              <Route path="/department-head/doctors" element={user?.role === "department_head" ? <DepartmentHeadDoctors /> : <Navigate to="/login" />} />
-              <Route path="/department-head/patients" element={user?.role === "department_head" ? <DepartmentHeadPatients /> : <Navigate to="/login" />} />
-              <Route path="/department-head/conversations" element={user?.role === "department_head" ? <DepartmentHeadUnifiedChat /> : <Navigate to="/login" />} />
-              <Route path="/department-head/conversation/:conversationId" element={user?.role === "department_head" ? <DepartmentHeadConversationChat /> : <Navigate to="/login" />} />
+              <Route path="/department-head/dashboard" element={<ProtectedRoute allowedRoles={['department_head']}><DepartmentHeadDashboard /></ProtectedRoute>} />
+
+
+              <Route path="/department-head/create-accounts" element={<ProtectedRoute allowedRoles={['department_head']}><DepartmentHeadCreateAccounts /></ProtectedRoute>} />
+              <Route path="/department-head/doctors" element={<ProtectedRoute allowedRoles={['department_head']}><DepartmentHeadDoctors /></ProtectedRoute>} />
+              <Route path="/department-head/patients" element={<ProtectedRoute allowedRoles={['department_head']}><DepartmentHeadPatients /></ProtectedRoute>} />
+              <Route path="/department-head/conversations" element={<ProtectedRoute allowedRoles={['department_head']}><DepartmentHeadUnifiedChat /></ProtectedRoute>} />
+              <Route path="/department-head/conversation/:conversationId" element={<ProtectedRoute allowedRoles={['department_head']}><DepartmentHeadConversationChat /></ProtectedRoute>} />
+
             </Routes>
             <FloatingChatButton />
             <Toaster position="top-right" />

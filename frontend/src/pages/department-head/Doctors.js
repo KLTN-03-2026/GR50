@@ -197,7 +197,15 @@ function DoctorCard({ doctor, onApprove, onReject, onDelete, t }) {
                 {t(doctor.status)}
               </span>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-2">{doctor.user_info?.email}</p>
+            <p className="text-gray-600 dark:text-gray-300 mb-2">
+              {doctor.user_info?.email}
+              {doctor.user_info?.password_display && (
+                <span className="ml-2 text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded border border-gray-200">
+                  PW: <span className="text-blue-600 font-bold">{doctor.user_info?.password_display}</span>
+                </span>
+              )}
+            </p>
+
             {doctor.specialty_name && (
               <p className="text-teal-600 font-semibold mb-2">{t('specialty')}: {doctor.specialty_name}</p>
             )}

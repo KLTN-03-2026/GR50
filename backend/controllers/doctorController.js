@@ -1,4 +1,5 @@
-const { BacSi, NguoiDung, ChuyenKhoa, VaiTro } = require('../models');
+const { BacSi, NguoiDung, ChuyenKhoa, VaiTro, PhongKham } = require('../models');
+
 
 exports.getAll = async (req, res) => {
   try {
@@ -12,9 +13,11 @@ exports.getAll = async (req, res) => {
       where: whereClause,
       include: [
         { model: NguoiDung },
-        { model: ChuyenKhoa }
+        { model: ChuyenKhoa },
+        { model: PhongKham }
       ]
     });
+
 
     const result = doctors.map(doc => {
       const d = doc.toJSON();
@@ -29,8 +32,11 @@ exports.getAll = async (req, res) => {
         full_name: `${d.NguoiDung.Ho} ${d.NguoiDung.Ten}`,
         email: d.NguoiDung.Email,
         avatar: d.NguoiDung.AnhDaiDien,
-        specialty_name: d.ChuyenKhoa ? d.ChuyenKhoa.TenChuyenKhoa : null
+        specialty_name: d.ChuyenKhoa ? d.ChuyenKhoa.TenChuyenKhoa : null,
+        clinic_name: d.PhongKham ? d.PhongKham.TenPhongKham : d.NoiLamViec,
+        clinic_address: d.PhongKham ? d.PhongKham.DiaChi : null
       };
+
     });
 
     res.json(result);
@@ -47,9 +53,11 @@ exports.getProfile = async (req, res) => {
       where: { Id_NguoiDung: userId },
       include: [
         { model: NguoiDung },
-        { model: ChuyenKhoa }
+        { model: ChuyenKhoa },
+        { model: PhongKham }
       ]
     });
+
 
     if (!doctor) {
       return res.status(404).json({ detail: 'Doctor profile not found' });
@@ -67,10 +75,13 @@ exports.getProfile = async (req, res) => {
       email: d.NguoiDung.Email,
       avatar: d.NguoiDung.AnhDaiDien,
       specialty_name: d.ChuyenKhoa ? d.ChuyenKhoa.TenChuyenKhoa : null,
+      clinic_name: d.PhongKham ? d.PhongKham.TenPhongKham : d.NoiLamViec,
+      clinic_address: d.PhongKham ? d.PhongKham.DiaChi : null,
       reviews: [],
       average_rating: 5.0,
       review_count: 0
     };
+
 
     res.json(result);
   } catch (error) {

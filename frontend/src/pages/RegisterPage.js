@@ -11,6 +11,9 @@ import axios from 'axios';
 import { Calendar, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { getErrorMessage } from '@/utils/errorHandler';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useGoogleLogin } from '@react-oauth/google';
+
+
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -44,6 +47,8 @@ export default function RegisterPage() {
     fetchSpecialties();
   }, []);
 
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -69,12 +74,53 @@ export default function RegisterPage() {
     }
   };
 
-  const handleSocialAuth = () => {
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API}/auth/google-login`, {
+        accessToken: credentialResponse.access_token
+      });
+      const { token, user } = response.data;
+      login(token, user);
+      toast.success(t('registerSuccess'));
+
+      if (user.role === 'patient') navigate('/patient/dashboard');
+      else if (user.role === 'doctor') navigate('/doctor/dashboard');
+      else if (user.role === 'admin') navigate('/admin/dashboard');
+    } catch (error) {
+      toast.error(t('registerFailed'));
+      console.error('Google Auth Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const googleLoginHandler = useGoogleLogin({
+    onSuccess: (codeResponse) => handleGoogleSuccess(codeResponse),
+    onError: (error) => toast.error(t('registerFailed')),
+    flow: 'implicit'
+  });
+
+  const handleSocialAuth = (type) => {
+    if (type === 'google') {
+      googleLoginHandler();
+      return;
+    }
+    if (type === 'facebook') {
+      if (window.FB) {
+        window.FB.login((response) => handleFacebookLogin(response), { scope: 'public_profile,email' });
+      } else {
+        toast.error('Facebook SDK not loaded');
+      }
+      return;
+    }
     toast.info(t('socialLoginNeedsConfig'), {
       icon: '🔐',
       duration: 4000
     });
   };
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-6 transition-colors duration-300">
@@ -210,7 +256,7 @@ export default function RegisterPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleSocialAuth}
+                onClick={() => handleSocialAuth('google')}
                 className="w-full flex items-center justify-center gap-2 border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -224,9 +270,10 @@ export default function RegisterPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleSocialAuth}
+                onClick={() => handleSocialAuth('facebook')}
                 className="w-full flex items-center justify-center gap-2 border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 hover:text-[#1877F2]"
               >
+
                 <svg className="w-5 h-5 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>

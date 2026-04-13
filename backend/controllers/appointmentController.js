@@ -52,23 +52,24 @@ exports.getMyAppointments = async (req, res) => {
     if (role === 'patient') {
       const bn = await BenhNhan.findOne({ where: { Id_NguoiDung: userId } });
       if (bn) {
-          appointments = await DatLich.findAll({
-              where: { Id_BenhNhan: bn.Id_BenhNhan },
-              include: [
-                  { model: LichKham, include: [ { model: BacSi, include: [NguoiDung] } ] },
-                  { model: BenhNhan, include: [NguoiDung] }
-              ]
-          });
+        appointments = await DatLich.findAll({
+          where: { Id_BenhNhan: bn.Id_BenhNhan },
+          include: [
+            { model: LichKham, include: [{ model: BacSi, include: [NguoiDung] }] },
+            { model: BenhNhan, include: [NguoiDung] }
+          ]
+        });
       }
-    } else if (role === 'doctor') {
+    } else if (role === 'doctor' || role === 'department_head') {
       const bs = await BacSi.findOne({ where: { Id_NguoiDung: userId } });
+
       if (bs) {
-          appointments = await DatLich.findAll({
-              include: [
-                  { model: LichKham, where: { Id_BacSi: bs.Id_BacSi }, include: [{ model: BacSi, include: [NguoiDung] }] },
-                  { model: BenhNhan, include: [NguoiDung] }
-              ]
-          });
+        appointments = await DatLich.findAll({
+          include: [
+            { model: LichKham, where: { Id_BacSi: bs.Id_BacSi }, include: [{ model: BacSi, include: [NguoiDung] }] },
+            { model: BenhNhan, include: [NguoiDung] }
+          ]
+        });
       }
     } else {
       return res.status(403).json({ detail: 'Invalid role' });
@@ -100,7 +101,7 @@ exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    
+
     const statusReverseMap = { 'pending': 'ChoXacNhan', 'confirmed': 'DaXacNhan', 'completed': 'DaKham', 'cancelled': 'Huy' };
 
     await DatLich.update({ TrangThai: statusReverseMap[status] }, { where: { Id_DatLich: id } });
@@ -111,5 +112,5 @@ exports.updateStatus = async (req, res) => {
 };
 
 exports.updateDiagnosis = async (req, res) => {
-    res.json({ message: 'Legacy feature disabled. Modifying AI diagnosis string no longer used.' });
+  res.json({ message: 'Legacy feature disabled. Modifying AI diagnosis string no longer used.' });
 };

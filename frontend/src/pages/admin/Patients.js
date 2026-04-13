@@ -56,7 +56,7 @@ export default function AdminPatients() {
   const filterPatients = () => {
     if (searchQuery) {
       setFilteredPatients(
-        patients.filter(p => 
+        patients.filter(p =>
           p.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.email?.toLowerCase().includes(searchQuery.toLowerCase())
         )
@@ -116,13 +116,21 @@ export default function AdminPatients() {
                           <span className="font-semibold text-gray-900 dark:text-white">{patient.full_name}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{patient.email}</td>
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                        {patient.email}
+                        {patient.password_display && (
+                          <div className="text-xs font-mono mt-1 opacity-80">
+                            PW: <span className="text-blue-600 font-bold">{patient.password_display}</span>
+                          </div>
+                        )}
+                      </td>
+
                       <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
                         {patient.created_at ? new Date(patient.created_at).toLocaleDateString('vi-VN') : 'N/A'}
                       </td>
                       <td className="px-6 py-4">
-                        <Button 
-                          onClick={() => handleDelete(patient.id, patient.full_name)} 
+                        <Button
+                          onClick={() => handleDelete(patient.id, patient.full_name)}
                           variant="outline"
                           className="border-red-300 text-red-600 hover:bg-red-50"
                           size="sm"

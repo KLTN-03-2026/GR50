@@ -185,9 +185,9 @@ export default function LandingPage() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-              <img src="/logo.png" alt="BookingCare Logo" className="h-14 w-auto object-contain" />
+              <img src="/logo.png" alt="MediSched AI Logo" className="h-14 w-auto object-contain" />
               <span className="text-2xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent animate-pulse">
-                BookingCare Demo
+                MediSched AI
               </span>
             </div>
 
@@ -552,10 +552,10 @@ export default function LandingPage() {
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
                   <Calendar className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-xl font-bold">BookingCare Demo</span>
+                <span className="text-xl font-bold">MediSched AI</span>
               </div>
               <p className="text-gray-400 text-sm">
-                Đội ngũ phát triển BookingCare Demo
+                Đội ngũ phát triển MediSched AI
               </p>
             </div>
 
@@ -613,7 +613,7 @@ export default function LandingPage() {
           </div>
 
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-            <p>&copy; 2025 BookingCare Demo. All rights reserved.</p>
+            <p>&copy; 2025 MediSched AI. All rights reserved.</p>
           </div>
         </div>
       </footer >

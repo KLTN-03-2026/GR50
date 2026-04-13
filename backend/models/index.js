@@ -14,10 +14,10 @@ const ChiTietDonThuoc = require('./ChiTietDonThuoc.js');
 const ThanhToan = require('./ThanhToan.js');
 const KhamOnline = require('./KhamOnline.js');
 const TinNhanKham = require('./TinNhanKham.js');
-const NoiDungChoDuyet = require('./NoiDungChoDuyet.js');
-const NoiDungDaDuyet = require('./NoiDungDaDuyet.js');
 const ThongBao = require('./ThongBao.js');
 const PhongKham = require('./PhongKham.js');
+const AITuVanPhien = require('./AITuVanPhien.js');
+const AITuVanTinNhan = require('./AITuVanTinNhan.js');
 
 // Define associations
 VaiTro.belongsToMany(NguoiDung, { through: NguoiDung_VaiTro, foreignKey: 'Id_VaiTro', otherKey: 'Id_NguoiDung' });
@@ -34,6 +34,10 @@ NguoiDung.hasOne(BacSi, { foreignKey: 'Id_NguoiDung' });
 
 BacSi.belongsTo(ChuyenKhoa, { foreignKey: 'Id_ChuyenKhoa' });
 ChuyenKhoa.hasMany(BacSi, { foreignKey: 'Id_ChuyenKhoa' });
+
+BacSi.belongsTo(PhongKham, { foreignKey: 'Id_PhongKham' });
+PhongKham.hasMany(BacSi, { foreignKey: 'Id_PhongKham' });
+
 
 LichKham.belongsTo(BacSi, { foreignKey: 'Id_BacSi' });
 BacSi.hasMany(LichKham, { foreignKey: 'Id_BacSi' });
@@ -64,9 +68,13 @@ TinNhanKham.belongsTo(KhamOnline, { foreignKey: 'Id_KhamOnline' });
 KhamOnline.hasMany(TinNhanKham, { foreignKey: 'Id_KhamOnline' });
 TinNhanKham.belongsTo(NguoiDung, { foreignKey: 'Id_NguoiGui' });
 
-NoiDungChoDuyet.belongsTo(NguoiDung, { foreignKey: 'Id_QuanTriVien' });
-NoiDungDaDuyet.belongsTo(NguoiDung, { foreignKey: 'NguoiDuyet' });
-NoiDungDaDuyet.belongsTo(NoiDungChoDuyet, { foreignKey: 'Id_NguonChoDuyet' });
+
+
+// AI Chat Session associations
+NguoiDung.hasMany(AITuVanPhien, { foreignKey: 'Id_NguoiDung', as: 'aiSessions' });
+AITuVanPhien.belongsTo(NguoiDung, { foreignKey: 'Id_NguoiDung', as: 'nguoiDung' });
+AITuVanPhien.hasMany(AITuVanTinNhan, { foreignKey: 'Id_AITuVanPhien', as: 'messages', onDelete: 'CASCADE' });
+AITuVanTinNhan.belongsTo(AITuVanPhien, { foreignKey: 'Id_AITuVanPhien', as: 'session' });
 
 module.exports = {
   sequelize,
@@ -84,8 +92,8 @@ module.exports = {
   ThanhToan,
   KhamOnline,
   TinNhanKham,
-  NoiDungChoDuyet,
-  NoiDungDaDuyet,
   ThongBao,
-  PhongKham
+  PhongKham,
+  AITuVanPhien,
+  AITuVanTinNhan,
 };

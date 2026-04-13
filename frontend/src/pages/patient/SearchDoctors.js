@@ -216,7 +216,19 @@ function DoctorCard({ doctor, onBook }) {
             Phí tư vấn: {doctor.consultation_fee.toLocaleString()} VNĐ
           </p>
         )}
+        {doctor.clinic_name && (
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            <MapPin className="w-4 h-4 inline mr-2 text-red-500" />
+            {doctor.clinic_name}
+          </p>
+        )}
+        {doctor.clinic_address && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 pl-6">
+            {doctor.clinic_address}
+          </p>
+        )}
       </div>
+
 
       <div className="grid grid-cols-2 gap-2">
         <Button

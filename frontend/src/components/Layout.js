@@ -84,9 +84,9 @@ export default function Layout({ children }) {
             to={role === 'admin' ? '/admin/dashboard' : role === 'doctor' ? '/doctor/dashboard' : role === 'department-head' ? '/department-head/dashboard' : '/'}
             className="flex items-center gap-2 mb-8 justify-center"
           >
-            <img src="/logo.png" alt="BookingCare Logo" className="h-12 w-auto object-contain" />
+            <img src="/logo.png" alt="MediSched AI Logo" className="h-14 w-auto object-contain" />
             <span className="text-xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent animate-pulse">
-              BookingCare
+              MediSched AI
             </span>
           </Link>
 

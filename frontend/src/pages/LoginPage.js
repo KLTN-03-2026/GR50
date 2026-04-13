@@ -11,6 +11,9 @@ import axios from 'axios';
 import { Calendar, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { getErrorMessage } from '@/utils/errorHandler';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useGoogleLogin } from '@react-oauth/google';
+
+
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -23,6 +26,8 @@ export default function LoginPage() {
     email: localStorage.getItem('rememberedEmail') || '',
     password: ''
   });
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,10 +51,18 @@ export default function LoginPage() {
       login(token, user);
       toast.success(t('loginSuccess'));
 
-      if (user.role === 'patient') navigate('/patient/dashboard');
-      else if (user.role === 'doctor') navigate('/doctor/dashboard');
-      else if (user.role === 'department_head') navigate('/department-head/dashboard');
-      else if (user.role === 'admin') navigate('/admin/dashboard');
+      if (user.must_change_password) {
+        navigate('/force-change-password');
+      } else if (user.role === 'patient') {
+        navigate('/patient/dashboard');
+      } else if (user.role === 'doctor') {
+        navigate('/doctor/dashboard');
+      } else if (user.role === 'department_head') {
+        navigate('/department-head/dashboard');
+      } else if (user.role === 'admin') {
+        navigate('/admin/dashboard');
+      }
+
     } catch (error) {
       let errorMessage = t('loginFailed');
 
@@ -63,12 +76,77 @@ export default function LoginPage() {
     }
   };
 
-  const handleSocialAuth = () => {
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API}/auth/google-login`, {
+        accessToken: credentialResponse.access_token
+      });
+      const { token, user } = response.data;
+      login(token, user);
+      toast.success(t('loginSuccess'));
+
+      if (user.role === 'patient') navigate('/patient/dashboard');
+      else if (user.role === 'doctor') navigate('/doctor/dashboard');
+      else if (user.role === 'admin') navigate('/admin/dashboard');
+    } catch (error) {
+      toast.error(t('loginFailed'));
+      console.error('Google Auth Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFacebookLogin = async (fbResponse) => {
+    if (fbResponse.status === 'connected') {
+      setLoading(true);
+      try {
+        const response = await axios.post(`${API}/auth/facebook-login`, {
+          accessToken: fbResponse.authResponse.accessToken
+        });
+        const { token, user } = response.data;
+        login(token, user);
+        toast.success(t('loginSuccess'));
+
+        if (user.role === 'patient') navigate('/patient/dashboard');
+        else if (user.role === 'doctor') navigate('/doctor/dashboard');
+        else if (user.role === 'admin') navigate('/admin/dashboard');
+      } catch (error) {
+        toast.error(t('loginFailed'));
+        console.error('Facebook Auth Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+
+  const googleLoginHandler = useGoogleLogin({
+    onSuccess: (codeResponse) => handleGoogleSuccess(codeResponse),
+    onError: (error) => toast.error(t('loginFailed')),
+    flow: 'implicit'
+  });
+
+  const handleSocialAuth = (type) => {
+    if (type === 'google') {
+      googleLoginHandler();
+      return;
+    }
+    if (type === 'facebook') {
+      if (window.FB) {
+        window.FB.login((response) => handleFacebookLogin(response), { scope: 'public_profile,email' });
+      } else {
+        toast.error('Facebook SDK not loaded');
+      }
+      return;
+    }
     toast.info(t('socialLoginNeedsConfig'), {
       icon: '🔐',
       duration: 4000
     });
   };
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-6 transition-colors duration-300">
@@ -170,9 +248,10 @@ export default function LoginPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleSocialAuth}
+                onClick={() => handleSocialAuth('google')}
                 className="w-full flex items-center justify-center gap-2 border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
               >
+
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -184,9 +263,10 @@ export default function LoginPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleSocialAuth}
+                onClick={() => handleSocialAuth('facebook')}
                 className="w-full flex items-center justify-center gap-2 border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 hover:text-[#1877F2]"
               >
+
                 <svg className="w-5 h-5 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>

@@ -50,7 +50,7 @@ export default function VideoConsultation() {
         );
     }
 
-    const roomName = `bookingcare-video-room-${conversationId}-${conversation?.id || 'public'}`;
+    const roomName = `medisched-ai-video-room-${conversationId}-${conversation?.id || 'public'}`;
 
     return (
         <Layout>

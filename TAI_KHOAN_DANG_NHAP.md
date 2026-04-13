@@ -36,31 +36,25 @@
 
 ---
 
-### 🟢 BÁC SĨ (Doctors)
+### 🟢 BÁC SĨ (Doctors) - 150 Tài khoản Đà Nẵng
+Hệ thống đã được nạp dữ liệu thực tế cho 150 bác sĩ tại các bệnh viện lớn ở Đà Nẵng.
 
-#### Bác Sĩ 1
-- **Email:** doctor1@test.com
-- **Password:** 12345678
-- **Tên:** Dr. Nguyễn Văn A
-- **Chuyên khoa:** Nội khoa
+- **Email format:** `doctor1@medisched.ai` đến `doctor150@medisched.ai`
+- **Mật khẩu mặc định:** `123456`
+- **Thông tin đi kèm:** 
+  - Đã được gán vào 6 bệnh viện lớn (BV Đà Nẵng, Hoàn Mỹ, Gia Đình, Vinmec, C Đà Nẵng, Pasteur).
+  - Đã có đầy đủ Chuyên khoa, Số năm kinh nghiệm, Phí tư vấn và Tiểu sử.
 
-#### Bác Sĩ 2
-- **Email:** doctor2@test.com
-- **Password:** 12345678
-- **Tên:** Dr. Trần Thị B
-- **Chuyên khoa:** Ngoại khoa
-
-#### Bác Sĩ 3
-- **Email:** doctor3@test.com
-- **Password:** 12345678
-- **Tên:** Dr. Lê Văn C
-- **Chuyên khoa:** Nhi khoa
+**Ví dụ:**
+- **Email:** `doctor1@medisched.ai` / Pass: `123456`
+- **Email:** `doctor150@medisched.ai` / Pass: `123456`
 
 **Quyền hạn bác sĩ:**
-- Xem danh sách lịch hẹn
-- Chat với bệnh nhân
-- Cập nhật hồ sơ cá nhân
-- Xem lịch làm việc
+- Xem danh sách lịch hẹn của mình.
+- Tiếp nhận và xác nhận lịch khám từ bệnh nhân.
+- Chat và tư vấn cho bệnh nhân.
+- Cập nhật hồ sơ cá nhân và lịch làm việc.
+
 
 ---
 

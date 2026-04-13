@@ -163,7 +163,7 @@ function AppointmentCard({ appointment, navigate, onReview }) {
                 Chat
               </Button>
               <Button
-                onClick={() => window.open(`https://meet.jit.si/bookingcare-appointment-${appointment.id}`, '_blank')}
+                onClick={() => window.open(`https://meet.jit.si/medisched-ai-appointment-${appointment.id}`, '_blank')}
                 className="bg-gradient-to-r from-purple-500 to-pink-500"
               >
                 <Video className="w-4 h-4 mr-2" />

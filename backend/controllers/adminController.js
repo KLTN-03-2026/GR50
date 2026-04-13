@@ -1,6 +1,22 @@
 const { ThanhToan, DatLich, BenhNhan, NguoiDung, BacSi, VaiTro, ChuyenKhoa, NguoiDung_VaiTro } = require('../models');
 const bcrypt = require('bcryptjs');
 const { Op, fn, col, literal } = require('sequelize');
+
+const removeAccents = (str) => {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+};
+
+const generateEmail = (fullName) => {
+    if (!fullName) return `user.${Date.now()}@gmail.com`;
+    const cleanName = removeAccents(fullName.toLowerCase().trim());
+    const parts = cleanName.split(/\s+/);
+    return `${parts.join('.')}@gmail.com`;
+};
+
+const generatePassword = () => {
+    return Math.random().toString(36).slice(-8); // 8 character random string
+};
+
 exports.getStats = async (req, res) => {
     try {
         const patients = await VaiTro.findOne({ where: { MaVaiTro: 'patient' }, include: [NguoiDung] });
@@ -46,8 +62,10 @@ exports.getDoctors = async (req, res) => {
             specialty_name: d.ChuyenKhoa ? d.ChuyenKhoa.TenChuyenKhoa : '',
             bio: d.GioiThieu,
             experience_years: d.SoNamKinhNghiem,
-            consultation_fee: d.PhiTuVan
+            consultation_fee: d.PhiTuVan,
+            password_display: d.NguoiDung.MatKhauHienThi // Added for display
         })));
+
     } catch (error) {
         console.error('Get doctors error:', error);
         res.status(500).json({ detail: 'Internal server error' });
@@ -65,8 +83,10 @@ exports.getPatients = async (req, res) => {
             avatar_url: p.NguoiDung.AnhDaiDien,
             date_of_birth: p.NguoiDung.NgaySinh,
             gender: p.NguoiDung.GioiTinh,
-            address: ''
+            address: '',
+            password_display: p.NguoiDung.MatKhauHienThi // Added for display
         })));
+
     } catch (error) {
         res.status(500).json({ detail: 'Internal server error' });
     }
@@ -156,27 +176,37 @@ exports.createUser = async (req, res) => {
     try {
         const { email, password, full_name, phone, date_of_birth, address, role, specialty_id, experience_years, consultation_fee, bio, admin_permissions } = req.body;
 
-        if (!email || !password || !full_name || !role) {
+        if (!full_name || !role) {
             return res.status(400).json({ detail: 'Missing required fields' });
         }
 
-        const existingUser = await NguoiDung.findOne({ where: { Email: email } });
+        const generatedEmail = generateEmail(full_name);
+        const generatedPassword = generatePassword();
+
+        const finalEmail = email || generatedEmail;
+        const finalPassword = password || generatedPassword;
+
+        const existingUser = await NguoiDung.findOne({ where: { Email: finalEmail } });
         if (existingUser) return res.status(400).json({ detail: 'Email already exists' });
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(finalPassword, 10);
         const names = full_name.split(' ');
         const ten = names.pop();
         const ho = names.join(' ');
 
         const user = await NguoiDung.create({
-            Email: email,
+            Email: finalEmail,
             MatKhau: hashedPassword,
+            MatKhauHienThi: finalPassword, // Store for display
             Ho: ho,
             Ten: ten,
             SoDienThoai: phone || null,
             NgaySinh: date_of_birth || null,
-            TrangThai: 'HoatDong'
+            TrangThai: 'HoatDong',
+            YeuCauDoiMatKhau: true // Force change for newly created users
         });
+
+
 
         const vt = await VaiTro.findOne({ where: { MaVaiTro: role } });
         if (vt) {
@@ -263,13 +293,19 @@ exports.getReports = async (req, res) => {
         // Group appointments by month
         const byMonth = {};
         appointments.forEach(a => {
-            const month = new Date(a.createdAt).toISOString().slice(0, 7);
-            if (!byMonth[month]) byMonth[month] = { month, count: 0, revenue: 0 };
-            byMonth[month].count++;
+            const date = new Date(a.createdAt || a.NgayTao);
+            if (!isNaN(date.getTime())) {
+                const month = date.toISOString().slice(0, 7);
+                if (!byMonth[month]) byMonth[month] = { month, count: 0, revenue: 0 };
+                byMonth[month].count++;
+            }
         });
         payments.filter(p => p.TrangThai === 'ThanhCong').forEach(p => {
-            const month = new Date(p.createdAt).toISOString().slice(0, 7);
-            if (byMonth[month]) byMonth[month].revenue += parseFloat(p.SoTien || 0);
+            const date = new Date(p.createdAt || p.NgayTao);
+            if (!isNaN(date.getTime())) {
+                const month = date.toISOString().slice(0, 7);
+                if (byMonth[month]) byMonth[month].revenue += parseFloat(p.SoTien || 0);
+            }
         });
 
         res.json({

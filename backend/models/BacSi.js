@@ -5,7 +5,9 @@ const BacSi = sequelize.define('BacSi', {
     Id_BacSi: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     Id_NguoiDung: { type: DataTypes.INTEGER, references: { model: 'nguoidung', key: 'Id_NguoiDung' } },
     Id_ChuyenKhoa: { type: DataTypes.INTEGER, references: { model: 'chuyenkhoa', key: 'Id_ChuyenKhoa' } },
+    Id_PhongKham: { type: DataTypes.INTEGER, references: { model: 'PhongKham', key: 'Id_PhongKham' } },
     SoChungChiHanhNghe: { type: DataTypes.STRING(100) },
+
     SoNamKinhNghiem: { type: DataTypes.INTEGER },
     PhiTuVan: { type: DataTypes.DECIMAL(12, 2) },
     GioiThieu: { type: DataTypes.TEXT },

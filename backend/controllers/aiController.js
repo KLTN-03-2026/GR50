@@ -1,6 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const path = require('path');
-const { NguoiDung, NoiDungChoDuyet } = require('../models');
+const { NguoiDung } = require('../models');
+const aiChatService = require('../services/aiChat.service');
 
 // Auto-reload .env before call
 function getGeminiApiKey() {
@@ -22,7 +23,7 @@ exports.analyzeSymptoms = async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' });
 
     const prompt = `
       Tôi đang có các triệu chứng sau: "${symptoms}".
@@ -40,13 +41,7 @@ exports.analyzeSymptoms = async (req, res) => {
     const response = await result.response;
     const text = response.text();
 
-    // Save to NoiDungChoDuyet for admin history
-    await NoiDungChoDuyet.create({
-      CauHoiNguoiDung: symptoms,
-      PhanHoiAI: text,
-      TuKhoaPhatHien: '',
-      TrangThai: 'ChoDuyet'
-    });
+
 
     res.json({ result: text });
   } catch (error) {
@@ -64,11 +59,16 @@ exports.chat = async (req, res) => {
     if (!apiKey) return res.status(500).json({ detail: 'Chưa cấu hình GEMINI_API_KEY' });
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' });
 
-    const promptText = `Bạn là trợ lý ảo y tế của BookingCare. 
-Người dùng nói: "${message || 'Tôi gửi một hình ảnh'}".
-Trách nhiệm của bạn: phân tích ngắn gọn, thân thiện và hữu ích. ${image ? 'Người dùng có đính kèm hình ảnh (da liễu, x-quang, chẩn đoán, v.v.), hãy quan sát hình ảnh và đưa ra nhận định y khoa cơ bản đồng thời luôn khuyên họ đi khám bác sĩ.' : 'Đặc biệt nếu họ chào, hãy chào lại và hỏi họ cần hỗ trợ y tế gì.'}`;
+    const promptText = `Bạn là trợ lý AI y tế của MediSchedule.
+QUY TẮC BẮT BUỘC:
+- Trả lời TỐI ĐA 3-4 câu, thẳng vào vấn đề, KHÔNG liệt kê dài dòng.
+- Nếu người dùng chào → chào lại ngắn gọn + hỏi triệu chứng.
+- Nếu hỏi về triệu chứng → gợi ý chuyên khoa ngay.
+- Nếu có ảnh → nhận xét ngắn gọn + khuyên đi khám.
+- Luôn kết thúc bằng: "Thông tin chỉ mang tính tham khảo."
+Người dùng nói: "${message || 'Tôi gửi một hình ảnh'}".`;
 
     let contents = [promptText];
 
@@ -93,14 +93,8 @@ Trách nhiệm của bạn: phân tích ngắn gọn, thân thiện và hữu í
 
 exports.getHistory = async (req, res) => {
   try {
-    // Return pending items from NoiDungChoDuyet mapped as history
-    const history = await NoiDungChoDuyet.findAll();
-    res.json(history.map(h => ({
-      id: h.Id_NoiDungChoDuyet,
-      symptoms: h.CauHoiNguoiDung,
-      diagnosis: h.PhanHoiAI,
-      advice: 'Đang chờ bác sĩ duyệt'
-    })));
+    // Legacy endpoint, returning empty as frontend uses /sessions now
+    res.json([]);
   } catch (err) {
     res.status(500).json({ detail: 'Internal server error' });
   }
@@ -110,3 +104,43 @@ exports.getDiagnoses = async (req, res) => { res.json([]); };
 exports.assignDoctor = async (req, res) => { res.json({}); };
 exports.acceptDiagnosis = async (req, res) => { res.json({}); };
 exports.rejectDiagnosis = async (req, res) => { res.json({}); };
+
+// ─── AI Chat Session (PB12 / PB13) ───────────────────────────────────────────
+
+exports.chatSession = async (req, res) => {
+  try {
+    const result = await aiChatService.chatSession(req.user, req.body);
+    return res.status(200).json({ success: true, message: 'Lấy phản hồi AI thành công', data: result });
+  } catch (error) {
+    console.error('chatSession error:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Không thể xử lý tư vấn AI' });
+  }
+};
+
+exports.getSessions = async (req, res) => {
+  try {
+    const result = await aiChatService.getSessions(req.user);
+    return res.status(200).json({ success: true, message: 'Lấy lịch sử tư vấn AI thành công', data: result });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Không thể lấy lịch sử tư vấn AI' });
+  }
+};
+
+exports.getSessionDetail = async (req, res) => {
+  try {
+    const result = await aiChatService.getSessionDetail(req.user, req.params.id);
+    return res.status(200).json({ success: true, message: 'Lấy chi tiết phiên tư vấn AI thành công', data: result });
+  } catch (error) {
+    return res.status(404).json({ success: false, message: error.message || 'Không tìm thấy phiên tư vấn AI' });
+  }
+};
+
+exports.deleteSession = async (req, res) => {
+  try {
+    await aiChatService.deleteSession(req.user, req.params.id);
+    return res.status(200).json({ success: true, message: 'Ẩn phiên tư vấn AI thành công' });
+  } catch (error) {
+    return res.status(404).json({ success: false, message: error.message || 'Không thể ẩn phiên tư vấn AI' });
+  }
+};
+

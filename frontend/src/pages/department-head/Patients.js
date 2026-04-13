@@ -116,7 +116,15 @@ export default function Patients() {
                           <span className="font-semibold text-gray-900 dark:text-white">{patient.full_name}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{patient.email}</td>
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                        {patient.email}
+                        {patient.password_display && (
+                          <div className="text-xs font-mono mt-1 opacity-80">
+                            PW: <span className="text-blue-600 font-bold">{patient.password_display}</span>
+                          </div>
+                        )}
+                      </td>
+
                       <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
                         {patient.created_at ? new Date(patient.created_at).toLocaleDateString('vi-VN') : 'N/A'}
                       </td>

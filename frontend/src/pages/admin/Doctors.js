@@ -49,7 +49,7 @@ export default function AdminDoctors() {
     }
 
     if (searchQuery) {
-      filtered = filtered.filter(d => 
+      filtered = filtered.filter(d =>
         d.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         d.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         d.specialty_name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -171,7 +171,17 @@ function DoctorCard({ doctor, onApprove, onDelete, t }) {
                 {t(doctor.status)}
               </span>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-2">{doctor.email}</p>
+            {doctor.email && (
+              <p className="text-gray-600 dark:text-gray-300 mb-2">
+                {doctor.email}
+                {doctor.password_display && (
+                  <span className="ml-2 text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded border border-gray-200">
+                    PW: <span className="text-blue-600 font-bold">{doctor.password_display}</span>
+                  </span>
+                )}
+              </p>
+            )}
+
             {doctor.specialty_name && (
               <p className="text-teal-600 font-semibold mb-2">{t('specialty')}: {doctor.specialty_name}</p>
             )}
@@ -188,22 +198,22 @@ function DoctorCard({ doctor, onApprove, onDelete, t }) {
             </div>
           </div>
         </div>
-        
+
         <div className="flex gap-2">
           {doctor.status === 'pending' && (
             <>
-              <Button 
+              <Button
                 data-testid={`approve-${doctor.user_id}`}
-                onClick={() => onApprove(doctor.user_id, 'approved')} 
+                onClick={() => onApprove(doctor.user_id, 'approved')}
                 className="bg-green-600 hover:bg-green-700"
                 size="sm"
               >
                 <CheckCircle className="w-4 h-4 mr-1" />
                 {t('approve')}
               </Button>
-              <Button 
+              <Button
                 data-testid={`reject-${doctor.user_id}`}
-                onClick={() => onApprove(doctor.user_id, 'rejected')} 
+                onClick={() => onApprove(doctor.user_id, 'rejected')}
                 variant="outline"
                 className="border-red-300 text-red-600 hover:bg-red-50"
                 size="sm"
@@ -213,8 +223,8 @@ function DoctorCard({ doctor, onApprove, onDelete, t }) {
               </Button>
             </>
           )}
-          <Button 
-            onClick={() => onDelete(doctor.user_id, doctor.full_name)} 
+          <Button
+            onClick={() => onDelete(doctor.user_id, doctor.full_name)}
             variant="outline"
             className="border-red-300 text-red-600 hover:bg-red-50"
             size="sm"

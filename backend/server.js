@@ -30,6 +30,8 @@ app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/patients', require('./routes/patientRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/department-head', require('./routes/departmentHeadRoutes'));
+
 app.use('/api/medical-records', require('./routes/medicalRecordRoutes'));
 app.use('/api/system', require('./routes/systemRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
@@ -38,7 +40,7 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 const fs = require('fs');
 const logFile = 'server_debug.log';
 
-sequelize.sync({ force: false })
+sequelize.sync({ alter: true })
   .then(async () => {
     console.log('Database connected and synced (MySQL)...');
     fs.appendFileSync(logFile, `[${new Date().toISOString()}] Database connected and synced...\n`);

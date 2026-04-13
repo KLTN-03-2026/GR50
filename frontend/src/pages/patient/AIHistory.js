@@ -1,41 +1,85 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Brain, Calendar, Activity, Stethoscope, ArrowLeft } from 'lucide-react';
-import axios from 'axios';
-import { API } from '@/config';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Brain, Calendar, Stethoscope, ArrowLeft, Trash2, MessageSquare } from 'lucide-react';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { toast } from 'sonner';
 import Layout from '@/components/Layout';
+import { getAISessions, getAISessionDetail, hideAISession } from '@/api/aiApi';
+
+const PRIORITY_COLORS = {
+    Thap: 'bg-green-100 text-green-800',
+    TrungBinh: 'bg-yellow-100 text-yellow-800',
+    Cao: 'bg-orange-100 text-orange-800',
+    KhanCap: 'bg-red-100 text-red-800',
+};
+
+const PRIORITY_LABELS = {
+    Thap: 'Thấp',
+    TrungBinh: 'Trung bình',
+    Cao: 'Cao',
+    KhanCap: 'Khẩn cấp',
+};
 
 export default function AIHistory() {
     const navigate = useNavigate();
-    const [history, setHistory] = useState([]);
+    const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedItem, setSelectedItem] = useState(null);
+    const [selectedSession, setSelectedSession] = useState(null);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [error, setError] = useState('');
 
     useEffect(() => {
-        fetchHistory();
+        fetchSessions();
     }, []);
 
-    const fetchHistory = async () => {
+    const fetchSessions = async () => {
         try {
-            const token = localStorage.getItem('token');
-            // Reusing the same endpoint, backend filters by user_id for patients
-            const response = await axios.get(`${API}/ai/diagnoses`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setHistory(response.data);
-        } catch (error) {
-            console.error('Error fetching history:', error);
-            toast.error("Không thể tải lịch sử tư vấn");
+            setLoading(true);
+            const res = await getAISessions();
+            setSessions(res.data || []);
+        } catch (err) {
+            setError('Không thể tải lịch sử tư vấn AI');
+            toast.error('Không thể tải lịch sử tư vấn AI');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const openDetail = async (id) => {
+        try {
+            setDetailLoading(true);
+            const res = await getAISessionDetail(id);
+            setSelectedSession(res.data);
+        } catch (err) {
+            toast.error('Không thể tải chi tiết phiên tư vấn');
+        } finally {
+            setDetailLoading(false);
+        }
+    };
+
+    const handleHide = async (id, e) => {
+        e.stopPropagation();
+        try {
+            await hideAISession(id);
+            setSessions((prev) => prev.filter((s) => s.Id_AITuVanPhien !== id));
+            if (selectedSession?.Id_AITuVanPhien === id) setSelectedSession(null);
+            toast.success('Đã ẩn phiên tư vấn');
+        } catch (err) {
+            toast.error('Không thể ẩn phiên tư vấn');
+        }
+    };
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '—';
+        try {
+            return format(new Date(dateStr), 'dd/MM/yyyy HH:mm', { locale: vi });
+        } catch {
+            return '—';
         }
     };
 
@@ -44,146 +88,167 @@ export default function AIHistory() {
     return (
         <Layout>
             <div className="space-y-6 container mx-auto p-6 max-w-5xl">
-                <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2 pl-0 hover:bg-transparent hover:text-purple-700 mb-2">
+                <Button
+                    variant="ghost"
+                    onClick={() => navigate(-1)}
+                    className="gap-2 pl-0 hover:bg-transparent hover:text-purple-700 mb-2"
+                >
                     <ArrowLeft className="w-5 h-5" />
                     Quay lại
                 </Button>
-                <h1 className="text-2xl font-bold flex items-center gap-2 text-purple-700">
-                    <Brain className="w-8 h-8" />
-                    Lịch sử Tư vấn AI
-                </h1>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Danh sách các lần tư vấn trước đây</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Thời gian</TableHead>
-                                    <TableHead>Triệu chứng</TableHead>
-                                    <TableHead>Chẩn đoán sơ bộ</TableHead>
-                                    <TableHead>Chuyên khoa</TableHead>
-                                    <TableHead>Trạng thái</TableHead>
-                                    <TableHead>Chi tiết</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {history.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                                            Bạn chưa có lịch sử tư vấn nào.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    history.map((item) => (
-                                        <TableRow key={item.id}>
-                                            <TableCell>
-                                                {format(new Date(item.createdAt), 'dd/MM/yyyy HH:mm', { locale: vi })}
-                                            </TableCell>
-                                            <TableCell className="max-w-[200px] truncate" title={item.symptoms}>
-                                                {item.symptoms}
-                                            </TableCell>
-                                            <TableCell className="max-w-[200px] truncate font-medium">
-                                                {item.diagnosis}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                                                    {item.specialty}
+                <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-bold flex items-center gap-2 text-purple-700">
+                        <Brain className="w-8 h-8" />
+                        Lịch sử Tư vấn AI
+                    </h1>
+                    <Button
+                        className="bg-purple-600 hover:bg-purple-700 gap-2"
+                        onClick={() => navigate('/patient/ai-consult')}
+                    >
+                        <Brain className="w-4 h-4" />
+                        Tư vấn mới
+                    </Button>
+                </div>
+
+                {error && (
+                    <div className="text-center py-8 text-red-500">{error}</div>
+                )}
+
+                {!error && sessions.length === 0 && (
+                    <Card className="text-center py-12">
+                        <CardContent>
+                            <Brain className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                            <p className="text-gray-500 mb-4">Bạn chưa có lịch sử tư vấn AI.</p>
+                            <Button
+                                className="bg-purple-600 hover:bg-purple-700"
+                                onClick={() => navigate('/patient/ai-consult')}
+                            >
+                                Bắt đầu tư vấn AI
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
+
+                <div className="grid gap-4">
+                    {sessions.map((item) => (
+                        <Card
+                            key={item.Id_AITuVanPhien}
+                            className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-purple-300"
+                            onClick={() => openDetail(item.Id_AITuVanPhien)}
+                        >
+                            <CardContent className="p-4">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                                            <h3 className="font-semibold text-gray-800 truncate">
+                                                {item.TieuDe || 'Phiên tư vấn AI'}
+                                            </h3>
+                                            {item.MucDoUuTien && (
+                                                <Badge className={`text-xs ${PRIORITY_COLORS[item.MucDoUuTien] || ''}`}>
+                                                    {PRIORITY_LABELS[item.MucDoUuTien] || item.MucDoUuTien}
                                                 </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge className={
-                                                    item.status === 'pending' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100' :
-                                                        item.status === 'assigned' ? 'bg-blue-100 text-blue-800 hover:bg-blue-100' :
-                                                            'bg-green-100 text-green-800 hover:bg-green-100'
-                                                }>
-                                                    {item.status === 'pending' ? 'Chờ tiếp nhận' :
-                                                        item.status === 'assigned' ? 'Đã tiếp nhận' : 'Đã xem'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => setSelectedItem(item)}
-                                                >
-                                                    Xem
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-
-                <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
-                    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2 text-xl text-purple-700">
-                                <Brain className="w-6 h-6" />
-                                Chi tiết kết quả tư vấn
-                            </DialogTitle>
-                        </DialogHeader>
-
-                        {selectedItem && (
-                            <div className="space-y-6 py-4">
-                                <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
-                                    <div>
-                                        <p className="text-sm text-gray-500">Thời gian tư vấn</p>
-                                        <p className="font-medium">
-                                            {format(new Date(selectedItem.createdAt), 'dd/MM/yyyy HH:mm', { locale: vi })}
+                                            )}
+                                        </div>
+                                        <p className="text-sm text-gray-500 truncate mb-2">
+                                            {item.TrieuChungTomTat || 'Chưa có tóm tắt'}
                                         </p>
-                                    </div>
-                                    <Badge className={
-                                        selectedItem.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                            selectedItem.status === 'assigned' ? 'bg-blue-100 text-blue-800' :
-                                                'bg-green-100 text-green-800'
-                                    }>
-                                        {selectedItem.status === 'pending' ? 'Chờ bác sĩ tiếp nhận' :
-                                            selectedItem.status === 'assigned' ? 'Bác sĩ đã tiếp nhận' : 'Hoàn thành'}
-                                    </Badge>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <h3 className="font-semibold flex items-center gap-2 text-gray-700">
-                                        <Activity className="w-4 h-4" />
-                                        Triệu chứng đã mô tả
-                                    </h3>
-                                    <div className="p-4 bg-white border rounded-md text-gray-800">
-                                        {selectedItem.symptoms}
-                                    </div>
-                                </div>
-
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <h3 className="font-semibold text-purple-700">Chẩn đoán từ AI</h3>
-                                        <div className="p-4 bg-purple-50 rounded-md text-purple-900 border border-purple-100">
-                                            {selectedItem.diagnosis}
+                                        <div className="flex items-center gap-4 text-xs text-gray-400 flex-wrap">
+                                            {item.GoiYChuyenKhoa && (
+                                                <span className="flex items-center gap-1">
+                                                    <Stethoscope className="w-3.5 h-3.5 text-blue-500" />
+                                                    {item.GoiYChuyenKhoa}
+                                                </span>
+                                            )}
+                                            <span className="flex items-center gap-1">
+                                                <Calendar className="w-3.5 h-3.5" />
+                                                {formatDate(item.NgayCapNhat || item.NgayTao)}
+                                            </span>
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <h3 className="font-semibold text-blue-700">Chuyên khoa gợi ý</h3>
-                                        <div className="p-4 bg-blue-50 rounded-md text-blue-900 border border-blue-100">
-                                            {selectedItem.specialty}
-                                        </div>
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="gap-1 text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+                                            onClick={(e) => { e.stopPropagation(); openDetail(item.Id_AITuVanPhien); }}
+                                        >
+                                            <MessageSquare className="w-4 h-4" />
+                                            Chi tiết
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="gap-1 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                            onClick={(e) => handleHide(item.Id_AITuVanPhien, e)}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                            Ẩn
+                                        </Button>
                                     </div>
                                 </div>
-
-                                <div className="space-y-2">
-                                    <h3 className="font-semibold text-green-700">Lời khuyên</h3>
-                                    <div className="p-4 bg-green-50 rounded-md text-green-900 border border-green-100 whitespace-pre-line">
-                                        {selectedItem.advice}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </DialogContent>
-                </Dialog>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
             </div>
+
+            {/* Detail Dialog */}
+            <Dialog open={!!selectedSession} onOpenChange={(open) => !open && setSelectedSession(null)}>
+                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-purple-700">
+                            <Brain className="w-5 h-5" />
+                            {selectedSession?.TieuDe || 'Chi tiết hội thoại AI'}
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {detailLoading && <div className="text-center py-8">Đang tải chi tiết...</div>}
+
+                    {!detailLoading && selectedSession && (
+                        <div className="space-y-3 py-2">
+                            {/* Meta info */}
+                            <div className="flex gap-2 flex-wrap text-sm text-gray-500 pb-2 border-b">
+                                {selectedSession.GoiYChuyenKhoa && (
+                                    <span className="flex items-center gap-1">
+                                        <Stethoscope className="w-3.5 h-3.5 text-blue-500" />
+                                        {selectedSession.GoiYChuyenKhoa}
+                                    </span>
+                                )}
+                                {selectedSession.MucDoUuTien && (
+                                    <Badge className={`text-xs ${PRIORITY_COLORS[selectedSession.MucDoUuTien] || ''}`}>
+                                        {PRIORITY_LABELS[selectedSession.MucDoUuTien] || selectedSession.MucDoUuTien}
+                                    </Badge>
+                                )}
+                            </div>
+
+                            {/* Messages */}
+                            {selectedSession.messages?.map((msg) => (
+                                <div
+                                    key={msg.Id_AITuVanTinNhan}
+                                    className={`flex ${msg.VaiTro === 'user' ? 'justify-end' : 'justify-start'}`}
+                                >
+                                    {msg.VaiTro === 'user' ? (
+                                        <div className="max-w-[75%] bg-purple-600 text-white rounded-2xl rounded-tr-sm px-4 py-3 text-sm">
+                                            <p className="opacity-70 text-xs mb-1">Bạn</p>
+                                            <p className="whitespace-pre-wrap">{msg.NoiDung}</p>
+                                        </div>
+                                    ) : (
+                                        <div className="max-w-[75%] bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 text-sm">
+                                            <p className="text-purple-700 font-medium text-xs mb-1">AI MediSchedule</p>
+                                            <p className="text-gray-800 whitespace-pre-wrap">{msg.NoiDung}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+
+                            {(!selectedSession.messages || selectedSession.messages.length === 0) && (
+                                <p className="text-center text-gray-400 py-4">Không có tin nhắn trong phiên này.</p>
+                            )}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </Layout>
     );
 }
