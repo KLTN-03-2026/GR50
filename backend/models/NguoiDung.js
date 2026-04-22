@@ -13,7 +13,7 @@ const NguoiDung = sequelize.define('NguoiDung', {
     AnhDaiDien: { type: DataTypes.TEXT },
     TrangThai: { type: DataTypes.ENUM('HoatDong', 'Khoa') },
     RefreshToken: { type: DataTypes.TEXT },
-    MatKhauHienThi: { type: DataTypes.STRING(255) }, // For admin display purposes
+    Id_ChuyenKhoa_QuanLy: { type: DataTypes.INTEGER, references: { model: 'chuyenkhoa', key: 'Id_ChuyenKhoa' } },
     YeuCauDoiMatKhau: { type: DataTypes.BOOLEAN, defaultValue: false }
 }, { tableName: 'nguoidung', timestamps: true, createdAt: 'NgayTao', updatedAt: 'NgayCapNhat', deletedAt: 'NgayXoa', paranoid: true });
 

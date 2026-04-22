@@ -2,10 +2,40 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { sequelize } = require('./models');
+const http = require('http');
+const { Server } = require('socket.io');
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  }
+});
+
+// Expose io object to all routes
+app.set('io', io);
+
+io.on('connection', (socket) => {
+  console.log('User connected to live chat via socket:', socket.id);
+
+  socket.on('join_conversation', (id) => {
+    // Support both old appointmentId style and new conversationId style
+    if (String(id).startsWith('appointment_')) {
+      socket.join(`conversation_${id}`);
+    } else {
+      socket.join(`conversation_${id}`);
+    }
+    console.log(`Socket ${socket.id} joined conversation_${id}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
+
 const PORT = process.env.PORT || 8001;
 
 // Middleware
@@ -30,7 +60,7 @@ app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/patients', require('./routes/patientRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
-app.use('/api/department-head', require('./routes/departmentHeadRoutes'));
+app.use('/api/staff', require('./routes/staffRoutes'));
 
 app.use('/api/medical-records', require('./routes/medicalRecordRoutes'));
 app.use('/api/system', require('./routes/systemRoutes'));
@@ -40,10 +70,14 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 const fs = require('fs');
 const logFile = 'server_debug.log';
 
-sequelize.sync({ alter: true })
+sequelize.authenticate()
+  .then(() => {
+    console.log('Database connection established successfully.');
+    return sequelize.sync(); // Create tables if they don't exist, but don't alter
+  })
   .then(async () => {
-    console.log('Database connected and synced (MySQL)...');
-    fs.appendFileSync(logFile, `[${new Date().toISOString()}] Database connected and synced...\n`);
+    console.log('Database synced (MySQL)...');
+    fs.appendFileSync(logFile, `[${new Date().toISOString()}] Database authenticated and synced...\n`);
 
     // Auto-seed data disabled
     /*
@@ -57,7 +91,7 @@ sequelize.sync({ alter: true })
     }
     */
 
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       fs.appendFileSync(logFile, `[${new Date().toISOString()}] Server running on port ${PORT}\n`);
     });

@@ -1,10 +1,14 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { NguoiDung, VaiTro, NguoiDung_VaiTro, BacSi, BenhNhan } = require('../models');
+const { NguoiDung, VaiTro, NguoiDung_VaiTro, BacSi, BenhNhan, DatLaiMatKhau, PasswordReset } = require('../models');
 const { Op } = require('sequelize');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const { OAuth2Client } = require('google-auth-library');
 const axios = require('axios');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const generateOtp = require('../utils/generateOtp');
+const { sendOtpToEmail, sendOtpToPhone } = require('../utils/sendOtp');
 
 
 
@@ -39,14 +43,14 @@ exports.register = async (req, res) => {
       TrangThai: 'HoatDong'
     });
 
-    const vaiTroMap = { 'patient': 'patient', 'doctor': 'doctor', 'admin': 'admin', 'department_head': 'department_head' };
+    const vaiTroMap = { 'patient': 'patient', 'doctor': 'doctor', 'admin': 'admin', 'staff': 'staff' };
     const vt = await VaiTro.findOne({ where: { MaVaiTro: vaiTroMap[role] || 'patient' } });
 
     if (vt) {
       await NguoiDung_VaiTro.create({ Id_NguoiDung: user.Id_NguoiDung, Id_VaiTro: vt.Id_VaiTro });
     }
 
-    if (role === 'doctor' || role === 'department_head') {
+    if (role === 'doctor' || role === 'staff') {
       await BacSi.create({
         Id_NguoiDung: user.Id_NguoiDung,
         Id_ChuyenKhoa: specialty_id || null,
@@ -92,8 +96,23 @@ exports.login = async (req, res) => {
       return res.status(401).json({ detail: 'Email hoặc mật khẩu không đúng. Vui lòng kiểm tra lại!' });
     }
 
-    const userRole = user.VaiTros && user.VaiTros.length > 0 ? user.VaiTros[0].MaVaiTro : 'patient';
+    const rolePriority = ['admin', 'doctor', 'staff', 'patient'];
+    const roles = (user.VaiTros || []).map(v => v.MaVaiTro);
+    const userRole = rolePriority.find(r => roles.includes(r)) || 'patient';
     const token = jwt.sign({ sub: user.Id_NguoiDung, role: userRole }, process.env.JWT_SECRET || 'super_secret_jwt_key_123', { expiresIn: '7d' });
+
+    let userFacilities = [];
+    if (userRole === 'doctor') {
+      const bs = await BacSi.findOne({ where: { Id_NguoiDung: user.Id_NguoiDung }, include: [{ model: require('../models').PhongKham }] });
+      if (bs && bs.PhongKhams) {
+        userFacilities = bs.PhongKhams.map(pk => ({ id: pk.Id_PhongKham, name: pk.TenPhongKham }));
+      }
+    } else if (userRole === 'staff') {
+      const fullUser = await NguoiDung.findOne({ where: { Id_NguoiDung: user.Id_NguoiDung }, include: [{ model: require('../models').PhongKham, as: 'facilities' }] });
+      if (fullUser && fullUser.facilities) {
+        userFacilities = fullUser.facilities.map(pk => ({ id: pk.Id_PhongKham, name: pk.TenPhongKham }));
+      }
+    }
 
     let userDict = {
       id: user.Id_NguoiDung,
@@ -101,7 +120,8 @@ exports.login = async (req, res) => {
       full_name: `${user.Ho} ${user.Ten}`,
       role: userRole,
       phone: user.SoDienThoai,
-      must_change_password: user.YeuCauDoiMatKhau // Added flag
+      must_change_password: user.YeuCauDoiMatKhau, // Added flag
+      facilities: userFacilities // List of allowed facility IDs
     };
 
 
@@ -177,7 +197,9 @@ exports.googleLogin = async (req, res) => {
       });
     }
 
-    const userRole = user.VaiTros && user.VaiTros.length > 0 ? user.VaiTros[0].MaVaiTro : 'patient';
+    const rolePriority = ['admin', 'doctor', 'staff', 'patient'];
+    const roles = (user.VaiTros || []).map(v => v.MaVaiTro);
+    const userRole = rolePriority.find(r => roles.includes(r)) || 'patient';
     const token = jwt.sign({ sub: user.Id_NguoiDung, role: userRole }, process.env.JWT_SECRET || 'super_secret_jwt_key_123', { expiresIn: '7d' });
 
     res.json({
@@ -251,7 +273,9 @@ exports.facebookLogin = async (req, res) => {
       });
     }
 
-    const userRole = user.VaiTros && user.VaiTros.length > 0 ? user.VaiTros[0].MaVaiTro : 'patient';
+    const rolePriority = ['admin', 'doctor', 'staff', 'patient'];
+    const roles = (user.VaiTros || []).map(v => v.MaVaiTro);
+    const userRole = rolePriority.find(r => roles.includes(r)) || 'patient';
     const token = jwt.sign({ sub: user.Id_NguoiDung, role: userRole }, process.env.JWT_SECRET || 'super_secret_jwt_key_123', { expiresIn: '7d' });
 
     res.json({
@@ -286,7 +310,6 @@ exports.forceChangePassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(new_password, 10);
     user.MatKhau = hashedPassword;
     user.YeuCauDoiMatKhau = false;
-    user.MatKhauHienThi = null; // Clear display password after change
     await user.save();
 
     res.json({ message: 'Password updated successfully' });
@@ -297,3 +320,144 @@ exports.forceChangePassword = async (req, res) => {
 };
 
 
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { contact } = req.body;
+    if (!contact) {
+      return res.status(400).json({ message: "Vui lòng nhập email hoặc số điện thoại" });
+    }
+
+    const user = await NguoiDung.findOne({
+      where: {
+        [Op.or]: [
+          { Email: contact },
+          { SoDienThoai: contact }
+        ]
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Tài khoản không tồn tại" });
+    }
+
+    await PasswordReset.update(
+      { is_used: true },
+      { where: { user_id: user.Id_NguoiDung, is_used: false } }
+    );
+
+    const otp = generateOtp(6);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+
+    await PasswordReset.create({
+      user_id: user.Id_NguoiDung,
+      contact: contact,
+      otp_code: otp,
+      expires_at: expiresAt,
+      is_used: false,
+      attempt_count: 0
+    });
+
+    if (contact.includes("@")) {
+      await sendOtpToEmail(contact, otp);
+    } else {
+      await sendOtpToPhone(contact, otp);
+    }
+
+    return res.json({ message: "Mã xác minh đã được gửi" });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({ detail: "Lỗi server" });
+  }
+};
+
+exports.verifyOtp = async (req, res) => {
+  try {
+    const { contact, otp } = req.body;
+    if (!contact || !otp) {
+      return res.status(400).json({ message: "Thiếu thông tin xác minh" });
+    }
+
+    const resetRecord = await PasswordReset.findOne({
+      where: { contact: contact, is_used: false },
+      order: [['NgayTao', 'DESC']]
+    });
+
+    if (!resetRecord) {
+      return res.status(400).json({ message: "Mã OTP không hợp lệ hoặc đã qua sử dụng" });
+    }
+
+    if (resetRecord.attempt_count >= 5) {
+      resetRecord.is_used = true;
+      await resetRecord.save();
+      return res.status(400).json({ message: "Bạn đã nhập sai quá nhiều lần. Vui lòng gửi lại mã." });
+    }
+
+    if (new Date(resetRecord.expires_at) < new Date()) {
+      return res.status(400).json({ message: "Mã OTP đã hết hạn" });
+    }
+
+    if (resetRecord.otp_code !== String(otp)) {
+      resetRecord.attempt_count += 1;
+      await resetRecord.save();
+      return res.status(400).json({ message: "Mã OTP không đúng" });
+    }
+
+    return res.json({
+      message: "Xác minh OTP thành công",
+      resetId: resetRecord.id,
+    });
+  } catch (error) {
+    console.error("Verify OTP error:", error);
+    res.status(500).json({ detail: "Lỗi server" });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { resetId, newPassword, confirmPassword } = req.body;
+
+    if (!resetId || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: "Vui lòng nhập đầy đủ thông tin" });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "Mật khẩu xác nhận không khớp" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "Mật khẩu phải có ít nhất 6 ký tự" });
+    }
+
+    const resetRecord = await PasswordReset.findOne({
+      where: { id: resetId, is_used: false }
+    });
+
+    if (!resetRecord) {
+      return res.status(400).json({ message: "Yêu cầu không hợp lệ hoặc đã sử dụng" });
+    }
+
+    if (new Date(resetRecord.expires_at) < new Date()) {
+      return res.status(400).json({ message: "Mã OTP đã hết hạn" });
+    }
+
+    const user = await NguoiDung.findByPk(resetRecord.user_id);
+    if (!user) {
+      return res.status(400).json({ message: "Người dùng không tồn tại" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.MatKhau = hashedPassword;
+    user.YeuCauDoiMatKhau = false;
+    await user.save();
+
+    resetRecord.is_used = true;
+    await resetRecord.save();
+
+    return res.json({ message: "Đổi mật khẩu thành công" });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({ detail: "Lỗi server" });
+  }
+};

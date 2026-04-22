@@ -25,7 +25,9 @@ const ThongBao = sequelize.define('ThongBao', {
     }
 }, {
     tableName: 'ThongBao',
-    timestamps: true
+    timestamps: true,
+    // createdAt: 'NgayTao',
+    // updatedAt: 'NgayCapNhat'
 });
 
 module.exports = ThongBao;

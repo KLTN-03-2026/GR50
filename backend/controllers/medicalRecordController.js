@@ -15,7 +15,7 @@ exports.getPatientRecords = async (req, res) => {
 
         res.json(records.map(r => ({
             id: r.Id_HoSo,
-            date: r.createdAt,
+            date: r.NgayTao,
             doctor_name: `${r.BacSi.NguoiDung.Ho} ${r.BacSi.NguoiDung.Ten}`,
             diagnosis: r.ChanDoan,
             prescription: r.KeHoachDieuTri,
@@ -41,7 +41,7 @@ exports.getDoctorRecords = async (req, res) => {
 
         res.json(records.map(r => ({
             id: r.Id_HoSo,
-            date: r.createdAt,
+            date: r.NgayTao,
             patient_name: `${r.BenhNhan.NguoiDung.Ho} ${r.BenhNhan.NguoiDung.Ten}`,
             diagnosis: r.ChanDoan,
             prescription: r.KeHoachDieuTri,
@@ -51,6 +51,8 @@ exports.getDoctorRecords = async (req, res) => {
         res.status(500).json({ detail: 'Internal server error' });
     }
 };
+
+
 
 exports.getRecordDetail = async (req, res) => {
     try {
@@ -64,9 +66,22 @@ exports.getRecordDetail = async (req, res) => {
 
         if (!record) return res.status(404).json({ detail: 'Not found' });
 
+        // Privacy check
+        if (req.user.role === 'patient') {
+            const patient = await BenhNhan.findOne({ where: { Id_NguoiDung: req.user.id } });
+            if (record.Id_BenhNhan !== patient.Id_BenhNhan) {
+                return res.status(403).json({ detail: 'Bạn không có quyền xem hồ sơ này.' });
+            }
+        } else if (req.user.role === 'doctor') {
+            const doctor = await BacSi.findOne({ where: { Id_NguoiDung: req.user.id } });
+            if (!doctor || record.Id_BacSi !== doctor.Id_BacSi) {
+                return res.status(403).json({ detail: 'Bạn không có quyền xem hồ sơ này.' });
+            }
+        }
+
         res.json({
             id: record.Id_HoSo,
-            date: record.createdAt,
+            date: record.NgayTao,
             diagnosis: record.ChanDoan,
             prescription: record.KeHoachDieuTri,
             notes: record.GhiChu,
@@ -81,13 +96,25 @@ exports.getRecordDetail = async (req, res) => {
 
 exports.createRecord = async (req, res) => {
     try {
-        const { patient_id, appointment_id, diagnosis, prescription, notes } = req.body;
-        
+        const { appointment_id, diagnosis, prescription, notes } = req.body;
+
         const bs = await BacSi.findOne({ where: { Id_NguoiDung: req.user.id } });
-        const bn = await BenhNhan.findOne({ where: { Id_NguoiDung: patient_id } });
+        if (!bs) return res.status(403).json({ detail: 'Doctor profile required.' });
+
+        const appointment = await DatLich.findOne({
+            where: { Id_DatLich: appointment_id },
+            include: [{ model: LichKham }]
+        });
+
+        if (!appointment) return res.status(404).json({ detail: 'Appointment not found.' });
+
+        // Ownership check
+        if (appointment.LichKham.Id_BacSi !== bs.Id_BacSi) {
+            return res.status(403).json({ detail: 'Bạn không có quyền tạo hồ sơ cho lịch hẹn này.' });
+        }
 
         const record = await HoSoBenhAn.create({
-            Id_BenhNhan: bn.Id_BenhNhan,
+            Id_BenhNhan: appointment.Id_BenhNhan,
             Id_BacSi: bs.Id_BacSi,
             Id_DatLich: appointment_id,
             ChanDoan: diagnosis,

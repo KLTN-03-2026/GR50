@@ -19,14 +19,17 @@ const authMiddleware = async (req, res, next) => {
       return res.status(404).json({ detail: 'User not found' });
     }
 
-    const userRole = user.VaiTros && user.VaiTros.length > 0 ? user.VaiTros[0].MaVaiTro : 'patient';
+    const rolePriority = ['admin', 'doctor', 'staff', 'patient'];
+    const roles = (user.VaiTros || []).map(v => v.MaVaiTro);
+    const userRole = rolePriority.find(r => roles.includes(r)) || 'patient';
 
     let userDict = {
       id: user.Id_NguoiDung,
       email: user.Email,
       full_name: `${user.Ho} ${user.Ten}`,
       role: userRole,
-      phone: user.SoDienThoai
+      phone: user.SoDienThoai,
+      Id_ChuyenKhoa_QuanLy: user.Id_ChuyenKhoa_QuanLy
     };
 
     if (userRole === 'admin') {

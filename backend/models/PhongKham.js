@@ -34,6 +34,27 @@ const PhongKham = sequelize.define('PhongKham', {
     GoogleMapUrl: {
         type: DataTypes.TEXT,
         allowNull: true
+    },
+    MaCoSo: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        unique: true
+    },
+    TrangThai: {
+        type: DataTypes.ENUM('HoatDong', 'NgungHoatDong', 'BaoTri'),
+        defaultValue: 'HoatDong'
+    },
+    KinhDo: {
+        type: DataTypes.DECIMAL(10, 8),
+        allowNull: true
+    },
+    ViDo: {
+        type: DataTypes.DECIMAL(10, 8),
+        allowNull: true
+    },
+    GioHoatDong: {
+        type: DataTypes.TEXT,
+        allowNull: true
     }
 }, {
     tableName: 'PhongKham',

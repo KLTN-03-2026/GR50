@@ -33,6 +33,27 @@ const AITuVanPhien = sequelize.define('AITuVanPhien', {
         allowNull: false,
         defaultValue: 'DangHoatDong',
     },
+    ChuanDoanSoBo: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    LoiKhuyen: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    TrangThaiChuyenGiao: {
+        type: DataTypes.ENUM('pending', 'assigned', 'completed'),
+        allowNull: false,
+        defaultValue: 'pending',
+    },
+    Id_BacSi_PhuTrach: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    Id_PhongKham: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    }
 }, {
     tableName: 'aituvanphien',
     timestamps: true,

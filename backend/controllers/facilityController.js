@@ -6,10 +6,10 @@ const { PhongKham, BacSi, NguoiDung, ChuyenKhoa } = require('../models');
  */
 exports.getAllFacilities = async (req, res) => {
     try {
-        const clinics = await PhongKham.findAll({ order: [['id', 'ASC']] });
+        const clinics = await PhongKham.findAll({ order: [['Id_PhongKham', 'ASC']] });
         if (clinics.length > 0) {
             return res.json(clinics.map(c => ({
-                id: c.id,
+                id: c.Id_PhongKham,
                 name: c.TenPhongKham,
                 address: c.DiaChi,
                 phone: c.SDT,
@@ -50,11 +50,19 @@ exports.getFacilityById = async (req, res) => {
         if (clinic) {
             const doctors = await BacSi.findAll({
                 where: { TrangThai: 'HoatDong' },
-                include: [{ model: NguoiDung }, { model: ChuyenKhoa }]
+                include: [
+                    { model: NguoiDung }, 
+                    { model: ChuyenKhoa },
+                    { 
+                        model: PhongKham, 
+                        where: { Id_PhongKham: id },
+                        through: { attributes: [] }
+                    }
+                ]
             });
             return res.json({
                 facility: {
-                    id: clinic.id,
+                    id: clinic.Id_PhongKham,
                     name: clinic.TenPhongKham,
                     address: clinic.DiaChi,
                     phone: clinic.SDT,

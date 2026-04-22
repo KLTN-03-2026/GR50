@@ -80,6 +80,9 @@ exports.delete = async (req, res) => {
         res.json({ success: true });
     } catch (error) {
         console.error('Lỗi xóa phòng khám:', error);
+        if (error.name === 'SequelizeForeignKeyConstraintError') {
+            return res.status(400).json({ detail: 'Không thể xóa phòng khám vì đang có bác sĩ hoạt động tại cơ sở này.' });
+        }
         res.status(500).json({ detail: 'Internal server error' });
     }
 };

@@ -21,7 +21,7 @@ async function seed() {
       { MaVaiTro: 'admin', TenVaiTro: 'Quản trị viên', MoTa: 'Toàn quyền hệ thống' },
       { MaVaiTro: 'doctor', TenVaiTro: 'Bác sĩ', MoTa: 'Chẩn đoán và khám bệnh' },
       { MaVaiTro: 'patient', TenVaiTro: 'Bệnh nhân', MoTa: 'Đăng ký khám' },
-      { MaVaiTro: 'department_head', TenVaiTro: 'Trưởng khoa', MoTa: 'Quản lý chuyên khoa' }
+      { MaVaiTro: 'staff', TenVaiTro: 'Nhân viên / Lễ tân', MoTa: 'Tiếp nhận và điều phối vận hành' }
     ];
     const roles = await VaiTro.bulkCreate(rolesData);
 

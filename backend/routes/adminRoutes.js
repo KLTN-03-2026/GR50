@@ -3,26 +3,20 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Middleware to check if user is admin
-const adminCheck = (req, res, next) => {
-    if (req.user && req.user.role === 'admin') {
-        next();
-    } else {
-        res.status(403).json({ detail: 'Access denied. Admin only.' });
-    }
-};
+const { isAdmin } = require('../middleware/roleMiddleware');
 
-router.get('/stats', authMiddleware, adminCheck, adminController.getStats);
-router.get('/payments', authMiddleware, adminCheck, adminController.getPayments);
-router.get('/reports', authMiddleware, adminCheck, adminController.getReports);
-router.get('/doctors', authMiddleware, adminCheck, adminController.getDoctors);
-router.get('/patients', authMiddleware, adminCheck, adminController.getPatients);
-router.put('/doctors/:id/approve', authMiddleware, adminCheck, adminController.approveDoctor);
-router.delete('/delete-user/:id', authMiddleware, adminCheck, adminController.deleteUser);
-router.get('/admins', authMiddleware, adminCheck, adminController.getAdmins);
-router.post('/create-user', authMiddleware, adminCheck, adminController.createUser);
-router.post('/create-admin', authMiddleware, adminCheck, adminController.createAdmin);
-router.delete('/delete-admin/:id', authMiddleware, adminCheck, adminController.deleteAdmin);
-router.put('/update-permissions', authMiddleware, adminCheck, adminController.updatePermissions);
+router.get('/stats', authMiddleware, isAdmin, adminController.getStats);
+router.get('/payments', authMiddleware, isAdmin, adminController.getPayments);
+router.get('/reports', authMiddleware, isAdmin, adminController.getReports);
+router.get('/doctors', authMiddleware, isAdmin, adminController.getDoctors);
+router.get('/patients', authMiddleware, isAdmin, adminController.getPatients);
+router.put('/doctors/:id/approve', authMiddleware, isAdmin, adminController.approveDoctor);
+router.delete('/delete-user/:id', authMiddleware, isAdmin, adminController.deleteUser);
+router.get('/admins', authMiddleware, isAdmin, adminController.getAdmins);
+router.post('/create-user', authMiddleware, isAdmin, adminController.createUser);
+router.post('/create-admin', authMiddleware, isAdmin, adminController.createAdmin);
+router.delete('/delete-admin/:id', authMiddleware, isAdmin, adminController.deleteAdmin);
+router.get('/ai-diagnoses', authMiddleware, isAdmin, adminController.getAIDiagnoses);
+router.put('/update-permissions', authMiddleware, isAdmin, adminController.updatePermissions);
 
 module.exports = router;

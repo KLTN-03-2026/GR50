@@ -17,17 +17,20 @@ const seedData = async () => {
 
         // 2. Define Real Clinics in Da Nang
         const clinicsData = [
-            { TenPhongKham: 'Bệnh viện Đa khoa Đà Nẵng', DiaChi: '124 Hải Phòng, Thạch Thang, Hải Châu, Đà Nẵng', SoDienThoai: '02363821118' },
-            { TenPhongKham: 'Bệnh viện Hoàn Mỹ Đà Nẵng', DiaChi: '291 Nguyễn Văn Linh, Thạc Gián, Thanh Khê, Đà Nẵng', SoDienThoai: '02363650676' },
-            { TenPhongKham: 'Bệnh viện Gia Đình (Family Hospital)', DiaChi: '73 Nguyễn Hữu Thọ, Hòa Thuận Nam, Hải Châu, Đà Nẵng', SoDienThoai: '19002250' },
-            { TenPhongKham: 'Bệnh viện Vinmec Đà Nẵng', DiaChi: 'Đường 30 Tháng 4, Khu dân cư số 4 Nguyễn Tri Phương, Hòa Cường Bắc, Hải Châu, Đà Nẵng', SoDienThoai: '02363711111' },
-            { TenPhongKham: 'Bệnh viện C Đà Nẵng', DiaChi: '74 Hải Phòng, Thạch Thang, Hải Châu, Đà Nẵng', SoDienThoai: '02363821480' },
-            { TenPhongKham: 'Phòng khám Đa khoa Pasteur Đà Nẵng', DiaChi: '19 Nguyễn Tường Tộ, Hòa Cường Bắc, Hải Châu, Đà Nẵng', SoDienThoai: '02363811868' }
+            { TenPhongKham: 'Bệnh viện Đa khoa Đà Nẵng', DiaChi: '124 Hải Phòng, Thạch Thang, Hải Châu, Đà Nẵng', SoDienThoai: '02363821118', UrlLogo: 'https://upload.wikimedia.org/wikipedia/commons/1/1a/B%E1%BB%87nh_vi%E1%BB%87n_%C4%90%C3%A0_N%E1%BA%B5ng.jpeg', UrlBanner: 'https://bvdn.danang.gov.vn/wps/wcm/connect/bvdn/7ca6e469-8735-4309-8d18-8f52af8321cb/1/banner+bvdn.png?MOD=AJPERES' },
+            { TenPhongKham: 'Bệnh viện Hoàn Mỹ Đà Nẵng', DiaChi: '291 Nguyễn Văn Linh, Thạc Gián, Thanh Khê, Đà Nẵng', SoDienThoai: '02363650676', UrlLogo: 'https://hoanmy.com/wp-content/uploads/2023/10/logo_hm.svg', UrlBanner: 'https://www.hoanmy.com/wp-content/uploads/2023/05/Hoan-My-Da-Nang-2.jpg' },
+            { TenPhongKham: 'Bệnh viện Gia Đình (Family Hospital)', DiaChi: '73 Nguyễn Hữu Thọ, Hòa Thuận Nam, Hải Châu, Đà Nẵng', SoDienThoai: '19002250', UrlLogo: 'https://familyhospital.vn/wp-content/uploads/2020/04/Logo-BVG%C4%90-01.png', UrlBanner: 'https://familyhospital.vn/wp-content/uploads/2020/04/Banner-Trang-Chu-1.jpg' },
+            { TenPhongKham: 'Bệnh viện Vinmec Đà Nẵng', DiaChi: 'Đường 30 Tháng 4, Khu dân cư số 4 Nguyễn Tri Phương, Hòa Cường Bắc, Hải Châu, Đà Nẵng', SoDienThoai: '02363711111', UrlLogo: 'https://vinmec-prod.s3.amazonaws.com/images/20200527_024016_402127_vinmec-da-nang.max-1800x1800.jpg', UrlBanner: 'https://vinmec-prod.s3.amazonaws.com/images/20200527_024016_402127_vinmec-da-nang.max-1800x1800.jpg' },
+            { TenPhongKham: 'Bệnh viện C Đà Nẵng', DiaChi: '74 Hải Phòng, Thạch Thang, Hải Châu, Đà Nẵng', SoDienThoai: '02363821480', UrlLogo: 'http://bvcdn.org.vn/wp-content/uploads/2019/08/logo-bvdc.png', UrlBanner: 'https://bvcdn.org.vn/wp-content/themes/bvcmn/images/banner.jpg' },
+            { TenPhongKham: 'Phòng khám Đa khoa Pasteur Đà Nẵng', DiaChi: '19 Nguyễn Tường Tộ, Hòa Cường Bắc, Hải Châu, Đà Nẵng', SoDienThoai: '02363811868', UrlLogo: 'https://pasteur.com.vn/wp-content/uploads/2018/11/logo-pasteur.png', UrlBanner: 'https://pasteur.com.vn/wp-content/uploads/2019/06/banner-trang-chu.jpg' }
         ];
 
         const clinics = [];
         for (const data of clinicsData) {
-            const [clinic] = await PhongKham.findOrCreate({ where: { TenPhongKham: data.TenPhongKham }, defaults: data });
+            const [clinic, created] = await PhongKham.findOrCreate({ where: { TenPhongKham: data.TenPhongKham }, defaults: data });
+            if (!created) {
+                await clinic.update({ UrlLogo: data.UrlLogo, UrlBanner: data.UrlBanner });
+            }
             clinics.push(clinic);
         }
 

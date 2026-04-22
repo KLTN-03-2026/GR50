@@ -25,9 +25,11 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-router.get('/patient', authMiddleware, medicalRecordController.getPatientRecords);
-router.get('/doctor', authMiddleware, medicalRecordController.getDoctorRecords);
+const { isPatient, isDoctor, isStaff, isMedicalStaff } = require('../middleware/roleMiddleware');
+
+router.get('/patient', authMiddleware, isPatient, medicalRecordController.getPatientRecords);
+router.get('/doctor', authMiddleware, isDoctor, medicalRecordController.getDoctorRecords);
 router.get('/:id', authMiddleware, medicalRecordController.getRecordDetail);
-router.post('/', authMiddleware, upload.single('file'), medicalRecordController.createRecord);
+router.post('/', authMiddleware, isDoctor, upload.single('file'), medicalRecordController.createRecord);
 
 module.exports = router;

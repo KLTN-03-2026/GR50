@@ -6,6 +6,7 @@ const HoSoBenhAn = sequelize.define('HoSoBenhAn', {
     Id_DatLich: { type: DataTypes.INTEGER, references: { model: 'datlich', key: 'Id_DatLich' } },
     Id_BenhNhan: { type: DataTypes.INTEGER, references: { model: 'benhnhan', key: 'Id_BenhNhan' } },
     Id_BacSi: { type: DataTypes.INTEGER, references: { model: 'bacsi', key: 'Id_BacSi' } },
+    Id_PhongKham: { type: DataTypes.INTEGER, references: { model: 'PhongKham', key: 'Id_PhongKham' } },
     TrieuChungChuQuan: { type: DataTypes.TEXT },
     KhamLamSang: { type: DataTypes.TEXT },
     DanhGia: { type: DataTypes.TEXT },

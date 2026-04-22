@@ -1,7 +1,60 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const path = require('path');
-const { NguoiDung } = require('../models');
+const { NguoiDung, AITuVanPhien, AITuVanTinNhan } = require('../models');
 const aiChatService = require('../services/aiChat.service');
+
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function generateWithRetryAndFallback(keys, contents, isVision, preferredModel = 'gemini-1.5-flash') {
+  // If it's a vision request, we might still fallback to gemini-1.5-flash as it supports vision well
+  const models = [preferredModel, 'gemini-1.5-pro'];
+  const maxRetries = 2;
+  const retryableStatuses = [429, 500, 503];
+
+  const promptLength = JSON.stringify(contents).length;
+
+  for (const key of keys) {
+    if (!key) continue;
+    const genAI = new GoogleGenerativeAI(key);
+    
+    for (let i = 0; i < models.length; i++) {
+      const modelName = models[i];
+      let attempt = 0;
+
+      while (attempt <= maxRetries) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent(contents);
+          return result;
+        } catch (error) {
+          const status = error?.status;
+          const isRetryable = retryableStatuses.includes(status);
+
+          console.error("AI Chat Error Details:", {
+            at: new Date().toISOString(),
+            route: "chat",
+            model: modelName,
+            retryCount: attempt,
+            status: status,
+            statusText: error?.statusText,
+            promptLength: promptLength,
+            isVision: isVision,
+            message: error?.message
+          });
+
+          if (!isRetryable || attempt === maxRetries) {
+            break; // Fallback to next model, or next key
+          }
+
+          const delay = Math.pow(2, attempt) * 1000;
+          await wait(delay);
+          attempt++;
+        }
+      }
+    }
+  }
+  throw new Error("Tất cả API keys và models đều quá tải hoặc gặp sự cố.");
+}
 
 // Auto-reload .env before call
 function getGeminiApiKey() {
@@ -9,6 +62,8 @@ function getGeminiApiKey() {
   require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
   return process.env.GEMINI_API_KEY;
 }
+
+const jwt = require('jsonwebtoken'); // Added for decoding token inside public chat route
 
 exports.analyzeSymptoms = async (req, res) => {
   try {
@@ -18,18 +73,18 @@ exports.analyzeSymptoms = async (req, res) => {
     }
 
     const apiKey = getGeminiApiKey();
-    if (!apiKey) {
-      return res.status(500).json({ detail: 'Chưa cấu hình GEMINI_API_KEY trong file .env!' });
-    }
+    const fallbackKey = process.env.GEMINI_API_KEY_FALLBACK || 'AIzaSyCAFj8gcyd56LjkUV7qVmuuRmDdgii8eQw';
+    const keys = [];
+    if (apiKey) keys.push(apiKey);
+    if (fallbackKey && fallbackKey !== apiKey) keys.push(fallbackKey);
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' });
+    if (keys.length === 0) return res.status(500).json({ detail: 'Chưa cấu hình GEMINI_API_KEY' });
 
     const prompt = `
       Tôi đang có các triệu chứng sau: "${symptoms}".
       Bạn là một trợ lý y tế ảo. Dựa vào mô tả này, hãy đưa ra:
-      1. Chẩn đoán sơ bộ (Ngắn gọn 1-2 câu).
-      2. Lời khuyên tư vấn cơ bản (Ví dụ: uống nhiều nước, cần đi khám ngay, v.v.).
+      1. Chẩn đoán sơ bộ chi tiết dựa vào triệu chứng.
+      2. Phân tích nguyên nhân có thể và lời khuyên chăm sóc ban đầu (hướng dẫn cụ thể, cặn kẽ).
       3. Gợi ý tôi nên khám chuyên khoa nào.
       Tuyệt đối KHÔNG ĐƯA RA CÁC ĐỊNH DẠNG ĐƯỢC CHUẨN HOÁ MARKDOWN HAY LIST NHƯ * HAY #. Trả về đúng format text thuần tuý sau:
       Chẩn đoán sơ bộ: ...
@@ -37,11 +92,9 @@ exports.analyzeSymptoms = async (req, res) => {
       Chuyên khoa gợi ý: ...
     `;
 
-    const result = await model.generateContent(prompt);
+    const result = await generateWithRetryAndFallback(keys, prompt, false, process.env.GEMINI_MODEL || 'gemini-1.5-flash');
     const response = await result.response;
     const text = response.text();
-
-
 
     res.json({ result: text });
   } catch (error) {
@@ -55,19 +108,33 @@ exports.chat = async (req, res) => {
     const { message, image } = req.body;
     if (!message && !image) return res.status(400).json({ detail: 'Missing message or image' });
 
+    let userId = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_jwt_key_123');
+        userId = decoded.sub;
+      } catch (err) {
+        // Invalid token, continue as guest
+      }
+    }
+
     const apiKey = getGeminiApiKey();
-    if (!apiKey) return res.status(500).json({ detail: 'Chưa cấu hình GEMINI_API_KEY' });
+    const fallbackKey = process.env.GEMINI_API_KEY_FALLBACK || 'AIzaSyCAFj8gcyd56LjkUV7qVmuuRmDdgii8eQw';
+    const keys = [];
+    if (apiKey) keys.push(apiKey);
+    if (fallbackKey && fallbackKey !== apiKey) keys.push(fallbackKey);
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' });
+    if (keys.length === 0) return res.status(500).json({ detail: 'Chưa cấu hình GEMINI_API_KEY' });
 
-    const promptText = `Bạn là trợ lý AI y tế của MediSchedule.
+    const promptText = `Bạn là trợ lý AI y tế chuyên nghiệp và tận tụy của MediSchedule.
 QUY TẮC BẮT BUỘC:
-- Trả lời TỐI ĐA 3-4 câu, thẳng vào vấn đề, KHÔNG liệt kê dài dòng.
-- Nếu người dùng chào → chào lại ngắn gọn + hỏi triệu chứng.
-- Nếu hỏi về triệu chứng → gợi ý chuyên khoa ngay.
-- Nếu có ảnh → nhận xét ngắn gọn + khuyên đi khám.
-- Luôn kết thúc bằng: "Thông tin chỉ mang tính tham khảo."
+- Tư vấn chi tiết, thấu đáo và phân tích rõ triệu chứng cho bệnh nhân.
+- Nếu người dùng chào → chào lại thân thiện + hỏi thăm sức khoẻ.
+- Nếu hỏi về triệu chứng → phân tích nguyên nhân tiềm năng, lời khuyên chăm sóc tại nhà và gợi ý chuyên khoa phù hợp.
+- Nếu có ảnh → nhận xét cặn kẽ biểu hiện trên ảnh và tư vấn hướng giải quyết.
+- Luôn kết thúc bằng: "Thông tin chỉ mang tính tham khảo, vui lòng đặt lịch khám để được bác sĩ chuyên khoa chẩn đoán chính xác."
 Người dùng nói: "${message || 'Tôi gửi một hình ảnh'}".`;
 
     let contents = [promptText];
@@ -83,10 +150,53 @@ Người dùng nói: "${message || 'Tôi gửi một hình ảnh'}".`;
       });
     }
 
-    const result = await model.generateContent(contents);
-    res.json({ result: result.response.text() });
+
+    let session = null;
+
+    if (userId) {
+      session = await AITuVanPhien.findOne({
+        where: { Id_NguoiDung: userId, TrangThai: 'DangHoatDong' },
+        order: [['NgayCapNhat', 'DESC']]
+      });
+
+      if (!session) {
+        session = await AITuVanPhien.create({
+          Id_NguoiDung: userId,
+          TieuDe: message ? message.substring(0, 80) : 'Tư vấn nhanh qua Popup',
+          TrangThai: 'DangHoatDong'
+        });
+      }
+
+      await AITuVanTinNhan.create({
+        Id_AITuVanPhien: session.Id_AITuVanPhien,
+        VaiTro: 'user',
+        NoiDung: message || 'Ghi chú: Có đính kèm hình ảnh'
+      });
+    }
+
+    const result = await generateWithRetryAndFallback(keys, contents, !!image, process.env.GEMINI_MODEL || 'gemini-1.5-flash');
+    const aiText = result.response.text();
+
+    if (session) {
+      await AITuVanTinNhan.create({
+        Id_AITuVanPhien: session.Id_AITuVanPhien,
+        VaiTro: 'assistant',
+        NoiDung: aiText
+      });
+      session.NgayCapNhat = new Date();
+      await session.save();
+    }
+
+    res.json({ result: aiText });
   } catch (error) {
-    console.error('AI Chat Error:', error);
+    if ([429, 500, 503].includes(error?.status)) {
+      return res.status(503).json({
+        message: 'AI đang quá tải tạm thời. Vui lòng thử lại sau ít phút.',
+        detail: 'AI đang quá tải tạm thời. Vui lòng thử lại sau ít phút.', // keep detail for compatibility just in case
+        code: 'AI_TEMPORARILY_UNAVAILABLE'
+      });
+    }
+
     res.status(500).json({ detail: 'Có lỗi xảy ra khi gọi AI Gemini: ' + error.message });
   }
 };
@@ -100,10 +210,103 @@ exports.getHistory = async (req, res) => {
   }
 };
 
-exports.getDiagnoses = async (req, res) => { res.json([]); };
-exports.assignDoctor = async (req, res) => { res.json({}); };
-exports.acceptDiagnosis = async (req, res) => { res.json({}); };
-exports.rejectDiagnosis = async (req, res) => { res.json({}); };
+exports.getDiagnoses = async (req, res) => {
+  try {
+    const diagnoses = await AITuVanPhien.findAll({
+      include: [
+        { model: NguoiDung, as: 'nguoiDung', attributes: ['Id_NguoiDung', 'Ho', 'Ten', 'Email'] },
+        {
+          model: require('../models').BacSi,
+          as: 'phuTrach',
+          include: [{ model: NguoiDung, attributes: ['Ho', 'Ten'] }]
+        }
+      ],
+      order: [['NgayCapNhat', 'DESC']]
+    });
+
+    const result = diagnoses.map(d => ({
+      id: d.Id_AITuVanPhien,
+      createdAt: d.NgayTao,
+      updatedAt: d.NgayCapNhat,
+      symptoms: d.TrieuChungTomTat || d.TieuDe || 'Chưa có thông tin',
+      diagnosis: d.ChuanDoanSoBo || 'Chưa có chẩn đoán',
+      advice: d.LoiKhuyen,
+      specialty: d.GoiYChuyenKhoa,
+      priority: d.MucDoUuTien,
+      status: d.TrangThaiChuyenGiao,
+      User: d.nguoiDung ? {
+        full_name: `${d.nguoiDung.Ho} ${d.nguoiDung.Ten}`,
+        email: d.nguoiDung.Email
+      } : null,
+      Doctor: d.phuTrach ? {
+        id: d.phuTrach.Id_BacSi,
+        User: {
+          full_name: `${d.phuTrach.NguoiDung.Ho} ${d.phuTrach.NguoiDung.Ten}`
+        }
+      } : null
+    }));
+    res.json(result);
+  } catch (error) {
+    console.error('getDiagnoses error:', error);
+    res.status(500).json({ detail: 'Lỗi khi lấy danh sách chẩn đoán' });
+  }
+};
+
+exports.assignDoctor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { doctor_id } = req.body;
+
+    const session = await AITuVanPhien.findByPk(id);
+    if (!session) return res.status(404).json({ detail: 'Không tìm thấy phiên' });
+
+    session.Id_BacSi_PhuTrach = doctor_id;
+    session.TrangThaiChuyenGiao = 'assigned';
+    await session.save();
+
+    res.json({ message: 'Đã phân công bác sĩ', session });
+  } catch (error) {
+    console.error('assignDoctor error:', error);
+    res.status(500).json({ detail: 'Lỗi phân công bác sĩ' });
+  }
+};
+
+exports.acceptDiagnosis = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { BacSi } = require('../models');
+
+    const doctor = await BacSi.findOne({ where: { Id_NguoiDung: req.user.id } });
+    if (!doctor) return res.status(403).json({ detail: 'Doctor profile required' });
+
+    const session = await AITuVanPhien.findByPk(id);
+    if (!session) return res.status(404).json({ detail: 'Không tìm thấy phiên' });
+
+    session.Id_BacSi_PhuTrach = doctor.Id_BacSi;
+    session.TrangThaiChuyenGiao = 'assigned';
+    await session.save();
+
+    res.json({ message: 'Đã tiếp nhận bệnh nhân thành công', session });
+  } catch (error) {
+    res.status(500).json({ detail: 'Lỗi khi tiếp nhận' });
+  }
+};
+
+exports.rejectDiagnosis = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const session = await AITuVanPhien.findByPk(id);
+    if (!session) return res.status(404).json({ detail: 'Không tìm thấy phiên' });
+
+    session.Id_BacSi_PhuTrach = null;
+    session.TrangThaiChuyenGiao = 'pending';
+    await session.save();
+
+    res.json({ message: 'Đã từ chối tiếp nhận', session });
+  } catch (error) {
+    res.status(500).json({ detail: 'Lỗi khi từ chối' });
+  }
+};
 
 // ─── AI Chat Session (PB12 / PB13) ───────────────────────────────────────────
 

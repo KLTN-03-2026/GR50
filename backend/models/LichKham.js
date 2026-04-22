@@ -4,6 +4,7 @@ const sequelize = require('../config/database');
 const LichKham = sequelize.define('LichKham', {
     Id_LichKham: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     Id_BacSi: { type: DataTypes.INTEGER, references: { model: 'bacsi', key: 'Id_BacSi' } },
+    Id_PhongKham: { type: DataTypes.INTEGER, references: { model: 'PhongKham', key: 'Id_PhongKham' } },
     NgayDate: { type: DataTypes.DATEONLY },
     GioBatDau: { type: DataTypes.TIME },
     GioKetThuc: { type: DataTypes.TIME },

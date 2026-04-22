@@ -1,0 +1,22 @@
+git : To https://github
+.com/KLTN-03-2026/GR50.
+git
+At line:1 char:1
++ git push gr50 
+Nguyen_NT 2>&1 | 
+Out-File -FilePath 
+git_push_gr50.txt - ...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (To https://gi   
+ th...3-2026/GR50.g    
+it:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+   896f6e5d..e350278d  
+Nguyen_NT -> Nguyen_NT
