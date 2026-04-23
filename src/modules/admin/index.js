@@ -1,0 +1,11 @@
+export { default as Dashboard } from './pages/Dashboard.jsx';
+export { default as Doctors } from './pages/Doctors.jsx';
+export { default as Patients } from './pages/Patients.jsx';
+export { default as Stats } from './pages/Stats.jsx';
+export { default as Admins } from './pages/Admins.jsx';
+export { default as CreateAccounts } from './pages/CreateAccounts.jsx';
+export { default as Payments } from './pages/Payments.jsx';
+export { default as Reports } from './pages/Reports.jsx';
+export { default as SystemSettings } from './pages/SystemSettings.jsx';
+export { default as AIDiagnoses } from './pages/AIDiagnoses.jsx';
+export { default as Specialties } from './pages/Specialties.jsx';
