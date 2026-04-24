@@ -1,116 +1,112 @@
 @echo off
-REM Script chạy MediSchedule local - Windows
-REM Chạy bằng: double-click hoặc run_local.bat
+TITLE MediSchedule - Local Development
+SETLOCAL EnableDelayedExpansion
 
-color 0A
-echo ====================================
-echo    MEDISCHEDULE - CHAY LOCAL
-echo ====================================
+:: ---------------------------------------------------------
+:: CONFIGURATION
+:: ---------------------------------------------------------
+set BACKEND_DIR=backend
+set FRONTEND_DIR=frontend
+set BACKEND_PORT=8001
+set FRONTEND_PORT=3050
+
+:: ---------------------------------------------------------
+:: STYLING
+:: ---------------------------------------------------------
+color 0B
+echo.
+echo  ##########################################################
+echo  #                                                        #
+echo  #             MEDISCHEDULE - CHAY CUC BO                 #
+echo  #                                                        #
+echo  ##########################################################
 echo.
 
-REM Kiểm tra MySQL (XAMPP)
-echo Kiem tra MySQL...
-mysql -u root -e "SELECT 1;" >nul 2>&1
+:: ---------------------------------------------------------
+:: CHECKS
+:: ---------------------------------------------------------
+
+:: Check Node.js
+echo [1/4] Kiem tra Node.js...
+where node >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [X] MySQL khong chay!
-    echo Vui long:
-    echo   1. Mo XAMPP Control Panel
-    echo   2. Nhan Start o MySQL
-    echo   3. Hoac cai dat MySQL tu: https://dev.mysql.com/downloads/mysql/
+    echo [X] Khong tim thay Node.js! Vui long cai dat tu https://nodejs.org/
     pause
     exit /b 1
 )
-echo [OK] MySQL dang chay
+node -v
+echo [OK] Node.js da san sang.
 
-REM Kiểm tra database
+:: Check MySQL
 echo.
-echo Kiem tra database medischedule...
-mysql -u root -e "USE medischedule;" >nul 2>&1
+echo [2/4] Kiem tra MySQL...
+:: Try to connect to MySQL using credentials from backend/.env if possible, 
+:: but here we just check if service is up.
+mysqladmin -u root ping >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [!] Database chua ton tai, dang tao...
-    mysql -u root -e "CREATE DATABASE medischedule CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-    cd backend
-    python create_tables.py
-    python create_admin_mysql.py
-    python create_sample_data_mysql.py
-    cd ..
-    echo [OK] Database da duoc tao
-) else (
-    echo [OK] Database da ton tai
+    echo [X] MySQL (XAMPP/MariaDB) chua chay!
+    echo Vui long mo XAMPP Control Panel va Start MySQL.
+    pause
+    exit /b 1
 )
+echo [OK] MySQL dang chay.
 
-REM Kiểm tra Python packages
+:: Check Backend Dependencies
 echo.
-echo Kiem tra Python dependencies...
-pip show fastapi >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [!] Dang cai dat Python packages...
-    cd backend
-    pip install -r requirements.txt
+echo [3/4] Kiem tra Backend dependencies...
+if not exist "%BACKEND_DIR%\node_modules" (
+    echo [!] Dang cai dat backend dependencies...
+    cd %BACKEND_DIR%
+    call npm install
     cd ..
 )
-echo [OK] Python dependencies OK
+echo [OK] Backend dependencies OK.
 
-REM Kiểm tra Node packages
+:: Check Frontend Dependencies
 echo.
-echo Kiem tra Node dependencies...
-if not exist "frontend\node_modules" (
-    echo [!] Dang cai dat Node packages...
-    cd frontend
-    call yarn install
+echo [4/4] Kiem tra Frontend dependencies...
+if not exist "%FRONTEND_DIR%\node_modules" (
+    echo [!] Dang cai dat frontend dependencies...
+    cd %FRONTEND_DIR%
+    call npm install
     cd ..
 )
-echo [OK] Node dependencies OK
+echo [OK] Frontend dependencies OK.
 
+:: ---------------------------------------------------------
+:: STARTING SERVICES
+:: ---------------------------------------------------------
 echo.
-echo ====================================
-echo    DANG KHOI DONG UNG DUNG...
-echo ====================================
+echo ==========================================================
+echo    DANG KHOI DONG BACKEND VA FRONTEND...
+echo ==========================================================
 echo.
 
-REM Tạo thư mục logs
-if not exist logs mkdir logs
+:: Start Backend in a new window
+echo [+] Dang khoi dong Backend tai port %BACKEND_PORT%...
+start "MediSchedule - Backend" cmd /c "cd %BACKEND_DIR% && npm run start"
 
-REM Chạy backend
-echo Khoi dong Backend (port 8001)...
-cd backend
-start /B python server.py > ..\logs\backend.log 2>&1
-cd ..
+:: Wait a few seconds for backend to initialize
 timeout /t 3 /nobreak >nul
-echo [OK] Backend: http://localhost:8001
 
-REM Chạy frontend
-echo.
-echo Khoi dong Frontend (port 3000)...
-cd frontend
-start /B cmd /c "yarn start > ..\logs\frontend.log 2>&1"
-cd ..
-echo [OK] Frontend: http://localhost:3000
+:: Start Frontend in a new window
+echo [+] Dang khoi dong Frontend tai port %FRONTEND_PORT%...
+start "MediSchedule - Frontend" cmd /c "cd %FRONTEND_DIR% && npm start"
 
 echo.
-echo ====================================
-echo    UNG DUNG DA CHAY THANH CONG!
-echo ====================================
+echo [HOAN TAT] He thong dang duoc khoi dong trong cac cua so rieng biet.
 echo.
-echo Frontend:  http://localhost:3000
-echo Backend:   http://localhost:8001
-echo API Docs:  http://localhost:8001/docs
+echo ----------------------------------------------------------
+echo - Frontend: http://localhost:%FRONTEND_PORT%
+echo - Backend:  http://localhost:%BACKEND_PORT%
+echo - API Docs: http://localhost:%BACKEND_PORT%/api/health
+echo ----------------------------------------------------------
 echo.
-echo TAI KHOAN TEST:
-echo   Admin:    admin@medischedule.com / 12345678
-echo   Doctor:   doctor1@test.com / 12345678
-echo   Patient:  patient1@test.com / 12345678
-echo.
-echo Xem log:
-echo   Backend:  type logs\backend.log
-echo   Frontend: type logs\frontend.log
-echo.
-echo Trinh duyet se tu dong mo trong giay lat...
+echo Luu y: Vui long giu cac cua so Terminal mo khi su dung web.
 echo.
 
-REM Mở trình duyệt
+:: Auto-open browser
 timeout /t 5 /nobreak >nul
-start http://localhost:3000
+start http://localhost:%FRONTEND_PORT%
 
-echo Nhan bat ky phim nao de dong cua so nay...
-pause >nul
+pause
