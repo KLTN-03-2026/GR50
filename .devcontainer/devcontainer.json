@@ -1,0 +1,21 @@
+{
+	"name": "MediSchedule Dev Environment",
+	"image": "mcr.microsoft.com/devcontainers/javascript-node:18",
+	"features": {
+		"ghcr.io/devcontainers/features/mysql:1": {
+			"version": "8.0",
+			"databaseName": "database_benhvien"
+		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"cweijan.vscode-mysql-client2",
+				"esbenp.prettier-vscode",
+				"dbaeumer.vscode-eslint"
+			]
+		}
+	},
+	"forwardPorts": [3050, 8001],
+	"postCreateCommand": "bash .devcontainer/setup.sh"
+}
