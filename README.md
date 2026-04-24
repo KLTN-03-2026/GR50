@@ -5,7 +5,7 @@
 
 ![Status](https://img.shields.io/badge/status-production--ready-success)
 ![Features](https://img.shields.io/badge/features-13%2F13-brightgreen)
-![Tech](https://img.shields.io/badge/tech-FastAPI%2BReact%2BMySQL-blue)
+![Tech](https://img.shields.io/badge/tech-Node.js%2BReact%2BMySQL-blue)
 ![Database](https://img.shields.io/badge/database-MySQL-orange)
 
 ---
@@ -59,10 +59,10 @@ Patient:        patient1@test.com / 12345678
 ## 🛠 Tech Stack
 
 - **Frontend**: React 18 + Tailwind CSS + Shadcn/ui
-- **Backend**: FastAPI + MySQL (SQLAlchemy + aiomysql)
-- **Database**: MySQL/MariaDB 10.11
+- **Backend**: Node.js (Express) + MySQL (Sequelize)
+- **Database**: MySQL 8.0
 - **Auth**: JWT + Bcrypt
-- **Deployment**: Kubernetes (Emergent Platform)
+- **Deployment**: GitHub Actions + Vercel/GitHub Pages
 
 ---
 
@@ -138,8 +138,19 @@ mysql -u root -p190705 medischedule
 🔄 Restart: `sudo supervisorctl restart all`  
 📊 Status: `sudo supervisorctl status`
 
+
 ---
 
-**Made with ❤️ by MediSchedule Team**  
-*Production-ready healthcare management system*
+## 🚀 Deployment (GitHub & Live Demo)
+
+Hệ thống đã được cấu hình để tự động build và deploy.
+
+1. **GitHub Actions**: Mỗi khi bạn `push` code lên branch `Nguyen_NT`, GitHub sẽ tự động chạy workflow để build và kiểm tra lỗi.
+2. **Xem Live Demo**: 
+   - Sau khi GitHub Action chạy xong (khoảng 2-3 phút), bạn có thể truy cập vào đường dẫn: `https://KLTN-GR50.github.io/KLTN_06-2026/` (Thay thế bằng link thực tế của bạn).
+   - **Lưu ý**: Bản web trên GitHub Pages chỉ là Frontend. Để hệ thống hoạt động đầy đủ (đăng nhập, đặt lịch), bạn cần deploy Backend lên Render/Railway và Database lên Aiven/PlanetScale.
+
+---
+
+**Made with ❤️ by MediSchedule Team**
 
