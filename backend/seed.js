@@ -1,9 +1,9 @@
 const bcrypt = require('bcryptjs');
 const {
   sequelize, VaiTro, NguoiDung, NguoiDung_VaiTro, ChuyenKhoa, BacSi, BenhNhan,
-  Clinic, DoctorSchedule, StaffProfile, StaffFacility, Appointment,
+  PhongKham, LichKham, StaffProfile, Staff_Facility, DatLich,
   HoSoBenhAn, DonThuoc, ChiTietDonThuoc, DanhGia, HoaDon, ThanhToan,
-  Conversation, Message, AITriage, ThongBao
+  Conversation, Message, AITuVanPhien, ThongBao
 } = require('./models');
 
 async function seed() {
@@ -42,7 +42,7 @@ async function seed() {
     ]);
 
     // 3. Clinics (5 Major Hospitals)
-    const clinics = await Clinic.bulkCreate([
+    const clinics = await PhongKham.bulkCreate([
       { TenPhongKham: 'Bệnh viện Bạch Mai (Hà Nội)', DiaChi: '78 Giải Phóng, Phương Mai, Đống Đa, Hà Nội', SoDienThoai: '024.3869.3731', TrangThai: 'HoatDong' },
       { TenPhongKham: 'Bệnh viện Chợ Rẫy (TP.HCM)', DiaChi: '201B Nguyễn Chí Thanh, Phường 12, Quận 5, TP.HCM', SoDienThoai: '028.3855.4137', TrangThai: 'HoatDong' },
       { TenPhongKham: 'Bệnh viện Đa khoa Đà Nẵng', DiaChi: '124 Hải Phòng, Thạch Thang, Hải Châu, Đà Nẵng', SoDienThoai: '0236.3821.118', TrangThai: 'HoatDong' },
@@ -61,7 +61,7 @@ async function seed() {
       const user = await NguoiDung.create({ Ho: staffNames[i][0], Ten: staffNames[i][1], Email: `staff${i+1}@medischedule.com`, MatKhau: hashedPassword });
       await NguoiDung_VaiTro.create({ Id_NguoiDung: user.Id_NguoiDung, Id_VaiTro: roleMap['staff'] });
       const profile = await StaffProfile.create({ user_id: user.Id_NguoiDung, employee_code: `EMP00${i+1}`, status: 'active' });
-      await StaffFacility.create({ staff_id: profile.id, facility_id: clinics[i].Id_PhongKham, is_active: true, can_reception: true, can_payment: true });
+      await Staff_Facility.create({ staff_id: profile.id, facility_id: clinics[i].Id_PhongKham, is_active: true, can_reception: true, can_payment: true });
       createdStaff.push(profile);
     }
 
@@ -117,13 +117,13 @@ async function seed() {
         const patient = createdPatients[Math.floor(Math.random() * 10)];
         const clinic = clinics[Math.floor(Math.random() * 5)];
 
-        const schedule = await DoctorSchedule.create({
+        const schedule = await LichKham.create({
           Id_BacSi: doctor.Id_BacSi, Id_PhongKham: clinic.Id_PhongKham,
           NgayDate: dateStr, GioBatDau: '09:00:00', GioKetThuc: '09:30:00',
           LoaiKham: Math.random() > 0.5 ? 'TrucTiep' : 'Online', SoLuongToiDa: 10, SoLuongDaDat: 1
         });
 
-        const apt = await Appointment.create({
+        const apt = await DatLich.create({
           MaDatLich: `DL_H${pastDate.getTime()}_${j}`,
           Id_BenhNhan: patient.Id_BenhNhan, Id_LichKham: schedule.Id_LichKham,
           Id_PhongKham: clinic.Id_PhongKham, Id_BacSi: doctor.Id_BacSi,
@@ -148,7 +148,7 @@ async function seed() {
       const dateStr = futureDate.toISOString().split('T')[0];
 
       for (const doctor of createdDoctors) {
-        await DoctorSchedule.create({
+        await LichKham.create({
           Id_BacSi: doctor.Id_BacSi, Id_PhongKham: clinics[doctor.Id_BacSi % 5].Id_PhongKham,
           NgayDate: dateStr, GioBatDau: '08:00:00', GioKetThuc: '11:00:00',
           LoaiKham: 'TrucTiep', SoLuongToiDa: 15, SoLuongDaDat: 0
@@ -157,9 +157,9 @@ async function seed() {
     }
 
     // 10. AI Triage & Notifications
-    await AITriage.create({
+    await AITuVanPhien.create({
       Id_NguoiDung: createdPatients[0].Id_NguoiDung, TrieuChungTomTat: 'Đau đầu kéo dài 3 ngày, kèm hoa mắt.',
-      GoiYChuyenKhoa: 'Thần Kinh', MucDoUuTien: 'Trung Bình', NgayTao: new Date(), Id_PhongKham: clinics[0].Id_PhongKham
+      GoiYChuyenKhoa: 'Thần Kinh', MucDoUuTien: 'TrungBinh', NgayTao: new Date(), Id_PhongKham: clinics[0].Id_PhongKham
     });
 
     await ThongBao.create({ Id_NguoiDung: createdPatients[0].Id_NguoiDung, NoiDung: 'Chào mừng bạn đến với hệ thống MediSched AI!', Loai: 'System', DaDoc: false });
