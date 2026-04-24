@@ -24,23 +24,28 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function ReceptionPayments() {
-  const { token } = useContext(AuthContext);
+  const { token, currentFacility } = useContext(AuthContext);
+
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    fetchInvoices();
-  }, []);
+    if (token && currentFacility) {
+        fetchInvoices();
+    }
+  }, [currentFacility, token]);
+
 
   const fetchInvoices = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API}/staff/invoices`, {
+      const response = await axios.get(`${API}/staff/invoices?facility_id=${currentFacility.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setInvoices(response.data);
+
     } catch (error) {
       console.error('Failed to fetch invoices', error);
       toast.error('Lỗi khi tải danh sách thanh toán');

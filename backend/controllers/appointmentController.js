@@ -1,4 +1,7 @@
-const { DatLich, BenhNhan, NguoiDung, BacSi, LichKham, ThanhToan, HoaDon } = require('../models');
+const { DatLich, BenhNhan, NguoiDung, BacSi, LichKham, ThanhToan, HoaDon, AuthToken, VaiTro, NguoiDung_VaiTro } = require('../models');
+const generateOtp = require('../utils/generateOtp');
+const { sendOtpToEmail, sendOtpToPhone } = require('../utils/sendOtp');
+const bcrypt = require('bcryptjs');
 
 exports.create = async (req, res) => {
   try {
@@ -8,10 +11,40 @@ exports.create = async (req, res) => {
 
     if (!facility_id) return res.status(400).json({ detail: 'Facility ID is required for multi-facility booking' });
 
-    const bacsi = await BacSi.findOne({ where: { Id_NguoiDung: doctor_id } });
+    const bacsi = await BacSi.findOne({ where: { Id_BacSi: doctor_id } });
     if (!bacsi) return res.status(404).json({ detail: 'Doctor not found' });
 
     const benhnhan = await BenhNhan.findOne({ where: { Id_NguoiDung: req.user.id } });
+    if (!benhnhan) {
+      console.warn(`Patient profile not found for user ${req.user.id}. Creating one automatically.`);
+      // Defensive: Create patient profile if missing but user exists
+      const user = await NguoiDung.findByPk(req.user.id);
+      await BenhNhan.create({
+        Id_NguoiDung: req.user.id,
+        SoDienThoaiLienHe: user.SoDienThoai
+      });
+      return res.status(400).json({ detail: 'Hồ sơ bệnh nhân vừa được khởi tạo. Vui lòng thực hiện lại thao tác đặt lịch.' });
+    }
+    // Business Rule: Prevent booking if the doctor is currently in an active consultation (IN_PROGRESS) 
+    // or has a patient checked in (CHECKED_IN) for bookings on the SAME day.
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (appointment_date === todayStr) {
+      const activeApt = await DatLich.findOne({
+        include: [{
+          model: LichKham,
+          where: { Id_BacSi: bacsi.Id_BacSi }
+        }],
+        where: {
+          TrangThai: ['IN_PROGRESS', 'IN_CONSULTATION', 'CHECKED_IN']
+        }
+      });
+
+      if (activeApt) {
+        return res.status(400).json({ 
+          detail: 'Bác sĩ hiện đang trong ca khám hoặc đang tiếp nhận bệnh nhân. Vui lòng chọn khung giờ khác hoặc quay lại sau khi bác sĩ hoàn tất ca khám hiện tại.' 
+        });
+      }
+    }
 
     // Map frontend appointment_type to database LoaiKham
     const dbLoaiKham = appointment_type === 'online' ? 'Online' : 'TrucTiep';
@@ -34,7 +67,7 @@ exports.create = async (req, res) => {
       }
       lichKham.SoLuongDaDat += 1;
       if (lichKham.SoLuongDaDat >= lichKham.SoLuongToiDa) {
-        lichKham.TrangThai = 'DaDay';
+        lichKham.TrangThai = 'Dong';
       }
       await lichKham.save();
     } else {
@@ -46,7 +79,7 @@ exports.create = async (req, res) => {
         GioBatDau: appointment_time,
         GioKetThuc: appointment_time,
         LoaiKham: dbLoaiKham,
-        TrangThai: 'KhaDung',
+        TrangThai: 'Mo',
         SoLuongToiDa: bacsi.SoLuongKhachMacDinh || 10,
         SoLuongDaDat: 1
       });
@@ -57,6 +90,7 @@ exports.create = async (req, res) => {
       Id_BenhNhan: benhnhan.Id_BenhNhan,
       Id_LichKham: lichKham.Id_LichKham,
       Id_PhongKham: facility_id,
+      Id_BacSi: bacsi.Id_BacSi,
       TrangThai: 'PENDING',
       TrieuChungSoBo: symptoms,
       GhiChu: '',
@@ -72,7 +106,7 @@ exports.create = async (req, res) => {
       MaDonHang: `ORDER-${Date.now()}`,
       SoTien: bacsi.PhiTuVan,
       PhuongThuc: 'TienMat',
-      TrangThai: 'UNPAID',
+      TrangThai: 'PENDING',
       MoTa: `Thanh toán phí hẹn khám cho mã ${appointment.MaDatLich}`
     });
 
@@ -143,6 +177,7 @@ exports.getMyAppointments = async (req, res) => {
 
       return {
         id: d.Id_DatLich,
+        code: d.MaDatLich,
         status: statusMap[d.TrangThai] || 'pending',
         payment_status: pStatus,
         doctor_name: `${d.LichKham.BacSi.NguoiDung.Ho} ${d.LichKham.BacSi.NguoiDung.Ten}`,
@@ -150,9 +185,11 @@ exports.getMyAppointments = async (req, res) => {
         appointment_date: d.LichKham.NgayDate,
         appointment_time: d.LichKham.GioBatDau,
         appointment_type: d.LichKham.LoaiKham === 'Online' ? 'online' : 'in-person',
-        symptoms: d.TrieuChungSoBo
+        symptoms: d.TrieuChungSoBo,
+        queue_number: d.STT_HangCho
       };
     });
+
 
     res.json(result);
   } catch (error) {
@@ -302,8 +339,8 @@ exports.cancelAppointment = async (req, res) => {
     const lichKham = await LichKham.findOne({ where: { Id_LichKham: appointment.Id_LichKham } });
     if (lichKham && lichKham.SoLuongDaDat > 0) {
       lichKham.SoLuongDaDat -= 1;
-      if (lichKham.TrangThai === 'DaDay') {
-        lichKham.TrangThai = 'KhaDung';
+      if (lichKham.TrangThai === 'Dong') {
+        lichKham.TrangThai = 'Mo';
       }
       await lichKham.save();
     }
@@ -323,7 +360,7 @@ exports.getAvailableSlots = async (req, res) => {
         const whereClause = {
             Id_BacSi: doctorId,
             NgayDate: date,
-            TrangThai: 'KhaDung'
+            TrangThai: 'Mo'
         };
 
         if (facilityId) {
@@ -344,4 +381,197 @@ exports.getAvailableSlots = async (req, res) => {
         console.error('GetAvailableSlots Error:', error);
         res.status(500).json({ detail: 'Error fetching slots' });
     }
+};
+
+exports.createGuestAppointment = async (req, res) => {
+  try {
+    const { 
+      full_name, phone, email, date_of_birth, gender,
+      doctor_id, facility_id, appointment_date, appointment_time, symptoms, appointment_type 
+    } = req.body;
+
+    if (!full_name || !phone || !appointment_date || !appointment_time) {
+      return res.status(400).json({ detail: 'Vui lòng điền đầy đủ các thông tin bắt buộc.' });
+    }
+
+    // Validate birth date year to prevent MySQL out of range error (max 9999)
+    if (date_of_birth) {
+      const year = new Date(date_of_birth).getFullYear();
+      if (year > 2100 || year < 1900) {
+        return res.status(400).json({ detail: 'Ngày sinh không hợp lệ.' });
+      }
+    }
+
+    // 1. Find or create Guest User
+    const { Op } = require('sequelize');
+    let user = await NguoiDung.findOne({ where: { [Op.or]: [{ Email: email || '' }, { SoDienThoai: phone }] } });
+    
+    if (!user) {
+      const names = full_name.split(' ');
+      const ten = names.pop();
+      const ho = names.join(' ');
+      
+      user = await NguoiDung.create({
+        Ho: ho,
+        Ten: ten,
+        Email: email || `guest_${Date.now()}@medischedule.com`,
+        SoDienThoai: phone,
+        NgaySinh: date_of_birth,
+        GioiTinh: gender,
+        TrangThai: 'HoatDong',
+        MatKhau: await bcrypt.hash(Math.random().toString(36), 10) // Temporary random password
+      });
+
+      const vt = await VaiTro.findOne({ where: { MaVaiTro: 'patient' } });
+      if (vt) {
+        await NguoiDung_VaiTro.create({ Id_NguoiDung: user.Id_NguoiDung, Id_VaiTro: vt.Id_VaiTro });
+      }
+
+      await BenhNhan.create({
+        Id_NguoiDung: user.Id_NguoiDung,
+        SoDienThoaiLienHe: phone
+      });
+    }
+
+    let benhnhan = await BenhNhan.findOne({ where: { Id_NguoiDung: user.Id_NguoiDung } });
+    if (!benhnhan) {
+      benhnhan = await BenhNhan.create({
+        Id_NguoiDung: user.Id_NguoiDung,
+        SoDienThoaiLienHe: phone
+      });
+    }
+    const bacsi = await BacSi.findOne({ where: { Id_BacSi: doctor_id } });
+    if (!bacsi) return res.status(404).json({ detail: 'Không tìm thấy thông tin bác sĩ.' });
+
+    // 2. Core Booking Logic (reusing logic from create)
+    const dbLoaiKham = appointment_type === 'online' ? 'Online' : 'TrucTiep';
+    let lichKham = await LichKham.findOne({
+      where: {
+        Id_BacSi: bacsi.Id_BacSi,
+        Id_PhongKham: facility_id,
+        NgayDate: appointment_date,
+        GioBatDau: appointment_time,
+        LoaiKham: dbLoaiKham
+      }
+    });
+
+    if (lichKham) {
+      if (lichKham.SoLuongDaDat >= lichKham.SoLuongToiDa) {
+        return res.status(400).json({ detail: 'Khung giờ này đã đầy.' });
+      }
+      lichKham.SoLuongDaDat += 1;
+      if (lichKham.SoLuongDaDat >= lichKham.SoLuongToiDa) {
+        lichKham.TrangThai = 'Dong';
+      }
+      await lichKham.save();
+    } else {
+      lichKham = await LichKham.create({
+        Id_BacSi: bacsi.Id_BacSi,
+        Id_PhongKham: facility_id,
+        NgayDate: appointment_date,
+        GioBatDau: appointment_time,
+        GioKetThuc: appointment_time,
+        LoaiKham: dbLoaiKham,
+        TrangThai: 'Mo',
+        SoLuongToiDa: 10,
+        SoLuongDaDat: 1
+      });
+    }
+
+    // Create Appointment as GUEST and UNVERIFIED
+    const appointment = await DatLich.create({
+      MaDatLich: `GUEST-${Date.now()}`,
+      Id_BenhNhan: benhnhan.Id_BenhNhan,
+      Id_LichKham: lichKham.Id_LichKham,
+      Id_PhongKham: facility_id,
+      Id_BacSi: bacsi.Id_BacSi,
+      TrangThai: 'PENDING',
+      TrieuChungSoBo: symptoms,
+      GiaTien: bacsi.PhiTuVan,
+      ThoiDiemDat: new Date(),
+      BookingSource: 'GUEST',
+      IdentityStatus: 'UNVERIFIED_GUEST'
+    });
+
+    // Create payment record for guest
+    await ThanhToan.create({
+      Id_DatLich: appointment.Id_DatLich,
+      Id_BenhNhan: benhnhan.Id_BenhNhan,
+      Id_PhongKham: facility_id,
+      MaDonHang: `GUEST-ORDER-${Date.now()}`,
+      SoTien: bacsi.PhiTuVan,
+      PhuongThuc: 'TienMat',
+      TrangThai: 'PENDING',
+      MoTa: `Thanh toán phí hẹn khám (Khách) cho mã ${appointment.MaDatLich}`
+    });
+
+    // 3. Skip OTP - Verify immediately
+    appointment.IdentityStatus = 'VERIFIED_GUEST';
+    await appointment.save();
+
+    res.status(201).json({
+      message: 'Đặt lịch thành công!',
+      appointment_id: appointment.Id_DatLich,
+      appointment: {
+        id: appointment.Id_DatLich,
+        code: appointment.MaDatLich,
+        status: appointment.TrangThai
+      }
+    });
+
+  } catch (error) {
+    console.error('--- GUEST BOOKING ERROR DETAILED ---');
+    console.error('Error Message:', error.message);
+    console.error('Stack Trace:', error.stack);
+    if (error.errors) {
+      console.error('Validation Errors:', error.errors.map(e => e.message));
+    }
+    console.error('------------------------------------');
+    res.status(500).json({ detail: 'Lỗi hệ thống khi đặt lịch nhanh.', error: error.message });
+  }
+};
+
+exports.verifyGuestBooking = async (req, res) => {
+  try {
+    const { appointment_id, otp } = req.body;
+
+    const appointment = await DatLich.findByPk(appointment_id, {
+      include: [{ model: BenhNhan, include: [NguoiDung] }]
+    });
+
+    if (!appointment) return res.status(404).json({ detail: 'Không tìm thấy lịch hẹn.' });
+
+    const tokenRecord = await AuthToken.findOne({
+      where: { 
+        Id_NguoiDung: appointment.BenhNhan.Id_NguoiDung,
+        Token: String(otp),
+        Type: 'GUEST_BOOKING_OTP',
+        IsUsed: false
+      }
+    });
+
+    if (!tokenRecord || new Date(tokenRecord.ExpiresAt) < new Date()) {
+      return res.status(400).json({ detail: 'Mã xác thực không đúng hoặc đã hết hạn.' });
+    }
+
+    // Mark as verified
+    appointment.IdentityStatus = 'VERIFIED_GUEST';
+    await appointment.save();
+
+    tokenRecord.IsUsed = true;
+    await tokenRecord.save();
+
+    res.json({
+      message: 'Xác thực thành công. Lịch hẹn của bạn đã chính thức được ghi nhận.',
+      appointment: {
+        id: appointment.Id_DatLich,
+        code: appointment.MaDatLich,
+        status: 'pending'
+      }
+    });
+
+  } catch (error) {
+    console.error('Verify guest booking error:', error);
+    res.status(500).json({ detail: 'Lỗi xác thực.' });
+  }
 };

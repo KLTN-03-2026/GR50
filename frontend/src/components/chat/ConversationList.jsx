@@ -28,7 +28,8 @@ const CONVERSATION_TYPES = {
 
 export default function ConversationList({ role = 'patient' }) {
   const navigate = useNavigate();
-  const { user, token } = useContext(AuthContext);
+  const { user, token, currentFacility } = useContext(AuthContext);
+
   
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,14 +38,17 @@ export default function ConversationList({ role = 'patient' }) {
 
   useEffect(() => {
     fetchConversations();
-  }, [token, activeFilter]);
+  }, [token, activeFilter, currentFacility]);
+
 
   const fetchConversations = async () => {
     try {
       setLoading(true);
       const type = activeFilter === 'all' ? null : activeFilter;
-      const data = await ChatService.getMyConversations(token, type);
+      const facilityId = (role === 'staff' || user?.role === 'staff') ? currentFacility?.id : null;
+      const data = await ChatService.getMyConversations(token, type, facilityId);
       setConversations(data);
+
     } catch (error) {
       console.error('Fetch conversations error:', error);
     } finally {

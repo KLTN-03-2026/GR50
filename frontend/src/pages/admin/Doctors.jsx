@@ -183,12 +183,21 @@ function DoctorCard({ doctor, onApprove, onDelete, t }) {
             {doctor.bio && (
               <p className="text-gray-600 dark:text-gray-300 text-sm mb-2 line-clamp-2">{doctor.bio}</p>
             )}
-            <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-300">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-300 mt-2">
               {doctor.experience_years > 0 && (
                 <span>{doctor.experience_years} {t('years')} {t('experience')}</span>
               )}
               {doctor.consultation_fee > 0 && (
                 <span>{t('fee')}: {doctor.consultation_fee.toLocaleString()} VNĐ</span>
+              )}
+              {doctor.degree && (
+                <span className="text-teal-600 font-medium">Học hàm/vị: {doctor.degree}</span>
+              )}
+              {doctor.certificate_number && (
+                <span className="text-blue-600 font-medium">Số CCHN: {doctor.certificate_number}</span>
+              )}
+              {doctor.workplace && (
+                <span className="italic">Nơi công tác: {doctor.workplace}</span>
               )}
             </div>
           </div>

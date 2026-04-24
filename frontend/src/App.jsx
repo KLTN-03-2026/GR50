@@ -13,9 +13,8 @@ import SearchDoctors from "@/pages/patient/SearchDoctors";
 import PatientAppointments from "@/pages/patient/Appointments";
 import PatientChat from "@/pages/patient/Chat";
 import PatientChatList from "@/pages/patient/ChatList";
-import PatientConversations from "@/pages/patient/Conversations";
-import PatientConversationChat from "@/pages/patient/ConversationChat";
 import PatientUnifiedChat from "@/pages/patient/UnifiedChat";
+
 import PatientPayments from "@/pages/patient/Payments";
 import PaymentProcess from "@/pages/patient/PaymentProcess";
 import PatientDoctorDetails from "@/pages/patient/DoctorDetails";
@@ -27,7 +26,7 @@ import DoctorAppointments from "@/pages/doctor/Appointments";
 import DoctorChat from "@/pages/doctor/Chat";
 import DoctorChatList from "@/pages/doctor/ChatList";
 import DoctorUnifiedChat from "@/pages/doctor/UnifiedChat";
-import DoctorConversationChat from "@/pages/doctor/ConversationChat";
+
 import PatientMedicalRecords from "@/pages/patient/MedicalRecords";
 import DoctorMedicalRecords from "@/pages/doctor/MedicalRecords";
 import DoctorAIDiagnoses from "@/pages/doctor/AIDiagnoses";
@@ -40,6 +39,7 @@ import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminDoctors from "@/pages/admin/Doctors";
 import AdminPatients from "@/pages/admin/Patients";
 import AdminStats from "@/pages/admin/Stats";
+import AdminStaffs from "@/pages/admin/Staffs";
 import AdminsManagement from "@/pages/admin/Admins";
 import CreateAccounts from "@/pages/admin/CreateAccounts";
 import AdminPayments from "@/pages/admin/Payments";
@@ -81,7 +81,21 @@ function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [mustChangePassword, setMustChangePassword] = useState(localStorage.getItem("mustChangePassword") === "true");
+  const [currentFacility, setCurrentFacility] = useState(() => {
+    try {
+      const saved = localStorage.getItem("currentFacility");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return (typeof parsed === 'object' && parsed !== null) ? parsed : null;
+      }
+    } catch (e) {
+      console.error("Failed to parse currentFacility", e);
+    }
+    return null;
+  });
+
   const [loading, setLoading] = useState(true);
+
 
 
   useEffect(() => {
@@ -111,9 +125,20 @@ function App() {
       logout();
     } finally {
       console.log("Loading set to false");
+      setLoading(true); // Re-run effect or just set false
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user?.role === 'staff' && user.facilities?.length > 0 && !currentFacility) {
+        const firstFac = user.facilities[0];
+        setCurrentFacility(firstFac);
+        localStorage.setItem("currentFacility", JSON.stringify(firstFac));
+    }
+  }, [user, currentFacility]);
+
+
 
   const login = (newToken, userData) => {
     localStorage.setItem("token", newToken);
@@ -126,16 +151,32 @@ function App() {
     }
     setToken(newToken);
     setUser(userData);
+    
+    if (userData.role === 'staff' && userData.facilities?.length > 0) {
+        const firstFac = userData.facilities[0];
+        setCurrentFacility(firstFac);
+        localStorage.setItem("currentFacility", JSON.stringify(firstFac));
+    }
   };
+
+  const changeFacility = (facility) => {
+      setCurrentFacility(facility);
+      localStorage.setItem("currentFacility", JSON.stringify(facility));
+      toast.success(`Đã chuyển sang cơ sở: ${facility.name}`);
+  };
+
 
 
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("mustChangePassword");
+    localStorage.removeItem("currentFacility");
     setToken(null);
     setUser(null);
     setMustChangePassword(false);
+    setCurrentFacility(null);
   };
+
 
 
   if (loading) {
@@ -159,8 +200,9 @@ function App() {
   return (
     <ThemeProvider>
       <LanguageProvider>
-        <AuthContext.Provider value={{ user, token, login, logout }}>
+        <AuthContext.Provider value={{ user, token, login, logout, currentFacility, changeFacility }}>
           <div className="App">
+
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
@@ -222,6 +264,7 @@ function App() {
 
 
               <Route path="/admin/doctors" element={<ProtectedRoute allowedRoles={['admin']}><AdminDoctors /></ProtectedRoute>} />
+              <Route path="/admin/staffs" element={<ProtectedRoute allowedRoles={['admin']}><AdminStaffs /></ProtectedRoute>} />
               <Route path="/admin/patients" element={<ProtectedRoute allowedRoles={['admin']}><AdminPatients /></ProtectedRoute>} />
               <Route path="/admin/stats" element={<ProtectedRoute allowedRoles={['admin']}><AdminStats /></ProtectedRoute>} />
               <Route path="/admin/admins" element={<ProtectedRoute allowedRoles={['admin']}><AdminsManagement /></ProtectedRoute>} />

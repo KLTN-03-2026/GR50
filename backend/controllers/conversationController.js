@@ -6,11 +6,11 @@ const {
   CallSession, 
   CallParticipant, 
   SupportCase,
-  DatLich,
+  Appointment,
   NguoiDung,
   BacSi,
   BenhNhan,
-  LichKham
+  DoctorSchedule
 } = require('../models');
 const { Op } = require('sequelize');
 
@@ -34,11 +34,11 @@ exports.getOrCreateAppointmentConversation = async (req, res) => {
     console.log(`[ChatDebug] getOrCreateAppointmentConversation: appointmentId=${appointmentId}, userId=${userId}, role=${userRole}`);
 
     // Check appointment
-    const appointment = await DatLich.findByPk(appointmentId, {
+    const appointment = await Appointment.findByPk(appointmentId, {
       include: [
         { model: BenhNhan, include: [{ model: NguoiDung }] },
         { 
-          model: LichKham, 
+          model: DoctorSchedule, 
           include: [{ model: BacSi, include: [{ model: NguoiDung }] }] 
         }
       ]
@@ -50,13 +50,13 @@ exports.getOrCreateAppointmentConversation = async (req, res) => {
 
     // Permission check
     const numericUserId = Number(userId);
-    const isDoctor = userRole === 'doctor' && appointment.LichKham?.BacSi?.Id_NguoiDung === numericUserId;
+    const isDoctor = userRole === 'doctor' && appointment.DoctorSchedule?.BacSi?.Id_NguoiDung === numericUserId;
     const isPatient = userRole === 'patient' && appointment.BenhNhan?.Id_NguoiDung === numericUserId;
     const isStaff = userRole === 'staff' || userRole === 'admin';
 
     console.log(`[ChatDebug] Permissions: isDoctor=${isDoctor}, isPatient=${isPatient}, isStaff=${isStaff}`);
-    if (appointment.LichKham?.BacSi) {
-      console.log(`[ChatDebug] Appointment Doctor UserID: ${appointment.LichKham.BacSi.Id_NguoiDung}`);
+    if (appointment.DoctorSchedule?.BacSi) {
+      console.log(`[ChatDebug] Appointment Doctor UserID: ${appointment.DoctorSchedule.BacSi.Id_NguoiDung}`);
     }
 
     if (!isDoctor && !isPatient && !isStaff) {
@@ -78,7 +78,7 @@ exports.getOrCreateAppointmentConversation = async (req, res) => {
         facility_id: appointment.Id_PhongKham || null,
         created_by: userId,
         status: 'open',
-        title: `Tư vấn: ${appointment.LichKham.BacSi.NguoiDung.Ho} ${appointment.LichKham.BacSi.NguoiDung.Ten} - ${appointment.BenhNhan.NguoiDung.Ho} ${appointment.BenhNhan.NguoiDung.Ten}`
+        title: `Tư vấn: ${appointment.DoctorSchedule.BacSi.NguoiDung.Ho} ${appointment.DoctorSchedule.BacSi.NguoiDung.Ten} - ${appointment.BenhNhan.NguoiDung.Ho} ${appointment.BenhNhan.NguoiDung.Ten}`
       });
 
       // Add participants
@@ -92,10 +92,10 @@ exports.getOrCreateAppointmentConversation = async (req, res) => {
         });
       }
       
-      if (appointment.LichKham?.BacSi?.Id_NguoiDung) {
+      if (appointment.DoctorSchedule?.BacSi?.Id_NguoiDung) {
         participants.push({
           conversation_id: conversation.id,
-          user_id: appointment.LichKham.BacSi.Id_NguoiDung,
+          user_id: appointment.DoctorSchedule.BacSi.Id_NguoiDung,
           role_in_conversation: 'doctor'
         });
       }
@@ -170,20 +170,33 @@ exports.createSupportConversation = async (req, res) => {
 exports.getMyConversations = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { type } = req.query;
+    const { type, facility_id } = req.query;
 
     const whereClause = {};
     if (type) {
       whereClause.conversation_type = type;
     }
 
-    // Find conversation IDs where the user is an active participant
-    const userParticipants = await ConversationParticipant.findAll({
-      where: { user_id: userId, is_active: true },
-      attributes: ['conversation_id']
-    });
+    let conversationIds = [];
 
-    const conversationIds = userParticipants.map(p => p.conversation_id);
+    if (req.user.role === 'staff' && facility_id) {
+        // Staff sees all conversations in their facility of type support_chat or internal_chat
+        // Or any conversation they are actually participating in
+        const conversationsInFacility = await Conversation.findAll({
+            where: {
+                [Op.or]: [
+                    { facility_id: facility_id },
+                    { id: { [Op.in]: await getParticipantConvIds(userId) } }
+                ],
+                ...whereClause
+            },
+            attributes: ['id']
+        });
+        conversationIds = conversationsInFacility.map(c => c.id);
+    } else {
+        // Patients and Doctors only see conversations they participate in
+        conversationIds = await getParticipantConvIds(userId);
+    }
 
     if (conversationIds.length === 0) {
       return res.json([]);
@@ -217,6 +230,16 @@ exports.getMyConversations = async (req, res) => {
   }
 };
 
+// Helper
+async function getParticipantConvIds(userId) {
+    const participants = await ConversationParticipant.findAll({
+        where: { user_id: userId, is_active: true },
+        attributes: ['conversation_id']
+    });
+    return participants.map(p => p.conversation_id);
+}
+
+
 exports.getConversationDetails = async (req, res) => {
   try {
     const { id } = req.params;
@@ -230,7 +253,7 @@ exports.getConversationDetails = async (req, res) => {
           include: [{ model: NguoiDung, as: 'user', attributes: ['Id_NguoiDung', 'Ho', 'Ten', 'AnhDaiDien'] }]
         },
         {
-          model: DatLich,
+          model: Appointment,
           as: 'appointment'
         },
         {

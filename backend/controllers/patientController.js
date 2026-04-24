@@ -33,8 +33,19 @@ exports.getDashboardStats = async (req, res) => {
     if (!benhnhan) return res.status(404).json({ detail: 'Bệnh nhân không tồn tại' });
 
     // Appointment Stats
-    const upcomingCount = await DatLich.count({ where: { Id_BenhNhan: benhnhan.Id_BenhNhan, TrangThai: ['ChoXacNhan', 'DaXacNhan'] } });
-    const completedCount = await DatLich.count({ where: { Id_BenhNhan: benhnhan.Id_BenhNhan, TrangThai: 'DaKham' } });
+    const upcomingCount = await DatLich.count({ 
+      where: { 
+        Id_BenhNhan: benhnhan.Id_BenhNhan, 
+        TrangThai: ['ChoXacNhan', 'DaXacNhan', 'PENDING', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS', 'WAITING', 'IN_CONSULTATION'] 
+      } 
+    });
+    const completedCount = await DatLich.count({ 
+      where: { 
+        Id_BenhNhan: benhnhan.Id_BenhNhan, 
+        TrangThai: ['DaKham', 'COMPLETED'] 
+      } 
+    });
+
 
     // AI Session Stats
     let aiSessionsCount = 0;

@@ -23,7 +23,8 @@ import { toast } from 'sonner';
 import { useLocation } from 'react-router-dom';
 
 export default function ReceptionBookingAssist() {
-  const { token } = useContext(AuthContext);
+  const { token, currentFacility } = useContext(AuthContext);
+
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const patientIdFromUrl = queryParams.get('patientId');
@@ -43,11 +44,14 @@ export default function ReceptionBookingAssist() {
   const [patientInfo, setPatientInfo] = useState(null);
 
   useEffect(() => {
-    fetchData();
+    if (token && currentFacility) {
+        fetchData();
+    }
     if (patientIdFromUrl) {
       fetchPatientInfo();
     }
-  }, [patientIdFromUrl]);
+  }, [patientIdFromUrl, currentFacility, token]);
+
 
   const fetchPatientInfo = async () => {
     try {
@@ -62,10 +66,13 @@ export default function ReceptionBookingAssist() {
     setLoading(true);
     try {
       const [docRes, specRes] = await Promise.all([
-        axios.get(`${API}/doctors`),
+        axios.get(`${API}/staff/doctors-coord?facility_id=${currentFacility.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        }),
         axios.get(`${API}/specialties`)
       ]);
       setDoctors(docRes.data);
+
       setSpecialties(specRes.data);
     } catch (error) {
       console.error('Failed to fetch data', error);
@@ -166,14 +173,15 @@ export default function ReceptionBookingAssist() {
             <Card key={doc.id} className="border-none shadow-lg hover:shadow-2xl transition-all duration-300 dark:bg-gray-800 rounded-3xl group overflow-hidden">
               <CardContent className="p-0">
                 <div className="p-6">
-                  {/* ... (Doctor info same) */}
+
                   <div className="flex gap-4">
                     <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 dark:border-gray-700">
                       <img 
-                        src={doc.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.full_name)}&background=random`} 
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(doc.full_name)}`} 
                         alt={doc.full_name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       />
+
                     </div>
                     <div className="flex-1">
                       <Badge className="bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 border-none mb-1">

@@ -7,12 +7,22 @@ import LanguageToggle from '@/components/LanguageToggle';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { API } from '@/config';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Building } from 'lucide-react';
+
 export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const role = location.pathname.split('/')[1];
-  const { user, token, logout } = useContext(AuthContext);
+  const { user, token, logout, currentFacility, changeFacility } = useContext(AuthContext);
   const { t } = useLanguage();
+
 
   const handleLogout = () => {
     logout();
@@ -46,6 +56,7 @@ export default function Layout({ children }) {
     { path: '/admin/dashboard', icon: Home, label: t('home') },
     { path: '/admin/create-accounts', icon: UserPlus, label: t('createAccounts') },
     { path: '/admin/doctors', icon: Users, label: t('doctors') },
+    { path: '/admin/staffs', icon: Users, label: 'Nhân viên / Lễ tân' },
     { path: '/admin/patients', icon: FileText, label: t('patients') },
     { path: '/admin/stats', icon: BarChart, label: t('stats') },
     { path: '/admin/payments', icon: CreditCard, label: t('payments') },
@@ -127,19 +138,44 @@ export default function Layout({ children }) {
       {/* Main Content */}
       <main className="ml-64 flex-1 flex flex-col">
         {/* Top Header Bar */}
-        <header className="bg-white dark:bg-gray-800 shadow-sm px-6 py-4 flex justify-end items-center gap-3 transition-colors duration-300">
-          {user && <NotificationDropdown token={token} />}
-          <ThemeToggle />
-          <LanguageToggle />
-          <Button
-            variant="outline"
-            onClick={handleLogout}
-            className="flex items-center gap-2 border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
-          >
-            <LogOut className="w-4 h-4" />
-            {t('logout')}
-          </Button>
+        <header className="bg-white dark:bg-gray-800 shadow-sm px-6 py-4 flex justify-between items-center transition-colors duration-300">
+          <div className="flex items-center gap-4">
+             {user?.role === 'staff' && user.facilities?.length > 0 && (
+                <div className="flex items-center gap-2 bg-teal-50 dark:bg-teal-900/20 px-3 py-1.5 rounded-xl border border-teal-100 dark:border-teal-800">
+                    <Building className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                    <Select value={currentFacility?.id?.toString()} onValueChange={(val) => {
+                        const fac = user.facilities.find(f => f.id.toString() === val);
+                        if (fac) changeFacility(fac);
+                    }}>
+                        <SelectTrigger className="border-none bg-transparent h-auto p-0 focus:ring-0 shadow-none text-sm font-bold text-teal-700 dark:text-teal-300">
+                            <SelectValue placeholder="Chọn cơ sở" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-teal-50 shadow-2xl">
+                            {user.facilities.map((fac) => (
+                                <SelectItem key={fac.id} value={fac.id.toString()} className="rounded-lg">
+                                    {fac.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+             )}
+          </div>
+          <div className="flex items-center gap-3">
+             {user && <NotificationDropdown token={token} />}
+             <ThemeToggle />
+             <LanguageToggle />
+             <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="flex items-center gap-2 border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
+             >
+                <LogOut className="w-4 h-4" />
+                {t('logout')}
+             </Button>
+          </div>
         </header>
+
 
         {/* Page Content */}
         <div className="flex-1 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">

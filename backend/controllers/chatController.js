@@ -1,18 +1,12 @@
-const { DatLich, KhamOnline, TinNhanKham, NguoiDung } = require('../models');
+const { DatLich, TinNhanKham, NguoiDung } = require('../models');
 const { Op } = require('sequelize');
 
 exports.getMessagesByAppointment = async (req, res) => {
   try {
     const { appointmentId } = req.params;
 
-    // Find or create KhamOnline wrapper around DatLich
-    let ko = await KhamOnline.findOne({ where: { Id_DatLich: appointmentId } });
-    if (!ko) {
-      ko = await KhamOnline.create({ Id_DatLich: appointmentId, LoaiTuVan: 'Chat', TrangThai: 'DangKham' });
-    }
-
     const messages = await TinNhanKham.findAll({
-      where: { Id_KhamOnline: ko.Id_KhamOnline },
+      where: { Id_DatLich: appointmentId },
       order: [['ThoiGianGui', 'ASC']],
       include: [{ model: NguoiDung }]
     });
@@ -41,13 +35,8 @@ exports.sendMessageByAppointment = async (req, res) => {
       fileUrl = `/uploads/chat/${req.file.filename}`;
     }
 
-    let ko = await KhamOnline.findOne({ where: { Id_DatLich: appointmentId } });
-    if (!ko) {
-      ko = await KhamOnline.create({ Id_DatLich: appointmentId, LoaiTuVan: 'Chat', TrangThai: 'DangKham' });
-    }
-
     const msg = await TinNhanKham.create({
-      Id_KhamOnline: ko.Id_KhamOnline,
+      Id_DatLich: appointmentId,
       Id_NguoiGui: req.user.id,
       LoaiTinNhan: req.file ? 'Image' : 'Text',
       NoiDung: content || '',
@@ -66,7 +55,7 @@ exports.sendMessageByAppointment = async (req, res) => {
       sender_id: req.user.id,
       sender: { full_name: `${sender.Ho} ${sender.Ten}`, id: req.user.id, avatar: sender.AnhDaiDien },
       sender_name: `${sender.Ho} ${sender.Ten}`,
-      Id_KhamOnline: ko.Id_KhamOnline
+      appointmentId: appointmentId
     };
 
     const io = req.app.get('io');
@@ -86,20 +75,17 @@ exports.markAsRead = async (req, res) => {
     const { appointmentId } = req.params;
     const userId = req.user.id;
 
-    const ko = await KhamOnline.findOne({ where: { Id_DatLich: appointmentId } });
-    if (!ko) return res.json({ message: 'OK' });
-
     await TinNhanKham.update(
       { DaDoc: 1 },
       {
         where: {
-          Id_KhamOnline: ko.Id_KhamOnline,
+          Id_DatLich: appointmentId,
           DaDoc: 0,
           Id_NguoiGui: { [Op.ne]: userId }
         }
       }
     );
-    res.json({ message: 'Marked as read' });
+    res.json({ message: 'OK' });
   } catch (err) {
     console.error('MarkAsRead error:', err);
     res.status(500).json({ detail: 'Error' });

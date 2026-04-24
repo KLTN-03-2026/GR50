@@ -15,7 +15,8 @@ import {
   ArrowRightLeft,
   ChevronDown,
   LayoutGrid,
-  List as ListIcon
+  List as ListIcon,
+  Search
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,22 +32,27 @@ import {
 import { toast } from 'sonner';
 
 export default function ReceptionAppointments() {
-  const { token } = useContext(AuthContext);
+  const { token, currentFacility } = useContext(AuthContext);
+
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
 
   useEffect(() => {
-    fetchAppointments();
-  }, []);
+    if (token && currentFacility) {
+        fetchAppointments();
+    }
+  }, [currentFacility, token]);
 
-  const fetchAppointments = async () => {
+
+  const fetchAppointments = async (query = '') => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API}/staff/appointments`, {
+      const response = await axios.get(`${API}/staff/appointments?facility_id=${currentFacility.id}&query=${query}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAppointments(response.data);
+
     } catch (error) {
       console.error('Failed to fetch appointments', error);
       toast.error('Lỗi khi tải danh sách lịch hẹn');
@@ -66,6 +72,21 @@ export default function ReceptionAppointments() {
       toast.error('Lỗi khi cập nhật trạng thái');
     }
   };
+
+  const handleCheckIn = async (id) => {
+    try {
+      const response = await axios.post(`${API}/staff/appointments/${id}/check-in`, {
+          facility_id: currentFacility.id
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(`Check-in thành công! Số thứ tự: ${response.data.queue_number}`);
+      fetchAppointments();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Lỗi khi check-in');
+    }
+  };
+
 
   const getStatusBadge = (status) => {
     const styles = {
@@ -111,12 +132,28 @@ export default function ReceptionAppointments() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          {['Tất cả', 'Chờ xác nhận', 'Đã xác nhận', 'Đã check-in', 'Đang khám'].map(f => (
-            <Button key={f} variant="outline" className="rounded-full px-5 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:border-teal-200">
-              {f}
-            </Button>
-          ))}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-700">
+           <div className="flex-1 relative max-w-xl">
+             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+             <input 
+               type="text" 
+               placeholder="Tìm kiếm theo mã, tên, SĐT hoặc email bệnh nhân..."
+               onChange={(e) => fetchAppointments(e.target.value)}
+               className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border-none rounded-2xl focus:ring-2 focus:ring-teal-500 transition-all text-sm"
+             />
+           </div>
+           <div className="flex gap-3">
+             {['all', 'PENDING', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS'].map(s => (
+               <Button 
+                 key={s} 
+                 variant="ghost" 
+                 size="sm"
+                 className="rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-gray-50 dark:hover:bg-gray-700"
+               >
+                 {s}
+               </Button>
+             ))}
+           </div>
         </div>
 
         {loading ? (
@@ -131,32 +168,42 @@ export default function ReceptionAppointments() {
                   <div className={`p-6 ${viewMode === 'list' ? 'flex flex-col md:flex-row md:items-center justify-between gap-6' : ''}`}>
                     <div className="flex items-center gap-5">
                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 flex flex-col items-center justify-center border border-blue-100 dark:border-blue-900/30">
-                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase">Hôm nay</span>
-                        <span className="text-lg font-black text-blue-700 dark:text-blue-300">10</span>
+                        {appt.STT_HangCho ? (
+                            <>
+                                <span className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase">STT</span>
+                                <span className="text-xl font-black text-teal-700 dark:text-teal-300">{appt.STT_HangCho}</span>
+                            </>
+                        ) : (
+                            <>
+                                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">GIỜ</span>
+                                <span className="text-lg font-black text-blue-700 dark:text-blue-300">{appt.time?.substring(0, 5) || '8:30'}</span>
+                            </>
+                        )}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{appt.patient_name}</h3>
-                          {getStatusBadge(appt.status)}
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{appt.patient_name || appt.BenhNhan?.NguoiDung ? `${appt.BenhNhan.NguoiDung.Ho} ${appt.BenhNhan.NguoiDung.Ten}` : 'N/A'}</h3>
+                          {getStatusBadge(appt.TrangThai || appt.status)}
                         </div>
                         <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {appt.time || '08:30'}</span>
                           <span className="flex items-center gap-1 font-medium text-teal-600 dark:text-teal-400">
-                            <Stethoscope className="w-3 h-3" /> BS. {appt.doctor_name}
+                            <Stethoscope className="w-3 h-3" /> BS. {appt.doctor_name || appt.LichKham?.BacSi?.NguoiDung ? `${appt.LichKham.BacSi.NguoiDung.Ho} ${appt.LichKham.BacSi.NguoiDung.Ten}` : 'N/A'}
                           </span>
+                          <span className="flex items-center gap-1"><Timer className="w-3 h-3" /> {appt.MaDatLich}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {appt.status !== 'CHECKED_IN' && appt.status !== 'DaKham' && (
+                      {['PENDING', 'CONFIRMED', 'ChoXacNhan', 'DaXacNhan'].includes(appt.TrangThai || appt.status) && (
                         <Button 
-                          onClick={() => updateStatus(appt.id, 'CHECKED_IN')}
-                          className="rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white shadow-md transition-all px-6"
+                          onClick={() => handleCheckIn(appt.id || appt.Id_DatLich)}
+                          className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg transition-all px-8 font-bold"
                         >
-                          Check-in
+                          Check-in ngay
                         </Button>
                       )}
+
                       
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

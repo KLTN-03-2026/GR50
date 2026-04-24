@@ -16,6 +16,6 @@ const BacSi = sequelize.define('BacSi', {
     NoiLamViec: { type: DataTypes.STRING(255) },
     LichLamViec: { type: DataTypes.TEXT }, // JSON data for recurring schedule
     TrangThai: { type: DataTypes.ENUM('HoatDong', 'NgungHoatDong') }
-}, { tableName: 'bacsi', timestamps: true, createdAt: 'NgayTao', updatedAt: 'NgayCapNhat', deletedAt: 'NgayXoa', paranoid: true });
+}, { tableName: 'bacsi', timestamps: true, createdAt: 'NgayTao', updatedAt: 'NgayCapNhat' });
 
 module.exports = BacSi;

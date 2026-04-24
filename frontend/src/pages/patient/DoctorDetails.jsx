@@ -25,6 +25,13 @@ export default function DoctorDetails() {
         fetchDoctorDetails();
     }, [id]);
 
+    const getAvatarUrl = (avatarPath) => {
+        if (!avatarPath) return null;
+        if (avatarPath.startsWith('http') || avatarPath.startsWith('blob:')) return avatarPath;
+        if (avatarPath.startsWith('/images/')) return avatarPath;
+        return `${API.replace('/api', '')}${avatarPath}`;
+    };
+
     const fetchDoctorDetails = async () => {
         try {
             const response = await axios.get(`${API}/doctors/${id}`);
@@ -76,7 +83,7 @@ export default function DoctorDetails() {
                         <div className="flex flex-col md:flex-row gap-8 items-start">
                             <div className="w-32 h-32 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-4xl font-bold flex-shrink-0 shadow-lg overflow-hidden">
                                 {doctor.avatar ? (
-                                    <img src={doctor.avatar} alt={doctor.full_name} className="w-full h-full object-cover" />
+                                    <img src={getAvatarUrl(doctor.avatar)} alt={doctor.full_name} className="w-full h-full object-cover" />
                                 ) : (
                                     doctor.full_name?.charAt(0) || 'D'
                                 )}
@@ -84,8 +91,15 @@ export default function DoctorDetails() {
                             <div className="flex-1">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{doctor.full_name}</h1>
-                                        <p className="text-teal-600 font-semibold text-lg mb-4">{doctor.Specialty?.name}</p>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{doctor.full_name}</h1>
+                                            {doctor.degree && (
+                                                <span className="bg-teal-50 text-teal-700 text-xs font-bold px-2 py-1 rounded-md border border-teal-100">
+                                                    {doctor.degree}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-teal-600 font-semibold text-lg mb-4">{doctor.Specialty?.name || doctor.specialty_name}</p>
                                     </div>
                                     <div className="flex items-center bg-yellow-50 px-3 py-1 rounded-full border border-yellow-200">
                                         <Star className="w-5 h-5 text-yellow-500 fill-current mr-1" />
@@ -113,6 +127,23 @@ export default function DoctorDetails() {
                                     <h3 className="text-lg font-semibold mb-2">Giới thiệu</h3>
                                     <p className="text-gray-600 dark:text-gray-300">{doctor.bio || 'Chưa có thông tin giới thiệu.'}</p>
                                 </div>
+
+                                {(doctor.workplace || doctor.certificate_number) && (
+                                    <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                        {doctor.workplace && (
+                                            <div>
+                                                <p className="font-bold text-gray-900 dark:text-white mb-1">Đào tạo & Công tác</p>
+                                                <p className="text-gray-600 dark:text-gray-400">{doctor.workplace}</p>
+                                            </div>
+                                        )}
+                                        {doctor.certificate_number && (
+                                            <div>
+                                                <p className="font-bold text-gray-900 dark:text-white mb-1">Chứng chỉ hành nghề</p>
+                                                <p className="text-gray-600 dark:text-gray-400">{doctor.certificate_number}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -220,7 +251,7 @@ export default function DoctorDetails() {
                                                 <div className="flex items-start gap-4">
                                                     <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                                                         {review.Patient?.avatar ? (
-                                                            <img src={review.Patient.avatar} alt="User" className="w-full h-full object-cover" />
+                                                            <img src={getAvatarUrl(review.Patient.avatar)} alt="User" className="w-full h-full object-cover" />
                                                         ) : (
                                                             <User className="w-6 h-6 text-gray-500" />
                                                         )}
@@ -254,15 +285,12 @@ export default function DoctorDetails() {
                     </div>
                 </div>
             </div>
-            {showBooking && (
-                <BookingDialog
-                    doctor={doctor}
-                    open={showBooking}
-                    onClose={() => setShowBooking(false)}
-                    token={token}
-                />
-            )
-            }
+            <BookingDialog
+                doctor={doctor}
+                open={showBooking && !!doctor}
+                onClose={() => setShowBooking(false)}
+                token={token}
+            />
         </Layout >
     );
 }

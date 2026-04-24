@@ -90,12 +90,26 @@ export default function FacilityDetail() {
                     <div className="grid md:grid-cols-3 gap-8">
                         {/* Main Info */}
                         <div className="md:col-span-2 space-y-8">
-                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Giới thiệu</h2>
-                                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                                    {facility.description || 'Chưa có thông tin giới thiệu.'}
-                                </p>
-                            </div>
+                             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Giới thiệu & Hình ảnh</h2>
+                                 <div className="grid md:grid-cols-2 gap-6 items-start">
+                                     <div className="space-y-4">
+                                         <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                                             {facility.description || 'Chưa có thông tin giới thiệu.'}
+                                         </p>
+                                     </div>
+                                     {facility.logo_url && (
+                                         <div className="rounded-lg overflow-hidden shadow-md">
+                                             <img 
+                                                 src={facility.logo_url} 
+                                                 alt="Không gian bên trong" 
+                                                 className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500" 
+                                             />
+                                             <p className="text-xs text-center text-gray-500 mt-2 italic">Không gian bên trong cơ sở</p>
+                                         </div>
+                                     )}
+                                 </div>
+                             </div>
 
                             {specialties.length > 0 && (
                                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">

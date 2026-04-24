@@ -29,10 +29,32 @@ const authMiddleware = async (req, res, next) => {
       full_name: `${user.Ho} ${user.Ten}`,
       role: userRole,
       phone: user.SoDienThoai,
-      Id_ChuyenKhoa_QuanLy: user.Id_ChuyenKhoa_QuanLy
+      Id_ChuyenKhoa_QuanLy: user.Id_ChuyenKhoa_QuanLy,
+      facilities: []
     };
 
+    if (userRole === 'doctor') {
+      const { BacSi, PhongKham } = require('../models');
+      const bs = await BacSi.findOne({ 
+        where: { Id_NguoiDung: user.Id_NguoiDung }, 
+        include: [{ model: PhongKham }] 
+      });
+      if (bs && bs.PhongKhams) {
+        userDict.facilities = bs.PhongKhams.map(pk => ({ id: pk.Id_PhongKham, name: pk.TenPhongKham }));
+      }
+    } else if (userRole === 'staff') {
+      const { StaffProfile, PhongKham } = require('../models');
+      const staff = await StaffProfile.findOne({ 
+        where: { user_id: user.Id_NguoiDung }, 
+        include: [{ model: PhongKham, as: 'facilities' }] 
+      });
+      if (staff && staff.facilities) {
+        userDict.facilities = staff.facilities.map(pk => ({ id: pk.Id_PhongKham, name: pk.TenPhongKham }));
+      }
+    }
+
     if (userRole === 'admin') {
+
       userDict.admin_permissions = {
         can_manage_doctors: true,
         can_manage_patients: true,

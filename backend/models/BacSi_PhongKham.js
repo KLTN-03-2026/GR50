@@ -13,9 +13,7 @@ const BacSi_PhongKham = sequelize.define('BacSi_PhongKham', {
     consultation_fee_offline: { type: DataTypes.DECIMAL(12, 2) }
 }, { 
     tableName: 'bacsi_phongkham', 
-    timestamps: true, 
-    createdAt: 'created_at', 
-    updatedAt: 'updated_at' 
+    timestamps: false
 });
 
 module.exports = BacSi_PhongKham;

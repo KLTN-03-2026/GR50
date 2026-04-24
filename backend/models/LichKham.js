@@ -11,7 +11,7 @@ const LichKham = sequelize.define('LichKham', {
     LoaiKham: { type: DataTypes.ENUM('TrucTiep', 'Online') },
     SoLuongToiDa: { type: DataTypes.INTEGER },
     SoLuongDaDat: { type: DataTypes.INTEGER, defaultValue: 0 },
-    TrangThai: { type: DataTypes.ENUM('KhaDung', 'DaDay', 'Huy') }
+    TrangThai: { type: DataTypes.ENUM('Mo', 'Dong', 'Huy') }
 }, { tableName: 'lichkham', timestamps: true, createdAt: 'NgayTao', updatedAt: 'NgayCapNhat' });
 
 module.exports = LichKham;

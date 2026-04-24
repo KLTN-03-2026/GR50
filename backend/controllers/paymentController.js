@@ -1,4 +1,4 @@
-const { ThanhToan, DatLich, BenhNhan, NguoiDung, LichKham, BacSi } = require('../models');
+const { ThanhToan, DatLich: Appointment, BenhNhan, NguoiDung, LichKham: DoctorSchedule, BacSi } = require('../models');
 
 exports.getMyPayments = async (req, res) => {
   try {
@@ -11,14 +11,14 @@ exports.getMyPayments = async (req, res) => {
       order: [['NgayTao', 'DESC']],
       include: [
         {
-          model: DatLich,
+          model: Appointment,
           include: [
             {
               model: BenhNhan,
               include: [{ model: NguoiDung }]
             },
             {
-              model: LichKham,
+              model: DoctorSchedule,
               include: [{ model: BacSi, include: [{ model: NguoiDung }] }]
             }
           ]
@@ -28,8 +28,8 @@ exports.getMyPayments = async (req, res) => {
 
     res.json(payments.map(p => {
       let doctor_name = 'Bác Sĩ';
-      if (p.DatLich && p.DatLich.LichKham && p.DatLich.LichKham.BacSi && p.DatLich.LichKham.BacSi.NguoiDung) {
-        doctor_name = p.DatLich.LichKham.BacSi.NguoiDung.Ho + ' ' + p.DatLich.LichKham.BacSi.NguoiDung.Ten;
+      if (p.Appointment && p.Appointment.DoctorSchedule && p.Appointment.DoctorSchedule.BacSi && p.Appointment.DoctorSchedule.BacSi.NguoiDung) {
+        doctor_name = p.Appointment.DoctorSchedule.BacSi.NguoiDung.Ho + ' ' + p.Appointment.DoctorSchedule.BacSi.NguoiDung.Ten;
       }
       return {
         payment_id: p.Id_ThanhToan,
@@ -54,14 +54,14 @@ exports.getPaymentById = async (req, res) => {
     const payment = await ThanhToan.findByPk(id, {
       include: [
         {
-          model: DatLich,
+          model: Appointment,
           include: [
             {
               model: BenhNhan,
               include: [{ model: NguoiDung }]
             },
             {
-              model: LichKham,
+              model: DoctorSchedule,
               include: [{ model: BacSi, include: [{ model: NguoiDung }] }]
             }
           ]
@@ -74,12 +74,12 @@ exports.getPaymentById = async (req, res) => {
     let patient_name = 'Bệnh Nhân';
     let doctor_name = 'Bác Sĩ';
 
-    if (payment.DatLich) {
-      if (payment.DatLich.BenhNhan?.NguoiDung) {
-        patient_name = payment.DatLich.BenhNhan.NguoiDung.Ho + ' ' + payment.DatLich.BenhNhan.NguoiDung.Ten;
+    if (payment.Appointment) {
+      if (payment.Appointment.BenhNhan?.NguoiDung) {
+        patient_name = payment.Appointment.BenhNhan.NguoiDung.Ho + ' ' + payment.Appointment.BenhNhan.NguoiDung.Ten;
       }
-      if (payment.DatLich.LichKham?.BacSi?.NguoiDung) {
-        doctor_name = payment.DatLich.LichKham.BacSi.NguoiDung.Ho + ' ' + payment.DatLich.LichKham.BacSi.NguoiDung.Ten;
+      if (payment.Appointment.DoctorSchedule?.BacSi?.NguoiDung) {
+        doctor_name = payment.Appointment.DoctorSchedule.BacSi.NguoiDung.Ho + ' ' + payment.Appointment.DoctorSchedule.BacSi.NguoiDung.Ten;
       }
     }
 
@@ -114,8 +114,8 @@ exports.processPayment = async (req, res) => {
     payment.MaGiaoDich = `TXN-${Date.now()}`;
     await payment.save();
 
-    // Do NOT update DatLich to DaXacNhan/Confirm upon payment anymore
-    // Because payment only occurs when DatLich is already COMPLETED.
+    // Do NOT update Appointment to DaXacNhan/Confirm upon payment anymore
+    // Because payment only occurs when Appointment is already COMPLETED.
     if (payment.Id_HoaDon) {
       const { HoaDon } = require('../models');
       await HoaDon.update({ TrangThai: 'PAID' }, { where: { Id_HoaDon: payment.Id_HoaDon } });
@@ -131,7 +131,7 @@ exports.createPayment = async (req, res) => {
   try {
     const { appointmentId } = req.body;
 
-    const datLich = await DatLich.findByPk(appointmentId);
+    const datLich = await Appointment.findByPk(appointmentId);
     if (!datLich) {
       return res.status(404).json({ detail: 'Appointment not found' });
     }

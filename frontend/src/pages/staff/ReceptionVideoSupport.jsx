@@ -22,21 +22,26 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
 export default function ReceptionVideoSupport() {
-  const { token } = useContext(AuthContext);
+  const { token, currentFacility } = useContext(AuthContext);
+
   const navigate = useNavigate();
   const [activeSessions, setActiveSessions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchSessions();
-  }, []);
+    if (token && currentFacility) {
+        fetchSessions();
+    }
+  }, [currentFacility, token]);
+
 
   const fetchSessions = async () => {
     try {
-      const response = await axios.get(`${API}/staff/online-consultations`, {
+      const response = await axios.get(`${API}/staff/online-consultations?facility_id=${currentFacility.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setActiveSessions(response.data);
+
     } catch (error) {
       console.error('Failed to fetch online sessions', error);
     } finally {

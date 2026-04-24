@@ -21,8 +21,13 @@ export default function DoctorProfile() {
     specialty_id: '',
     bio: '',
     experience_years: 0,
-    consultation_fee: 0
+    consultation_fee: 0,
+    degree: '',
+    workplace: '',
+    certificate_number: ''
   });
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -40,7 +45,10 @@ export default function DoctorProfile() {
         specialty_id: profileRes.data.specialty_id || '',
         bio: profileRes.data.bio || '',
         experience_years: profileRes.data.experience_years || 0,
-        consultation_fee: profileRes.data.consultation_fee || 0
+        consultation_fee: profileRes.data.consultation_fee || 0,
+        degree: profileRes.data.degree || '',
+        workplace: profileRes.data.workplace || '',
+        certificate_number: profileRes.data.certificate_number || ''
       });
     } catch (error) {
       toast.error('Không thể tải thông tin');
@@ -66,6 +74,13 @@ export default function DoctorProfile() {
     }
   };
 
+  const getAvatarUrl = (avatarPath) => {
+    if (!avatarPath) return null;
+    if (avatarPath.startsWith('http') || avatarPath.startsWith('blob:')) return avatarPath;
+    if (avatarPath.startsWith('/images/')) return avatarPath;
+    return `${API.replace('/api', '')}${avatarPath}`;
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -83,11 +98,47 @@ export default function DoctorProfile() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Hồ sơ bác sĩ</h1>
 
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8">
-            <div className="flex items-center gap-4 mb-8 pb-8 border-b">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-3xl font-bold">
-                {user?.full_name?.charAt(0) || 'D'}
+            <div className="flex flex-col md:flex-row items-center gap-6 mb-8 pb-8 border-b">
+              <div className="relative group">
+                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-3xl font-bold overflow-hidden shadow-lg">
+                  {profile?.avatar ? (
+                    <img 
+                      src={getAvatarUrl(profile.avatar)} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    user?.full_name?.charAt(0) || 'D'
+                  )}
+                </div>
+                <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-3xl">
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      const formData = new FormData();
+                      formData.append('avatar', file);
+                      setUploading(true);
+                      try {
+                        await axios.post(`${API}/auth/update-avatar`, formData, {
+                          headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
+                        });
+                        toast.success('Cập nhật ảnh đại diện thành công');
+                        fetchData();
+                      } catch (error) {
+                        toast.error('Lỗi khi tải ảnh lên');
+                      } finally {
+                        setUploading(false);
+                      }
+                    }} 
+                  />
+                  <span className="text-xs font-medium">{uploading ? '...' : 'Đổi ảnh'}</span>
+                </label>
               </div>
-              <div>
+              <div className="text-center md:text-left">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{user?.full_name}</h2>
                 <p className="text-gray-600 dark:text-gray-300">{user?.email}</p>
                 {profile && (
@@ -117,14 +168,48 @@ export default function DoctorProfile() {
                 </Select>
               </div>
 
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="degree">Học hàm / Học vị</Label>
+                  <Input
+                    id="degree"
+                    value={formData.degree}
+                    onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
+                    placeholder="VD: Thạc sĩ, Bác sĩ CKI..."
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="certificate_number">Số CCHN</Label>
+                  <Input
+                    id="certificate_number"
+                    value={formData.certificate_number}
+                    onChange={(e) => setFormData({ ...formData, certificate_number: e.target.value })}
+                    placeholder="Số chứng chỉ hành nghề"
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+
               <div>
-                <Label htmlFor="bio">Giới thiệu</Label>
+                <Label htmlFor="workplace">Nơi đào tạo / Công tác</Label>
+                <Input
+                  id="workplace"
+                  value={formData.workplace}
+                  onChange={(e) => setFormData({ ...formData, workplace: e.target.value })}
+                  placeholder="VD: Đại học Y Hà Nội, Bệnh viện Bạch Mai..."
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="bio">Giới thiệu chuyên môn & Thế mạnh</Label>
                 <Textarea
                   data-testid="bio-input"
                   id="bio"
                   value={formData.bio}
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  placeholder="Giới thiệu về bản thân, kinh nghiệm, chuyên môn..."
+                  placeholder="Giới thiệu về bản thân, kinh nghiệm, các thế mạnh chuyên môn..."
                   className="mt-2"
                   rows={5}
                 />

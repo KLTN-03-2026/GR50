@@ -16,10 +16,10 @@ exports.getPatientRecords = async (req, res) => {
         res.json(records.map(r => ({
             id: r.Id_HoSo,
             date: r.NgayTao,
-            doctor_name: `${r.BacSi.NguoiDung.Ho} ${r.BacSi.NguoiDung.Ten}`,
+            patient_name: `${r.BenhNhan.NguoiDung.Ho} ${r.BenhNhan.NguoiDung.Ten}`,
             diagnosis: r.ChanDoan,
             prescription: r.KeHoachDieuTri,
-            Appointment: { schedule_time: r.DatLich ? r.DatLich.LichKham.NgayDate : null }
+            Appointment: { schedule_time: r.DatLich && r.DatLich.LichKham ? r.DatLich.LichKham.NgayDate : null }
         })));
     } catch (error) {
         res.status(500).json({ detail: 'Internal server error' });
@@ -45,7 +45,7 @@ exports.getDoctorRecords = async (req, res) => {
             patient_name: `${r.BenhNhan.NguoiDung.Ho} ${r.BenhNhan.NguoiDung.Ten}`,
             diagnosis: r.ChanDoan,
             prescription: r.KeHoachDieuTri,
-            Appointment: { schedule_time: r.DatLich ? r.DatLich.LichKham.NgayDate : null }
+            Appointment: { schedule_time: r.DatLich && r.DatLich.LichKham ? r.DatLich.LichKham.NgayDate : null }
         })));
     } catch (error) {
         res.status(500).json({ detail: 'Internal server error' });

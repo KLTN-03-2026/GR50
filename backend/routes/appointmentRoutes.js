@@ -6,6 +6,8 @@ const authMiddleware = require('../middleware/authMiddleware');
 const { isPatient, isDoctor, isMedicalStaff } = require('../middleware/roleMiddleware');
 
 router.get('/slots', appointmentController.getAvailableSlots);
+router.post('/guest', appointmentController.createGuestAppointment);
+router.post('/guest/verify', appointmentController.verifyGuestBooking);
 router.post('/', authMiddleware, isPatient, appointmentController.create);
 router.get('/my', authMiddleware, appointmentController.getMyAppointments); // Handles role internally
 router.put('/my/:id/cancel', authMiddleware, isPatient, appointmentController.cancelAppointment);

@@ -12,11 +12,12 @@ import {
   Baby, Eye, Pill, Activity, ChevronRight, Star, MapPin,
   Phone, Mail, Facebook, Twitter, Youtube, Instagram,
   LogOut, User as UserIcon, Camera, Upload, LayoutDashboard,
-  Syringe, Hand
+  Syringe, Hand, ChevronDown
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageToggle from '@/components/LanguageToggle';
+import BookingDialog from '@/components/BookingDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,6 +73,9 @@ export default function LandingPage() {
   const [doctors, setDoctors] = useState([]);
   const [specialties, setSpecialties] = useState([]);
   const [facilities, setFacilities] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [showBooking, setShowBooking] = useState(false);
+  const { token } = useContext(AuthContext);
 
   useEffect(() => {
     fetchSystemSettings();
@@ -174,7 +178,8 @@ export default function LandingPage() {
 
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
-    if (avatarPath.startsWith('http')) return avatarPath;
+    if (avatarPath.startsWith('http') || avatarPath.startsWith('blob:')) return avatarPath;
+    if (avatarPath.startsWith('/images/')) return avatarPath;
     return `${API.replace('/api', '')}${avatarPath}`;
   };
 
@@ -358,7 +363,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section >
+      </section>
 
       {/* Comprehensive Services Section */}
       < section id="dich-vu" className="py-16 bg-gray-50 dark:bg-gray-800/50" >
@@ -387,7 +392,7 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-      </section >
+      </section>
 
       {/* Specialties Section */}
       < section id="chuyen-khoa" className="py-16" >
@@ -402,9 +407,10 @@ export default function LandingPage() {
             </button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {specialties.map((specialty) => (
+            {specialties.map((specialty, idx) => (
               <div
-                key={specialty.id}
+                key={specialty.id || specialty.Id_ChuyenKhoa || idx}
+
                 onClick={() => navigate(`/specialty/${specialty.id}`)}
                 className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-xl transition cursor-pointer group"
               >
@@ -428,7 +434,7 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-      </section >
+      </section>
 
       {/* Featured Doctors Section */}
       < section id="bac-si" className="py-16 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800" >
@@ -443,18 +449,20 @@ export default function LandingPage() {
             </button>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {doctors.map((doctor) => (
+            {doctors.map((doctor, idx) => (
               <div
-                key={doctor.id}
+                key={doctor.id || idx}
+
                 onClick={() => navigate(`/doctors/${doctor.id}`)}
                 className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-xl transition cursor-pointer"
               >
                 <div className="aspect-[4/3] relative overflow-hidden">
-                  <img
-                    src={getAvatarUrl(doctor.avatar) || 'https://via.placeholder.com/300'}
-                    alt={doctor.full_name}
-                    className="w-full h-full object-cover"
-                  />
+                    <img
+                      src={getAvatarUrl(doctor.avatar) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(doctor.full_name)}`}
+                      alt={doctor.full_name}
+                      className="w-full h-full object-cover"
+                    />
+
                 </div>
                 <div className="p-6">
                   <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">{doctor.full_name}</h3>
@@ -512,12 +520,8 @@ export default function LandingPage() {
                         className="w-full text-xs bg-cyan-600 hover:bg-cyan-700"
                         onClick={(e) => { 
                           e.stopPropagation(); 
-                          if (!user) {
-                            toast.info("Vui lòng đăng nhập để đặt lịch");
-                            navigate('/login');
-                            return;
-                          }
-                          navigate(`/patient/doctor/${doctor.id}`);
+                          setSelectedDoctor(doctor);
+                          setShowBooking(true);
                         }}
                      >
                        {doctor.facilities?.length > 1 ? 'Chọn cơ sở' : 'Đặt lịch'}
@@ -528,7 +532,7 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-      </section >
+      </section>
 
       {/* Medical Facilities Section */}
       < section id="co-so" className="py-16" >
@@ -543,18 +547,24 @@ export default function LandingPage() {
             </button>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {facilities.map((facility) => (
+            {facilities.map((facility, idx) => (
               <div
-                key={facility.id}
+                key={facility.id || facility.Id_PhongKham || idx}
+
                 onClick={() => facility.GoogleMapUrl ? window.open(facility.GoogleMapUrl, '_blank') : null}
                 className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-xl transition cursor-pointer"
               >
                 <div className="aspect-video relative overflow-hidden">
                   <img
-                    src={facility.UrlBanner || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d'}
+                    src={facility.UrlLogo || facility.UrlBanner || [
+                        'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800',
+                        'https://images.unsplash.com/photo-1586773860418-d3b97998c637?auto=format&fit=crop&q=80&w=800',
+                        'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=800'
+                    ][idx % 3]}
                     alt={facility.TenPhongKham}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
+
                 </div>
                 <div className="p-6">
                   <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">{facility.TenPhongKham}</h3>
@@ -570,7 +580,7 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-      </section >
+      </section>
 
       {/* Telemedicine Section */}
       < section className="py-16 bg-gradient-to-r from-teal-500 to-cyan-500" >
@@ -584,12 +594,7 @@ export default function LandingPage() {
               <Button
                 size="lg"
                 onClick={() => {
-                  if (!user) {
-                    toast.info("Vui lòng đăng nhập để đặt lịch khám");
-                    navigate('/login?redirect=/doctors');
-                  } else {
-                    navigate('/patient/dashboard');
-                  }
+                  navigate('/doctors');
                 }}
                 className="bg-white text-teal-600 hover:bg-gray-100 text-lg px-8"
               >
@@ -606,7 +611,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section >
+      </section>
 
       {/* Call to Action Section */}
       < section className="py-20 bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-gray-800 dark:to-gray-700" >
@@ -625,7 +630,7 @@ export default function LandingPage() {
             Đăng ký miễn phí
           </Button>
         </div>
-      </section >
+      </section>
 
       {/* Footer */}
       < footer className="bg-gray-900 text-white py-12" >
@@ -703,7 +708,7 @@ export default function LandingPage() {
             <p>&copy; 2026 MediSched AI. All rights reserved.</p>
           </div>
         </div>
-      </footer >
+      </footer>
 
       {/* Avatar Upload Dialog */}
       < Dialog open={showAvatarDialog} onOpenChange={setShowAvatarDialog} >
@@ -731,7 +736,13 @@ export default function LandingPage() {
             </div>
           </div>
         </DialogContent>
-      </Dialog >
-    </div >
+      </Dialog>
+      <BookingDialog
+          doctor={selectedDoctor}
+          open={showBooking && !!selectedDoctor}
+          onClose={() => setShowBooking(false)}
+          token={token}
+        />
+    </div>
   );
 }

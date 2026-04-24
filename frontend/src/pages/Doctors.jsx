@@ -80,7 +80,8 @@ export default function Doctors() {
 
     const getAvatarUrl = (avatarPath) => {
         if (!avatarPath) return null;
-        if (avatarPath.startsWith('http')) return avatarPath;
+        if (avatarPath.startsWith('http') || avatarPath.startsWith('blob:')) return avatarPath;
+        if (avatarPath.startsWith('/images/')) return avatarPath;
         return `${API.replace('/api', '')}${avatarPath}`;
     };
 

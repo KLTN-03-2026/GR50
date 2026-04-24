@@ -6,6 +6,6 @@ const ChuyenKhoa = sequelize.define('ChuyenKhoa', {
     TenChuyenKhoa: { type: DataTypes.STRING(100) },
     MoTa: { type: DataTypes.TEXT },
     TrangThai: { type: DataTypes.ENUM('HoatDong', 'NgungHoatDong') }
-}, { tableName: 'chuyenkhoa', timestamps: true, createdAt: 'NgayTao', updatedAt: 'NgayCapNhat', deletedAt: 'NgayXoa', paranoid: true });
+}, { tableName: 'chuyenkhoa', timestamps: true, createdAt: 'NgayTao', updatedAt: 'NgayCapNhat' });
 
 module.exports = ChuyenKhoa;

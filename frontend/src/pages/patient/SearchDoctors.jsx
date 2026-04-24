@@ -196,18 +196,13 @@ export default function SearchDoctors() {
       </div>
 
       {/* Booking Dialog */}
-      {showBooking && selectedDoctor && (
-        <BookingDialog
+      <BookingDialog
           doctor={selectedDoctor}
-          open={showBooking}
-          onClose={() => {
-            setShowBooking(false);
-            setSelectedDoctor(null);
-          }}
+          open={showBooking && !!selectedDoctor}
+          onClose={() => setShowBooking(false)}
           token={token}
-          aiDiagnosis={aiDiagnosis} // Pass AI diagnosis
+          aiDiagnosis={aiDiagnosis}
         />
-      )}
     </Layout>
   );
 }
@@ -217,8 +212,12 @@ function DoctorCard({ doctor, onBook }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6">
       <div className="flex items-start gap-4 mb-4">
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-2xl font-bold">
-          {doctor.full_name?.charAt(0) || "D"}
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
+          {doctor.avatar ? (
+            <img src={doctor.avatar} alt={doctor.full_name} className="w-full h-full object-cover" />
+          ) : (
+            doctor.full_name?.charAt(0) || "D"
+          )}
         </div>
         <div className="flex-1">
           <h3 className="font-bold text-lg text-gray-900 dark:text-white">

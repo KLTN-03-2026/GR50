@@ -14,7 +14,7 @@ exports.getAll = async (req, res) => {
       include: [
         { model: NguoiDung },
         { model: ChuyenKhoa },
-        { model: PhongKham }
+        { model: PhongKham, as: 'facilities' }
       ]
     });
 
@@ -32,8 +32,9 @@ exports.getAll = async (req, res) => {
         full_name: `${d.NguoiDung.Ho} ${d.NguoiDung.Ten}`,
         email: d.NguoiDung.Email,
         avatar: d.NguoiDung.AnhDaiDien,
+        specialty_id: d.Id_ChuyenKhoa,
         specialty_name: d.ChuyenKhoa ? d.ChuyenKhoa.TenChuyenKhoa : null,
-        facilities: d.PhongKhams ? d.PhongKhams.map(pk => ({
+        facilities: d.facilities ? d.facilities.map(pk => ({
             id: pk.Id_PhongKham,
             name: pk.TenPhongKham,
             address: pk.DiaChi,
@@ -42,6 +43,7 @@ exports.getAll = async (req, res) => {
         })) : []
       };
     });
+
 
     res.json(result);
   } catch (error) {
@@ -59,7 +61,7 @@ exports.getProfile = async (req, res) => {
       include: [
         { model: NguoiDung },
         { model: ChuyenKhoa },
-        { model: PhongKham },
+        { model: PhongKham, as: 'facilities' },
         { model: DanhGia, as: 'reviews', include: [{ model: BenhNhan, include: [NguoiDung] }] }
       ]
     });
@@ -80,12 +82,21 @@ exports.getProfile = async (req, res) => {
       const patient = await BenhNhan.findOne({ where: { Id_NguoiDung: userId } });
       if (patient) {
         const appointment = await DatLich.findOne({
-          where: { Id_BenhNhan: patient.Id_BenhNhan, TrangThai: 'COMPLETED' },
-          include: [{ model: LichKham, where: { Id_BacSi: doctorId } }]
+          where: { 
+            Id_BenhNhan: patient.Id_BenhNhan, 
+            TrangThai: { [Op.in]: ['COMPLETED', 'DaKham'] } 
+          },
+          include: [{ model: LichKham, where: { Id_BacSi: doctorId } }],
+          order: [['NgayTao', 'DESC']]
         });
-        if (appointment) canReview = true;
+        
+        if (appointment) {
+          const existingReview = await DanhGia.findOne({ where: { Id_DatLich: appointment.Id_DatLich } });
+          if (!existingReview) canReview = true;
+        }
       }
     }
+
 
     const result = {
       ...d,
@@ -99,7 +110,10 @@ exports.getProfile = async (req, res) => {
       phone: d.NguoiDung.SoDienThoai,
       avatar: d.NguoiDung.AnhDaiDien,
       specialty_name: d.ChuyenKhoa ? d.ChuyenKhoa.TenChuyenKhoa : null,
-      facilities: d.PhongKhams ? d.PhongKhams.map(pk => ({
+      degree: d.HocHamHocVi,
+      workplace: d.NoiLamViec,
+      certificate_number: d.SoChungChiHanhNghe,
+      facilities: d.facilities ? d.facilities.map(pk => ({
           id: pk.Id_PhongKham,
           name: pk.TenPhongKham,
           address: pk.DiaChi,
@@ -138,7 +152,7 @@ exports.getMyProfile = async (req, res) => {
       include: [
         { model: NguoiDung },
         { model: ChuyenKhoa },
-        { model: PhongKham }
+        { model: PhongKham, as: 'facilities' }
       ]
     });
 
@@ -160,7 +174,10 @@ exports.getMyProfile = async (req, res) => {
       phone: d.NguoiDung.SoDienThoai,
       avatar: d.NguoiDung.AnhDaiDien,
       specialty_name: d.ChuyenKhoa ? d.ChuyenKhoa.TenChuyenKhoa : null,
-      facilities: d.PhongKhams ? d.PhongKhams.map(pk => ({
+      degree: d.HocHamHocVi,
+      workplace: d.NoiLamViec,
+      certificate_number: d.SoChungChiHanhNghe,
+      facilities: d.facilities ? d.facilities.map(pk => ({
           id: pk.Id_PhongKham,
           name: pk.TenPhongKham,
           address: pk.DiaChi
@@ -268,7 +285,7 @@ exports.getReviewByPatient = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { specialty_id, bio, experience_years, consultation_fee } = req.body;
+    const { specialty_id, bio, experience_years, consultation_fee, degree, workplace, certificate_number } = req.body;
 
     const doctor = await BacSi.findOne({ where: { Id_NguoiDung: userId } });
     if (!doctor) {
@@ -279,6 +296,9 @@ exports.updateProfile = async (req, res) => {
     if (bio !== undefined) doctor.GioiThieu = bio;
     if (experience_years !== undefined) doctor.SoNamKinhNghiem = experience_years;
     if (consultation_fee !== undefined) doctor.PhiTuVan = consultation_fee;
+    if (degree !== undefined) doctor.HocHamHocVi = degree;
+    if (workplace !== undefined) doctor.NoiLamViec = workplace;
+    if (certificate_number !== undefined) doctor.SoChungChiHanhNghe = certificate_number;
 
     await doctor.save();
     res.json({ message: 'Profile updated successfully', doctor });
@@ -400,5 +420,94 @@ exports.getAIDiagnoses = async (req, res) => {
   } catch (error) {
     console.error('getAIDiagnoses error:', error);
     res.status(500).json({ detail: 'Lỗi khi lấy danh sách chẩn đoán AI' });
+  }
+};
+exports.addReview = async (req, res) => {
+  try {
+    const { id: doctorId } = req.params;
+    const { rating, comment, appointment_id } = req.body;
+    const userId = req.user.id;
+
+    const patient = await BenhNhan.findOne({ where: { Id_NguoiDung: userId } });
+    if (!patient) return res.status(403).json({ detail: 'Chỉ bệnh nhân mới có thể đánh giá' });
+
+    // Verify appointment exists and is completed
+    const appointment = await DatLich.findOne({
+      where: {
+        Id_DatLich: appointment_id,
+        Id_BenhNhan: patient.Id_BenhNhan,
+        TrangThai: { [Op.in]: ['COMPLETED', 'DaKham'] }
+      },
+      include: [{
+        model: LichKham,
+        where: { Id_BacSi: doctorId }
+      }]
+    });
+
+    if (!appointment) {
+      return res.status(400).json({ detail: 'Bạn chỉ có thể đánh giá sau khi đã hoàn thành buổi khám với bác sĩ này.' });
+    }
+
+    // Check if already reviewed
+    const existingReview = await DanhGia.findOne({
+      where: { Id_DatLich: appointment_id }
+    });
+    if (existingReview) {
+      return res.status(400).json({ detail: 'Bạn đã đánh giá cho buổi khám này rồi.' });
+    }
+
+    const review = await DanhGia.create({
+      Id_BacSi: doctorId,
+      Id_BenhNhan: patient.Id_BenhNhan,
+      Id_DatLich: appointment_id,
+      SoSao: rating,
+      BinhLuan: comment
+    });
+
+    res.status(201).json({ message: 'Cảm ơn bạn đã để lại đánh giá!', review });
+  } catch (error) {
+    console.error('Add review error:', error);
+    res.status(500).json({ detail: 'Lỗi khi lưu đánh giá' });
+  }
+};
+
+exports.updateReview = async (req, res) => {
+  try {
+    const { id: doctorId } = req.params;
+    const { rating, comment, review_id } = req.body;
+    const userId = req.user.id;
+
+    const patient = await BenhNhan.findOne({ where: { Id_NguoiDung: userId } });
+    const review = await DanhGia.findByPk(review_id);
+
+    if (!review || review.Id_BenhNhan !== patient.Id_BenhNhan) {
+      return res.status(404).json({ detail: 'Không tìm thấy đánh giá của bạn' });
+    }
+
+    await review.update({ SoSao: rating, BinhLuan: comment });
+    res.json({ message: 'Cập nhật đánh giá thành công', review });
+  } catch (error) {
+    console.error('Update review error:', error);
+    res.status(500).json({ detail: 'Lỗi khi cập nhật đánh giá' });
+  }
+};
+
+exports.getReviewByPatient = async (req, res) => {
+  try {
+    const { id: doctorId } = req.params;
+    const userId = req.user.id;
+
+    const patient = await BenhNhan.findOne({ where: { Id_NguoiDung: userId } });
+    if (!patient) return res.json(null);
+
+    const review = await DanhGia.findOne({
+      where: { Id_BacSi: doctorId, Id_BenhNhan: patient.Id_BenhNhan },
+      order: [['NgayTao', 'DESC']]
+    });
+
+    res.json(review);
+  } catch (error) {
+    console.error('Get review error:', error);
+    res.status(500).json({ detail: 'Lỗi khi lấy thông tin đánh giá' });
   }
 };

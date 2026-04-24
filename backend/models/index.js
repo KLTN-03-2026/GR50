@@ -13,14 +13,12 @@ const DonThuoc = require('./DonThuoc.js');
 const ChiTietDonThuoc = require('./ChiTietDonThuoc.js');
 const HoaDon = require('./HoaDon.js');
 const ThanhToan = require('./ThanhToan.js');
-const KhamOnline = require('./KhamOnline.js');
 const TinNhanKham = require('./TinNhanKham.js');
 const ThongBao = require('./ThongBao.js');
 const PhongKham = require('./PhongKham.js');
 const AITuVanPhien = require('./AITuVanPhien.js');
 const AITuVanTinNhan = require('./AITuVanTinNhan.js');
-const DatLaiMatKhau = require('./DatLaiMatKhau.js');
-const PasswordReset = require('./PasswordReset.js');
+const AuthToken = require('./AuthToken.js');
 const DanhGia = require('./DanhGia.js');
 const Conversation = require('./Conversation.js');
 const ConversationParticipant = require('./ConversationParticipant.js');
@@ -31,6 +29,8 @@ const CallParticipant = require('./CallParticipant.js');
 const SupportCase = require('./SupportCase.js');
 const BacSi_PhongKham = require('./BacSi_PhongKham.js');
 const NguoiDung_PhongKham = require('./NguoiDung_PhongKham.js');
+const StaffProfile = require('./StaffProfile.js');
+const Staff_Facility = require('./Staff_Facility.js');
 
 // Define associations
 VaiTro.belongsToMany(NguoiDung, { through: NguoiDung_VaiTro, foreignKey: 'Id_VaiTro', otherKey: 'Id_NguoiDung' });
@@ -39,11 +39,8 @@ NguoiDung.belongsToMany(VaiTro, { through: NguoiDung_VaiTro, foreignKey: 'Id_Ngu
 NguoiDung.hasMany(ThongBao, { foreignKey: 'Id_NguoiDung' });
 ThongBao.belongsTo(NguoiDung, { foreignKey: 'Id_NguoiDung' });
 
-NguoiDung.hasMany(DatLaiMatKhau, { foreignKey: 'Id_NguoiDung' });
-DatLaiMatKhau.belongsTo(NguoiDung, { foreignKey: 'Id_NguoiDung' });
-
-NguoiDung.hasMany(PasswordReset, { foreignKey: 'user_id' });
-PasswordReset.belongsTo(NguoiDung, { foreignKey: 'user_id' });
+NguoiDung.hasMany(AuthToken, { foreignKey: 'Id_NguoiDung' });
+AuthToken.belongsTo(NguoiDung, { foreignKey: 'Id_NguoiDung' });
 
 BenhNhan.belongsTo(NguoiDung, { foreignKey: 'Id_NguoiDung' });
 NguoiDung.hasOne(BenhNhan, { foreignKey: 'Id_NguoiDung' });
@@ -57,15 +54,20 @@ ChuyenKhoa.hasMany(NguoiDung, { foreignKey: 'Id_ChuyenKhoa_QuanLy', as: 'quanLyK
 BacSi.belongsTo(ChuyenKhoa, { foreignKey: 'Id_ChuyenKhoa' });
 ChuyenKhoa.hasMany(BacSi, { foreignKey: 'Id_ChuyenKhoa' });
 
-BacSi.belongsToMany(PhongKham, { through: BacSi_PhongKham, foreignKey: 'doctor_id', otherKey: 'facility_id' });
-PhongKham.belongsToMany(BacSi, { through: BacSi_PhongKham, foreignKey: 'facility_id', otherKey: 'doctor_id' });
+BacSi.belongsToMany(PhongKham, { through: BacSi_PhongKham, foreignKey: 'doctor_id', otherKey: 'facility_id', as: 'facilities' });
+PhongKham.belongsToMany(BacSi, { through: BacSi_PhongKham, foreignKey: 'facility_id', otherKey: 'doctor_id', as: 'doctors' });
 
 NguoiDung.belongsToMany(PhongKham, { through: NguoiDung_PhongKham, foreignKey: 'staff_id', otherKey: 'facility_id', as: 'facilities' });
 PhongKham.belongsToMany(NguoiDung, { through: NguoiDung_PhongKham, foreignKey: 'facility_id', otherKey: 'staff_id', as: 'staffs' });
 
+// Staff associations
+NguoiDung.hasOne(StaffProfile, { foreignKey: 'user_id' });
+StaffProfile.belongsTo(NguoiDung, { foreignKey: 'user_id' });
+StaffProfile.belongsToMany(PhongKham, { through: Staff_Facility, foreignKey: 'staff_id', otherKey: 'facility_id', as: 'facilities' });
+PhongKham.belongsToMany(StaffProfile, { through: Staff_Facility, foreignKey: 'facility_id', otherKey: 'staff_id', as: 'staffMembers' });
+
 LichKham.belongsTo(PhongKham, { foreignKey: 'Id_PhongKham' });
 PhongKham.hasMany(LichKham, { foreignKey: 'Id_PhongKham' });
-
 
 LichKham.belongsTo(BacSi, { foreignKey: 'Id_BacSi' });
 BacSi.hasMany(LichKham, { foreignKey: 'Id_BacSi' });
@@ -75,8 +77,8 @@ BenhNhan.hasMany(DatLich, { foreignKey: 'Id_BenhNhan' });
 DatLich.belongsTo(LichKham, { foreignKey: 'Id_LichKham' });
 LichKham.hasMany(DatLich, { foreignKey: 'Id_LichKham' });
 
-DatLich.belongsTo(PhongKham, { foreignKey: 'Id_PhongKham' });
-PhongKham.hasMany(DatLich, { foreignKey: 'Id_PhongKham' });
+DatLich.belongsTo(PhongKham, { foreignKey: 'Id_PhongKham', as: 'Clinic' });
+PhongKham.hasMany(DatLich, { foreignKey: 'Id_PhongKham', as: 'appointments' });
 
 HoSoBenhAn.belongsTo(DatLich, { foreignKey: 'Id_DatLich' });
 DatLich.hasOne(HoSoBenhAn, { foreignKey: 'Id_DatLich' });
@@ -105,14 +107,10 @@ ThanhToan.belongsTo(BenhNhan, { foreignKey: 'Id_BenhNhan' });
 ThanhToan.belongsTo(PhongKham, { foreignKey: 'Id_PhongKham' });
 PhongKham.hasMany(ThanhToan, { foreignKey: 'Id_PhongKham' });
 
-KhamOnline.belongsTo(DatLich, { foreignKey: 'Id_DatLich' });
-DatLich.hasOne(KhamOnline, { foreignKey: 'Id_DatLich' });
-
-TinNhanKham.belongsTo(KhamOnline, { foreignKey: 'Id_KhamOnline' });
-KhamOnline.hasMany(TinNhanKham, { foreignKey: 'Id_KhamOnline' });
+// Updated TinNhanKham to link directly to DatLich
+TinNhanKham.belongsTo(DatLich, { foreignKey: 'Id_DatLich' });
+DatLich.hasMany(TinNhanKham, { foreignKey: 'Id_DatLich' });
 TinNhanKham.belongsTo(NguoiDung, { foreignKey: 'Id_NguoiGui' });
-
-
 
 // AI Chat Session associations
 NguoiDung.hasMany(AITuVanPhien, { foreignKey: 'Id_NguoiDung', as: 'aiSessions' });
@@ -195,14 +193,12 @@ module.exports = {
   ChiTietDonThuoc,
   HoaDon,
   ThanhToan,
-  KhamOnline,
   TinNhanKham,
   ThongBao,
   PhongKham,
   AITuVanPhien,
   AITuVanTinNhan,
-  DatLaiMatKhau,
-  PasswordReset,
+  AuthToken,
   DanhGia,
   Conversation,
   ConversationParticipant,
@@ -212,5 +208,8 @@ module.exports = {
   CallParticipant,
   SupportCase,
   BacSi_PhongKham,
-  NguoiDung_PhongKham
+  NguoiDung_PhongKham,
+  StaffProfile,
+  Staff_Facility
 };
+

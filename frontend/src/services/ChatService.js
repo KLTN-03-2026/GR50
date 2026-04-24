@@ -7,11 +7,17 @@ const getHeaders = (token) => ({
 
 const ChatService = {
   // Conversations
-  getMyConversations: async (token, type) => {
-    const url = type ? `${API}/conversations?type=${type}` : `${API}/conversations`;
+  getMyConversations: async (token, type, facilityId) => {
+    let url = `${API}/conversations`;
+    const params = [];
+    if (type) params.push(`type=${type}`);
+    if (facilityId) params.push(`facility_id=${facilityId}`);
+    if (params.length > 0) url += `?${params.join('&')}`;
+    
     const response = await axios.get(url, getHeaders(token));
     return response.data;
   },
+
 
   getOrCreateAppointmentConversation: async (token, appointmentId) => {
     const response = await axios.post(`${API}/conversations/appointments/${appointmentId}/conversation`, {}, getHeaders(token));

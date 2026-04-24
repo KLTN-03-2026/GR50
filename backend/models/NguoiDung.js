@@ -15,7 +15,7 @@ const NguoiDung = sequelize.define('NguoiDung', {
     RefreshToken: { type: DataTypes.TEXT },
     Id_ChuyenKhoa_QuanLy: { type: DataTypes.INTEGER, references: { model: 'chuyenkhoa', key: 'Id_ChuyenKhoa' } },
     YeuCauDoiMatKhau: { type: DataTypes.BOOLEAN, defaultValue: false }
-}, { tableName: 'nguoidung', timestamps: true, createdAt: 'NgayTao', updatedAt: 'NgayCapNhat', deletedAt: 'NgayXoa', paranoid: true });
+}, { tableName: 'nguoidung', timestamps: true, createdAt: 'NgayTao', updatedAt: 'NgayCapNhat' });
 
 
 

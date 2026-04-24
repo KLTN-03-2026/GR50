@@ -19,7 +19,9 @@ router.get('/patients/:id', staffController.getPatientById);
 // STAFF-03 & STAFF-04: Appointment Management & Coordination
 router.get('/appointments', staffController.getAppointments);
 router.post('/appointments', staffController.createAppointment);
+router.post('/appointments/:id/check-in', staffController.checkInAppointment);
 router.patch('/appointments/:id/status', staffController.updateAppointmentStatus);
+
 router.get('/doctors-coord', staffController.getDoctorsForCoordination);
 
 // STAFF-06: Online Support

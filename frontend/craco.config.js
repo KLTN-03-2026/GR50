@@ -69,7 +69,16 @@ const webpackConfig = {
         webpackConfig.plugins.push(healthPluginInstance);
       }
 
+      // Suppress source map loader warnings for libraries like dompurify
+      webpackConfig.ignoreWarnings = [
+        {
+          module: /node_modules\/dompurify/,
+          message: /Failed to parse source map/,
+        },
+      ];
+
       return webpackConfig;
+
     },
   },
 };

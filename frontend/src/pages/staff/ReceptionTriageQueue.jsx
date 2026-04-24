@@ -27,7 +27,8 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 export default function ReceptionTriageQueue() {
-  const { token } = useContext(AuthContext);
+  const { token, currentFacility } = useContext(AuthContext);
+
   const [triageItems, setTriageItems] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,16 +39,20 @@ export default function ReceptionTriageQueue() {
   const [showReport, setShowReport] = useState(false);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (token && currentFacility) {
+        fetchData();
+    }
+  }, [currentFacility, token]);
+
 
   const fetchData = async () => {
     try {
       const [triageRes, doctorsRes] = await Promise.all([
-        axios.get(`${API}/staff/triage-queue`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API}/staff/doctors-coord`, { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(`${API}/staff/triage-queue?facility_id=${currentFacility.id}`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API}/staff/doctors-coord?facility_id=${currentFacility.id}`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setTriageItems(triageRes.data);
+
       setDoctors(doctorsRes.data);
     } catch (error) {
       console.error('Failed to fetch data', error);

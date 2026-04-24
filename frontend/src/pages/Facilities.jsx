@@ -65,7 +65,7 @@ export default function Facilities() {
                             >
                                 <div className="aspect-video relative overflow-hidden">
                                     <img
-                                        src={facility.image || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d'}
+                                        src={facility.logo_url || facility.banner_url || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d'}
                                         alt={facility.name}
                                         className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
                                     />

@@ -20,8 +20,10 @@ export default function PatientAppointments() {
   const [reviewDialog, setReviewDialog] = useState({
     open: false,
     doctorId: null,
-    doctorName: ''
+    doctorName: '',
+    appointmentId: null
   });
+
 
   useEffect(() => {
     fetchAppointments();
@@ -40,13 +42,15 @@ export default function PatientAppointments() {
     }
   };
 
-  const handleOpenReview = (doctorId, doctorName) => {
+  const handleOpenReview = (doctorId, doctorName, appointmentId) => {
     setReviewDialog({
       open: true,
       doctorId,
-      doctorName
+      doctorName,
+      appointmentId
     });
   };
+
 
   const handlePayNow = async (appointmentId) => {
     try {
@@ -107,7 +111,8 @@ export default function PatientAppointments() {
                   key={apt.id}
                   appointment={apt}
                   navigate={navigate}
-                  onReview={() => handleOpenReview(apt.doctor_id, apt.doctor_name)}
+                  onReview={() => handleOpenReview(apt.doctor_id, apt.doctor_name, apt.id)}
+
                   onPayNow={handlePayNow}
                   onCancel={handleCancelAppointment}
                 />
@@ -122,7 +127,10 @@ export default function PatientAppointments() {
         onOpenChange={(open) => setReviewDialog(prev => ({ ...prev, open }))}
         doctorId={reviewDialog.doctorId}
         doctorName={reviewDialog.doctorName}
+        appointmentId={reviewDialog.appointmentId}
+        onSuccess={fetchAppointments}
       />
+
     </Layout>
   );
 }
@@ -149,7 +157,13 @@ function AppointmentCard({ appointment, navigate, onReview, onPayNow, onCancel }
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all relative overflow-hidden">
+      {appointment.queue_number && (
+        <div className="absolute top-0 right-0 bg-teal-600 text-white px-4 py-2 rounded-bl-2xl shadow-md flex flex-col items-center">
+            <span className="text-[10px] font-bold uppercase opacity-80">SỐ THỨ TỰ</span>
+            <span className="text-xl font-black">{appointment.queue_number}</span>
+        </div>
+      )}
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
@@ -160,6 +174,9 @@ function AppointmentCard({ appointment, navigate, onReview, onPayNow, onCancel }
           </div>
 
           <div className="space-y-2 mb-4">
+            <p className="text-sm font-bold text-teal-600">
+               Mã lịch hẹn: {appointment.code}
+            </p>
             <p className="text-gray-600 dark:text-gray-300">
               <Calendar className="w-4 h-4 inline mr-2" />
               {appointment.appointment_date}
@@ -178,6 +195,7 @@ function AppointmentCard({ appointment, navigate, onReview, onPayNow, onCancel }
             )}
           </div>
         </div>
+
 
         <div className="flex flex-col gap-2 min-w-[200px]">
           {appointment.status === 'completed' && appointment.payment_status === 'unpaid' && (

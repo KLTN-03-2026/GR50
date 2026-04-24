@@ -8,7 +8,8 @@ import axios from 'axios';
 import { API } from '@/config';
 import { AuthContext } from '@/contexts/AuthContext';
 
-export default function ReviewDialog({ open, onOpenChange, doctorId, doctorName, onSuccess }) {
+export default function ReviewDialog({ open, onOpenChange, doctorId, doctorName, appointmentId, onSuccess }) {
+
     const { token } = useContext(AuthContext);
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState('');
@@ -56,7 +57,8 @@ export default function ReviewDialog({ open, onOpenChange, doctorId, doctorName,
                 // Update
                 await axios.put(`${API}/doctors/${doctorId}/reviews`, {
                     rating,
-                    comment
+                    comment,
+                    review_id: existingReview.Id_DanhGia
                 }, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -65,7 +67,8 @@ export default function ReviewDialog({ open, onOpenChange, doctorId, doctorName,
                 // Create
                 await axios.post(`${API}/doctors/${doctorId}/reviews`, {
                     rating,
-                    comment
+                    comment,
+                    appointment_id: appointmentId
                 }, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -74,6 +77,7 @@ export default function ReviewDialog({ open, onOpenChange, doctorId, doctorName,
             if (onSuccess) onSuccess();
             onOpenChange(false);
         } catch (error) {
+
             toast.error(error.response?.data?.detail || 'Có lỗi xảy ra');
         } finally {
             setLoading(false);

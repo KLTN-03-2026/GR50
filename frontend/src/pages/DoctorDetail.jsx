@@ -67,13 +67,13 @@ export default function DoctorDetail() {
     };
 
     const handleBookingClick = () => {
-        if (!handleActionGate('đặt lịch khám')) return;
         setShowBooking(true);
     };
 
     const getAvatarUrl = (avatarPath) => {
         if (!avatarPath) return null;
-        if (avatarPath.startsWith('http')) return avatarPath;
+        if (avatarPath.startsWith('http') || avatarPath.startsWith('blob:')) return avatarPath;
+        if (avatarPath.startsWith('/images/')) return avatarPath;
         return `${API.replace('/api', '')}${avatarPath}`;
     };
 
@@ -107,7 +107,14 @@ export default function DoctorDetail() {
                                 </div>
                                 <div className="flex-1">
                                     <div className="mb-4">
-                                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{doctor.full_name}</h1>
+                                        <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{doctor.full_name}</h1>
+                                            {doctor.degree && (
+                                                <span className="bg-teal-50 text-teal-700 text-xs font-bold px-2 py-1 rounded-md border border-teal-100">
+                                                    {doctor.degree}
+                                                </span>
+                                            )}
+                                        </div>
                                         <p className="text-cyan-600 dark:text-cyan-400 font-semibold text-lg">{doctor.specialty_name || doctor.Specialty?.name}</p>
                                     </div>
 
@@ -129,6 +136,23 @@ export default function DoctorDetail() {
                                             {doctor.bio || 'Chưa có thông tin giới thiệu.'}
                                         </p>
                                     </div>
+
+                                    {(doctor.workplace || doctor.certificate_number) && (
+                                        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 grid md:grid-cols-2 gap-6 text-sm">
+                                            {doctor.workplace && (
+                                                <div>
+                                                    <p className="font-bold text-gray-900 dark:text-white mb-2">Đào tạo & Công tác</p>
+                                                    <p className="text-gray-600 dark:text-gray-400">{doctor.workplace}</p>
+                                                </div>
+                                            )}
+                                            {doctor.certificate_number && (
+                                                <div>
+                                                    <p className="font-bold text-gray-900 dark:text-white mb-2">Chứng chỉ hành nghề</p>
+                                                    <p className="text-gray-600 dark:text-gray-400">{doctor.certificate_number}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -294,14 +318,12 @@ export default function DoctorDetail() {
                 </div>
             </div>
 
-            {showBooking && (
-                <BookingDialog
-                    doctor={doctor}
-                    open={showBooking}
-                    onClose={() => setShowBooking(false)}
-                    token={token}
-                />
-            )}
+            <BookingDialog
+                doctor={doctor}
+                open={showBooking && !!doctor}
+                onClose={() => setShowBooking(false)}
+                token={token}
+            />
         </div>
     );
 }
