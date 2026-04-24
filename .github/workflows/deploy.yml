@@ -18,7 +18,8 @@ jobs:
           npm install
           npm run build
         env:
-          CI: false # Prevents warnings from being treated as errors
+          CI: false
+          PUBLIC_URL: /KLTN_06-2026
 
       - name: Deploy 🚀
         uses: peaceiris/actions-gh-pages@v3
