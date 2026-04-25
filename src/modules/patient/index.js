@@ -1,0 +1,14 @@
+export { default as Dashboard } from './pages/Dashboard.jsx';
+export { default as AIHistory } from './pages/AIHistory.jsx';
+export { default as Appointments } from './pages/Appointments.jsx';
+export { default as Chat } from './pages/Chat.jsx';
+export { default as ChatList } from './pages/ChatList.jsx';
+export { default as ConversationChat } from './pages/ConversationChat.jsx';
+export { default as Conversations } from './pages/Conversations.jsx';
+export { default as DoctorDetails } from './pages/DoctorDetails.jsx';
+export { default as MedicalRecords } from './pages/MedicalRecords.jsx';
+export { default as PaymentProcess } from './pages/PaymentProcess.jsx';
+export { default as Payments } from './pages/Payments.jsx';
+export { default as SearchDoctors } from './pages/SearchDoctors.jsx';
+export { default as UnifiedChat } from './pages/UnifiedChat.jsx';
+export { default as AccountSettings } from './pages/AccountSettings.jsx';

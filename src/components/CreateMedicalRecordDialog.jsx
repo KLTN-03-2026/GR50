@@ -9,7 +9,7 @@ import axios from 'axios';
 import { API } from '@/config';
 import { AuthContext } from '@/contexts/AuthContext';
 import { Upload, FileText } from 'lucide-react';
-// Component for creating a medical record after an appointment
+
 export default function CreateMedicalRecordDialog({ open, onOpenChange, appointment, onSuccess }) {
     const { token } = useContext(AuthContext);
     const [loading, setLoading] = useState(false);
