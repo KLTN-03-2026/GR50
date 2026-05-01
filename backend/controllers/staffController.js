@@ -75,6 +75,7 @@ exports.getDashboardStats = async (req, res) => {
             where: { ...facilityFilter },
             include: [{
                 model: DoctorSchedule,
+                as: 'DoctorSchedule',
                 where: { NgayDate: todayStr },
                 required: true
             }]
@@ -88,6 +89,7 @@ exports.getDashboardStats = async (req, res) => {
             },
             include: [{
                 model: DoctorSchedule,
+                as: 'DoctorSchedule',
                 where: { NgayDate: todayStr },
                 required: true
             }]
@@ -95,23 +97,13 @@ exports.getDashboardStats = async (req, res) => {
 
 
         // 4. Doctors on Duty (Scoped to facility and having slots today)
-        const activeDoctorsCount = await BacSi.count({
+        const activeDoctorsCount = await DoctorSchedule.count({
             distinct: true,
             col: 'Id_BacSi',
-            include: [
-                {
-                    model: Clinic,
-                    as: 'facilities',
-                    where: { Id_PhongKham: { [Op.in]: facilityIds } },
-                    required: true
-                },
-                {
-                    model: DoctorSchedule,
-                    where: { NgayDate: todayStr },
-                    required: true
-                }
-            ],
-            where: { TrangThai: 'HoatDong' }
+            where: {
+                NgayDate: todayStr,
+                Id_PhongKham: { [Op.in]: facilityIds }
+            }
         });
 
         // 5. Pending Confirmations (Scoped)
@@ -127,6 +119,7 @@ exports.getDashboardStats = async (req, res) => {
             where: { ...facilityFilter },
             include: [{
                 model: DoctorSchedule,
+                as: 'DoctorSchedule',
                 where: { NgayDate: todayStr, LoaiKham: 'Online' },
                 required: true
             }]
@@ -150,11 +143,13 @@ exports.getDashboardStats = async (req, res) => {
                 },
                 {
                     model: DoctorSchedule,
+                    as: 'DoctorSchedule',
                     where: { NgayDate: todayStr },
                     required: true,
                     include: [
                         { 
                             model: BacSi, 
+                            as: 'Doctor',
                             include: [
                                 { model: NguoiDung, attributes: ['Ho', 'Ten'] },
                                 { model: ChuyenKhoa }
@@ -181,10 +176,10 @@ exports.getDashboardStats = async (req, res) => {
             recent_activity: recentActivity.map(a => ({
                 id: a.Id_DatLich,
                 patient_name: `${a.BenhNhan?.NguoiDung?.Ho || ''} ${a.BenhNhan?.NguoiDung?.Ten || ''}`.trim(),
-                doctor_name: `${a.DoctorSchedule?.BacSi?.NguoiDung?.Ho || ''} ${a.DoctorSchedule?.BacSi?.NguoiDung?.Ten || ''}`.trim(),
+                doctor_name: `${a.DoctorSchedule?.Doctor?.NguoiDung?.Ho || ''} ${a.DoctorSchedule?.Doctor?.NguoiDung?.Ten || ''}`.trim(),
                 status: a.TrangThai,
                 time: a.DoctorSchedule?.GioBatDau ? a.DoctorSchedule.GioBatDau.substring(0, 5) : '--:--',
-                specialty: a.DoctorSchedule?.BacSi?.ChuyenKhoa?.TenChuyenKhoa || 'Tổng quát',
+                specialty: a.DoctorSchedule?.Doctor?.ChuyenKhoa?.TenChuyenKhoa || 'Tổng quát',
                 queue_number: a.STT_HangCho,
                 code: a.MaDatLich
             })),
@@ -205,19 +200,43 @@ exports.getDashboardStats = async (req, res) => {
  */
 exports.searchPatients = async (req, res) => {
     try {
-        const { query } = req.query;
+        const { query, received } = req.query;
+        let whereNguoiDung = {};
+        if (query) {
+            whereNguoiDung = {
+                [Op.or]: [
+                    { Ho: { [Op.like]: `%${query}%` } },
+                    { Ten: { [Op.like]: `%${query}%` } },
+                    { Email: { [Op.like]: `%${query}%` } },
+                    { SoDienThoai: { [Op.like]: `%${query}%` } }
+                ]
+            };
+        }
+
+        const includeClause = [{
+            model: NguoiDung,
+            where: whereNguoiDung
+        }];
+
+        if (received === 'true') {
+            const today = new Date().toISOString().split('T')[0];
+            includeClause.push({
+                model: Appointment,
+                as: 'appointments',
+                where: { 
+                    TrangThai: 'CHECKED_IN',
+                },
+                include: [{
+                    model: DoctorSchedule,
+                    as: 'DoctorSchedule',
+                    where: { NgayDate: today }
+                }],
+                required: true
+            });
+        }
+
         const patients = await BenhNhan.findAll({
-            include: [{
-                model: NguoiDung,
-                where: query ? {
-                    [Op.or]: [
-                        { Ho: { [Op.like]: `%${query}%` } },
-                        { Ten: { [Op.like]: `%${query}%` } },
-                        { Email: { [Op.like]: `%${query}%` } },
-                        { SoDienThoai: { [Op.like]: `%${query}%` } }
-                    ]
-                } : {}
-            }]
+            include: includeClause
         });
 
         const result = patients.map(p => ({
@@ -227,7 +246,9 @@ exports.searchPatients = async (req, res) => {
             email: p.NguoiDung?.Email,
             phone: p.NguoiDung?.SoDienThoai,
             dob: p.NguoiDung?.NgaySinh,
-            gender: p.NguoiDung?.GioiTinh
+            gender: p.NguoiDung?.GioiTinh,
+            address: p.DiaChi,
+            is_received: p.appointments && p.appointments.length > 0
         }));
 
         res.json(result);
@@ -239,11 +260,11 @@ exports.searchPatients = async (req, res) => {
 
 exports.createPatientAccount = async (req, res) => {
     try {
-        const { full_name, email, phone, gender, dob } = req.body;
+        const { full_name, email, phone, gender, dob, address } = req.body;
         
-        const finalEmail = email || generateEmail(full_name);
-        const existingUser = await NguoiDung.findOne({ where: { Email: finalEmail } });
-        if (existingUser) return res.status(400).json({ detail: 'Email already exists' });
+        const finalEmail = email || `${phone}@medischedule.com`;
+        const existingUser = await NguoiDung.findOne({ where: { [Op.or]: [{ Email: finalEmail }, { SoDienThoai: phone }] } });
+        if (existingUser) return res.status(400).json({ detail: 'Email hoặc Số điện thoại đã tồn tại' });
 
         const tempPassword = generatePassword();
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
@@ -267,10 +288,14 @@ exports.createPatientAccount = async (req, res) => {
         const patientRole = await VaiTro.findOne({ where: { MaVaiTro: 'patient' } });
         await NguoiDung_VaiTro.create({ Id_NguoiDung: user.Id_NguoiDung, Id_VaiTro: patientRole.Id_VaiTro });
         
-        const patient = await BenhNhan.create({ Id_NguoiDung: user.Id_NguoiDung, SoDienThoaiLienHe: phone });
+        const patient = await BenhNhan.create({ 
+            Id_NguoiDung: user.Id_NguoiDung, 
+            SoDienThoaiLienHe: phone,
+            DiaChi: address
+        });
 
         res.status(201).json({
-            message: 'Patient account created',
+            message: 'Tài khoản bệnh nhân đã được khởi tạo',
             id: patient.Id_BenhNhan,
             temp_password: tempPassword,
             email: finalEmail
@@ -310,8 +335,10 @@ exports.getAppointments = async (req, res) => {
             },
             {
                 model: DoctorSchedule,
+                as: 'DoctorSchedule',
                 include: [{
                     model: BacSi,
+                    as: 'Doctor',
                     include: [
                         { model: NguoiDung, attributes: ['Ho', 'Ten'] },
                         { model: ChuyenKhoa }
@@ -334,8 +361,8 @@ exports.getAppointments = async (req, res) => {
         const result = appointments.map(a => ({
             id: a.Id_DatLich,
             patient_name: `${a.BenhNhan?.NguoiDung?.Ho || ''} ${a.BenhNhan?.NguoiDung?.Ten || ''}`.trim(),
-            doctor_name: `${a.DoctorSchedule?.BacSi?.NguoiDung?.Ho || ''} ${a.DoctorSchedule?.BacSi?.NguoiDung?.Ten || ''}`.trim(),
-            specialty: a.DoctorSchedule?.BacSi?.ChuyenKhoa?.TenChuyenKhoa,
+            doctor_name: `${a.DoctorSchedule?.Doctor?.NguoiDung?.Ho || ''} ${a.DoctorSchedule?.Doctor?.NguoiDung?.Ten || ''}`.trim(),
+            specialty: a.DoctorSchedule?.Doctor?.ChuyenKhoa?.TenChuyenKhoa,
             status: a.TrangThai,
             time: a.DoctorSchedule?.KhungGio,
             date: a.NgayHen || a.ThoiDiemDat,
@@ -356,7 +383,7 @@ exports.checkInAppointment = async (req, res) => {
         const { facility_id } = req.body;
 
         const appointment = await Appointment.findByPk(id, {
-            include: [{ model: DoctorSchedule }]
+            include: [{ model: DoctorSchedule, as: 'DoctorSchedule' }]
         });
 
         if (!appointment) return res.status(404).json({ detail: 'Appointment not found' });
@@ -376,6 +403,7 @@ exports.checkInAppointment = async (req, res) => {
         const lastInQueue = await Appointment.findOne({
             include: [{
                 model: DoctorSchedule,
+                as: 'DoctorSchedule',
                 where: { 
                     Id_BacSi: appointment.DoctorSchedule.Id_BacSi,
                     NgayDate: todayStr
@@ -518,16 +546,55 @@ exports.payInvoice = async (req, res) => {
 exports.updatePatientInfo = async (req, res) => {
     try {
         const { id } = req.params; // BenhNhan ID
-        const { phone, address } = req.body;
+        const { full_name, email, phone, gender, dob, address } = req.body;
 
-        const patient = await BenhNhan.findByPk(id);
+        const patient = await BenhNhan.findByPk(id, { include: [NguoiDung] });
         if (!patient) return res.status(404).json({ detail: 'Patient not found' });
 
-        await patient.update({ SoDienThoaiLienHe: phone, DiaChi: address });
-        res.json({ message: 'Patient info updated' });
+        const names = full_name ? full_name.split(' ') : [];
+        const ten = names.length > 0 ? names.pop() : patient.NguoiDung.Ten;
+        const ho = names.length > 0 ? names.join(' ') : patient.NguoiDung.Ho;
+
+        await patient.NguoiDung.update({
+            Ho: ho,
+            Ten: ten,
+            Email: email || patient.NguoiDung.Email,
+            SoDienThoai: phone || patient.NguoiDung.SoDienThoai,
+            GioiTinh: gender || patient.NguoiDung.GioiTinh,
+            NgaySinh: dob || patient.NguoiDung.NgaySinh
+        });
+
+        await patient.update({ 
+            SoDienThoaiLienHe: phone || patient.SoDienThoaiLienHe, 
+            DiaChi: address || patient.DiaChi 
+        });
+
+        res.json({ message: 'Cập nhật thông tin bệnh nhân thành công' });
     } catch (error) {
         console.error('StaffUpdatePatient Error:', error);
-        res.status(500).json({ detail: 'Error updating patient info' });
+        res.status(500).json({ detail: 'Lỗi khi cập nhật thông tin bệnh nhân' });
+    }
+};
+
+exports.deletePatient = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const patient = await BenhNhan.findByPk(id);
+        if (!patient) return res.status(404).json({ detail: 'Bệnh nhân không tồn tại' });
+
+        const aptCount = await Appointment.count({ where: { Id_BenhNhan: id } });
+        if (aptCount > 0) {
+            return res.status(400).json({ detail: 'Bệnh nhân đã có lịch sử khám bệnh, không thể xóa. Vui lòng chỉ vô hiệu hóa tài khoản nếu cần.' });
+        }
+
+        const userId = patient.Id_NguoiDung;
+        await patient.destroy();
+        await NguoiDung.destroy({ where: { Id_NguoiDung: userId } });
+
+        res.json({ message: 'Đã xóa bệnh nhân thành công' });
+    } catch (error) {
+        console.error('StaffDeletePatient Error:', error);
+        res.status(500).json({ detail: 'Lỗi khi xóa bệnh nhân' });
     }
 };
 /**

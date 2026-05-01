@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { NguoiDung, VaiTro, NguoiDung_VaiTro, BacSi, BenhNhan, AuthToken, PhongKham, StaffProfile } = require('../models');
+const { NguoiDung, VaiTro, NguoiDung_VaiTro, BacSi, BenhNhan, AuthToken, PhongKham, StaffProfile, AdminProfile } = require('../models');
+
 const { Op } = require('sequelize');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
@@ -102,11 +103,12 @@ exports.login = async (req, res) => {
     if (userRole === 'doctor') {
       const bs = await BacSi.findOne({ 
         where: { Id_NguoiDung: user.Id_NguoiDung }, 
-        include: [{ model: PhongKham }] 
+        include: [{ model: PhongKham, as: 'facilities' }] 
       });
-      if (bs && bs.PhongKhams) {
-        userFacilities = bs.PhongKhams.map(pk => ({ id: pk.Id_PhongKham, name: pk.TenPhongKham }));
+      if (bs && bs.facilities) {
+        userFacilities = bs.facilities.map(pk => ({ id: pk.Id_PhongKham, name: pk.TenPhongKham }));
       }
+
     } else if (userRole === 'staff') {
       const staff = await StaffProfile.findOne({ 
         where: { user_id: user.Id_NguoiDung }, 
@@ -128,15 +130,38 @@ exports.login = async (req, res) => {
     };
 
     if (userRole === 'admin') {
-      userDict.admin_permissions = {
-        can_manage_doctors: true,
-        can_manage_patients: true,
-        can_manage_appointments: true,
-        can_view_stats: true,
-        can_manage_specialties: true,
-        can_create_admins: true
-      };
+      const ap = await AdminProfile.findOne({ 
+        where: { user_id: user.Id_NguoiDung },
+        include: [{ model: PhongKham, as: 'assignedFacility' }]
+      });
+      
+      if (ap) {
+        userDict.admin_type = ap.admin_type;
+        userDict.admin_permissions = {
+          can_manage_doctors: ap.can_manage_doctors,
+          can_manage_staff: ap.can_manage_staff,
+          can_manage_patients: ap.can_manage_patients,
+          can_view_stats: ap.can_view_stats,
+          can_manage_payments: ap.can_manage_payments,
+          can_manage_specialties: ap.can_manage_specialties,
+          can_create_admins: ap.can_manage_admins
+        };
+        if (ap.admin_type === 'FACILITY_ADMIN' && ap.assignedFacility) {
+          userDict.facilities = [{ id: ap.assignedFacility.Id_PhongKham, name: ap.assignedFacility.TenPhongKham }];
+        }
+      } else {
+        // Legacy fallback
+        userDict.admin_type = 'SUPER_ADMIN';
+        userDict.admin_permissions = {
+          can_manage_doctors: true,
+          can_manage_patients: true,
+          can_view_stats: true,
+          can_manage_specialties: true,
+          can_create_admins: true
+        };
+      }
     }
+
 
     res.json({ token, user: userDict });
   } catch (error) {

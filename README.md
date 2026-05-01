@@ -1,160 +1,153 @@
+# 🏥 MediSchedule - Hệ thống Quản lý Đặt lịch Khám bệnh & Tư vấn AI Toàn diện
 
-# 🏥 MediSchedule - Healthcare Management System
+![MediSchedule Banner](./docs/images/banner.png)
 
-> Hệ thống quản lý bệnh viện toàn diện với đầy đủ tính năng đặt lịch khám, tư vấn online, và thanh toán
+> **MediSchedule** là một nền tảng quản lý y tế thông minh, tích hợp trí tuệ nhân tạo (AI Triage) để tối ưu hóa quy trình kết nối giữa bệnh nhân và bác sĩ. Hệ thống được xây dựng theo kiến trúc hiện đại, đáp ứng đầy đủ các nghiệp vụ từ đặt lịch, khám trực tuyến đến quản lý bệnh án điện tử.
 
-![Status](https://img.shields.io/badge/status-production--ready-success)
-![Features](https://img.shields.io/badge/features-13%2F13-brightgreen)
-![Tech](https://img.shields.io/badge/tech-Node.js%2BReact%2BMySQL-blue)
-![Database](https://img.shields.io/badge/database-MySQL-orange)
-
----
-
-## 🎯 Tổng quan
-
-MediSchedule là một hệ thống quản lý y tế hiện đại, đầy đủ tính năng cho phép:
-- 👤 **Bệnh nhân**: Tìm bác sĩ, đặt lịch khám, thanh toán, tư vấn online
-- 👨‍⚕️ **Bác sĩ**: Quản lý lịch hẹn, cập nhật thông tin, tư vấn online
-- 🏥 **Trưởng khoa**: Quản lý bác sĩ và bệnh nhân trong chuyên khoa
-- 👨‍💼 **Admin**: Quản lý toàn bộ hệ thống, thanh toán, thống kê
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FKLTN-GR50%2FKLTN_06-2026&root-directory=frontend)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/KLTN-GR50/KLTN_06-2026?branch=Nguyen_NT)
+[![Status](https://img.shields.io/badge/status-production--ready-success)](https://github.com/KLTN-GR50/KLTN_06-2026)
+[![Framework](https://img.shields.io/badge/frontend-React%2018-blue)](https://reactjs.org/)
+[![Backend](https://img.shields.io/badge/backend-Node.js-green)](https://nodejs.org/)
+[![Database](https://img.shields.io/badge/database-MySQL-orange)](https://www.mysql.com/)
+[![AI](https://img.shields.io/badge/AI-Gemini%20Flash-purple)](https://deepmind.google/technologies/gemini/)
 
 ---
 
-## ✨ Tính năng chính (13/13 = 100%)
+## 📑 Tài liệu Hệ thống (System Documentation)
 
-### ✅ Hoàn thành đầy đủ
-1. ✅ Đăng ký / Đăng nhập / Quên mật khẩu
-2. ✅ Tìm kiếm bác sĩ theo chuyên khoa
-3. ✅ Đặt lịch khám trực tiếp + Tư vấn online
-4. ✅ Xem lịch sử đặt lịch
-5. ✅ Đăng nhập quản lý tài khoản bác sĩ
-6. ✅ Cập nhật thông tin chuyên khoa
-7. ✅ Cập nhật khung giờ rảnh
-8. ✅ Xác nhận lịch hẹn
-9. ✅ Hủy lịch hẹn
-10. ✅ **Thanh toán - Admin** 💳 (Mock Payment System)
-
-### 💳 Payment System Highlights
-- Tự động tạo payment khi đặt lịch
-- 3 phương thức thanh toán (card, wallet, bank)
-- Lịch sử giao dịch & mã GD
-- Admin dashboard quản lý thanh toán
-- Thống kê doanh thu
+Hệ thống được thiết kế dựa trên các bộ quy tắc nghiệp vụ chặt chẽ:
+- [Quy trình nghiệp vụ chi tiết (Functional Specs)](./bang_chuc_nang.md)
+- [Yêu cầu hệ thống & Logic nghiệp vụ](./SYSTEM_REQUIREMENTS.md)
+- [Báo cáo cấu trúc Database](./database_schema_report.md)
+- [Danh sách tài khoản thử nghiệm](./TAI_KHOAN_DANG_NHAP.md)
 
 ---
 
-## 👥 Tài khoản đăng nhập
+## 🧠 Logic Nghiệp vụ Cốt lõi (Core Business Logic)
 
-```
-Admin:          admin@medischedule.com / 12345678
-Department Head: departmenthead@test.com / 12345678
-Doctor:         doctor1@test.com / 12345678
-Patient:        patient1@test.com / 12345678
-```
+### 1. Xác thực & Phân quyền (RBAC)
+Hệ thống sử dụng cơ chế **Role-Based Access Control (RBAC)** với 5 nhóm đối tượng:
+- **Khách (Guest)**: Chỉ truy cập giao diện công cộng.
+- **Bệnh nhân (Patient)**: Quản lý lịch hẹn cá nhân và tư vấn AI.
+- **Bác sĩ (Doctor)**: Quản lý ca khám, chuyên môn và bệnh án.
+- **Nhân viên (Staff)**: Điều phối vận hành, tiếp nhận tại quầy và hỗ trợ kỹ thuật.
+- **Quản trị viên (Admin)**: Quản trị hệ thống, nhân sự và báo cáo tài chính.
 
-📄 **Chi tiết đầy đủ**: Xem file `COMPLETE_CREDENTIALS.md`
+### 2. Quy tắc Đặt lịch & Khám bệnh
+- **Slot Management**: Lịch hẹn được chia theo khung giờ (Time Slots). Mỗi khung giờ có giới hạn số lượng bệnh nhân (`SoLuongToiDa`).
+- **Trạng thái lịch hẹn**: `CHO_XAC_NHAN` → `DA_XAC_NHAN` → `DA_HOAN_THANH` / `VANG_MAT`.
+- **Chính sách hủy lịch**: Việc hủy/đổi lịch phải tuân thủ quy tắc thời gian (ví dụ: trước 2 giờ).
+
+### 3. Trí tuệ Nhân tạo (AI Triage Logic)
+- **Cơ chế**: Sử dụng mô hình **Gemini Flash** để phân tích triệu chứng tự nhiên của bệnh nhân.
+- **Output**: Gợi ý mức độ ưu tiên (Normal/Urgent), chuyên khoa phù hợp và danh sách bác sĩ liên quan.
+- **Oversight**: Mọi kết quả tư vấn AI đều được lưu vết để Admin/Bác sĩ kiểm duyệt và đánh giá độ chính xác.
 
 ---
 
-## 🛠 Tech Stack
+## ✨ Các Module Chức năng Chi tiết
 
-- **Frontend**: React 18 + Tailwind CSS + Shadcn/ui
-- **Backend**: Node.js (Express) + MySQL (Sequelize)
-- **Database**: MySQL 8.0
-- **Auth**: JWT + Bcrypt
-- **Deployment**: GitHub Actions + Vercel/GitHub Pages
+### 🌐 Giao diện Công cộng (Public)
+1. **Landing Page**: Giới thiệu dịch vụ, tìm kiếm bác sĩ/cơ sở y tế.
+2. **Hệ thống Tìm kiếm**: Lọc theo chuyên khoa, kinh nghiệm, đánh giá và vị trí.
+3. **Đặt lịch Nhanh (Fast Booking)**: Cho phép khách vãng lai đặt lịch mà không cần đăng ký tài khoản rườm rà.
+
+### 👤 Module Bệnh nhân (Patient)
+- **Dashboard**: Theo dõi nhắc lịch, thống kê cá nhân.
+- **AI Consultation**: Chat tư vấn triệu chứng, nhận định chuyên khoa.
+- **Telemedicine**: Video Call tích hợp trực tiếp (Jitsi SDK) cho các ca khám từ xa.
+- **E-Health Record**: Xem toa thuốc, kết quả xét nghiệm và lịch sử khám bệnh.
+
+### 👨‍⚕️ Module Bác sĩ (Doctor)
+- **Schedule Management**: Tùy chỉnh khung giờ rảnh, thiết lập ngày nghỉ.
+- **Consultation Room**: Giao diện khám bệnh chuyên nghiệp (Video + Ghi chú y khoa + Kê đơn).
+- **AI Support**: Xem tóm tắt chẩn đoán AI của bệnh nhân trước khi khám.
+
+### 🏢 Module Tiếp tân & Vận hành (Staff)
+- **Triage Queue**: Giám sát hàng chờ bệnh nhân, ưu tiên các ca AI đánh giá "Cấp cứu".
+- **Offline Booking**: Hỗ trợ đặt lịch trực tiếp tại quầy hoặc qua điện thoại.
+- **Payment Support**: Thu phí mặt, xác nhận hóa đơn cho bệnh nhân khám tại chỗ.
+
+### ⚙️ Module Quản trị (Admin)
+- **User Management**: Phê duyệt hồ sơ bác sĩ, quản lý trạng thái tài khoản.
+- **Financial Analytics**: Thống kê doanh thu theo ngày/tháng/chuyên khoa, heatmap hoạt động.
+- **System Settings**: Cấu hình thông tin bệnh viện, quản lý các nội dung hiển thị trên Landing Page.
 
 ---
 
-## 🚀 Khởi động nhanh
+## 🛠 Công nghệ & Kiến trúc (Tech Stack)
 
-### ✅ Production (Đã chạy sẵn)
+| Lớp | Công nghệ | Chi tiết |
+| :--- | :--- | :--- |
+| **Frontend** | React 18 | Vite, Tailwind CSS, Shadcn UI, Framer Motion |
+| **Backend** | Node.js (Express) | Sequelize ORM, JWT, Socket.io |
+| **Database** | MySQL 8.0 | Quan hệ chặt chẽ (30+ bảng), tối ưu hóa Index |
+| **AI/ML** | Gemini API | Flash 2.5, Prompt Engineering |
+| **Video/Comm** | Jitsi SDK | WebRTC truyền tải chất lượng cao |
+
+---
+
+## 📊 Sơ đồ Dữ liệu & Mối quan hệ (Data Logic)
+
+Hệ thống quản lý hơn **30 bảng dữ liệu** với các mối quan hệ thực thể chặt chẽ:
+
+### 1. Phân cấp Người dùng & Phân quyền
+- **NguoiDung ↔ VaiTro**: Quan hệ n-n (Many-to-Many). Một người có thể có nhiều vai trò (ví dụ: Bác sĩ kiêm Trưởng khoa).
+- **BacSi ↔ ChuyenKhoa**: Một bác sĩ thuộc về một chuyên khoa cụ thể.
+- **BenhNhan ↔ NguoiDung**: Quan hệ 1-1. Mở rộng thông tin y tế cho tài khoản người dùng.
+
+### 2. Luồng Nghiệp vụ Đặt lịch
+- **LichKham**: Chứa các "Slot" thời gian của Bác sĩ.
+- **DatLich**: Kết nối `BenhNhan` và `LichKham`. Đây là bảng trung tâm điều hướng luồng thanh toán và khám bệnh.
+- **HoSoBenhAn**: Được tạo ra sau khi `DatLich` hoàn thành, liên kết với `DonThuoc` và `ChiTietDonThuoc`.
+
+### 3. Hệ thống Giao tiếp & AI
+- **AITuVanPhien**: Lưu trữ toàn bộ hội thoại của một phiên tư vấn AI.
+- **Conversation ↔ Message**: Quản lý tin nhắn giữa Bệnh nhân - Bác sĩ hoặc Bệnh nhân - Nhân viên hỗ trợ.
+- **SupportCase**: Quản lý các ticket hỗ trợ kỹ thuật cho bệnh nhân.
+
+---
+
+## 🚀 Hướng dẫn Cài đặt & Khởi chạy
+
+### 1. Yêu cầu Hệ thống
+- Node.js >= 18.x
+- MySQL Server >= 8.0
+- Internet connection (để kết nối Gemini API)
+
+### 2. Cài đặt Phụ thuộc
 ```bash
-# Kiểm tra services
-sudo supervisorctl status
-
-# Restart nếu cần
-sudo supervisorctl restart all
+# Tại thư mục gốc (Root)
+npm run install:all
 ```
 
-### 📖 Hướng dẫn localhost chi tiết
-Xem file **[README_LOCALHOST.md](./README_LOCALHOST.md)** để:
-- Cấu hình MySQL
-- Test authentication
-- Troubleshooting
-- Database queries
-
-**🔗 Đường dẫn truy cập khi chạy local:** [http://localhost:3050](http://localhost:3050)
-
-### Development
+### 3. Thiết lập Cơ sở dữ liệu
+Hệ thống sử dụng script tự động để khởi tạo:
+1. Tạo Database: `CREATE DATABASE database_benhvien;`
+2. Chạy file batch để import dữ liệu mẫu (31 bảng):
 ```bash
-# Backend
-cd backend && uvicorn server:app --reload --port 8001
-
-# Frontend  
-cd frontend && yarn start
-
-# MySQL
-mysql -u root -p190705 medischedule
+./import_db.bat
 ```
 
----
+### 4. Cấu hình Biến môi trường (.env)
+Tạo file `.env` trong thư mục `backend/` và `frontend/` dựa trên các file `.env.example`. Đảm bảo cung cấp:
+- `DB_PASS`: Mật khẩu MySQL của bạn.
+- `GEMINI_API_KEY`: Key từ Google AI Studio.
 
-## 💳 Hướng dẫn thanh toán
-
-1. Đăng nhập bệnh nhân → Đặt lịch khám
-2. Vào menu "Thanh toán" → Click "Thanh toán ngay"
-3. Nhập thông tin demo:
-   - Số thẻ: `4111111111111111`
-   - Tên: `NGUYEN VAN A`
-   - Hạn: `12/25`, CVV: `123`
-4. Hoàn tất thanh toán! ✅
-
-⚠️ **Mock Payment - Không có giao dịch thật**
-
----
-
-## 📊 API Documentation
-
-- Swagger: `/api/docs`
-- ReDoc: `/api/redoc`
-- OpenAPI: `/api/openapi.json`
+### 5. Khởi chạy Ứng dụng
+```bash
+# Chạy toàn bộ hệ thống (Frontend + Backend)
+./run_local.bat
+```
+- **Frontend**: [http://localhost:3050](http://localhost:3050)
+- **Backend API**: [http://localhost:8001](http://localhost:8001)
 
 ---
 
-## 📈 Project Status
-
-✅ **100% Complete** - All 13 requirements implemented
-- Backend: 100% functional
-- Frontend: 100% responsive
-- Payment: Mock system integrated
-- Testing: 35/41 tests passed (85.4%)
+## 🔒 An toàn & Bảo mật Dữ liệu
+- **Data Encryption**: Mật khẩu được mã hóa bằng `bcrypt`.
+- **JWT Authentication**: Bảo mật các phiên làm việc và API.
+- **Audit Logs**: Ghi lại lịch sử thay đổi các thiết lập quan trọng của hệ thống.
+- **Medical Privacy**: Tuân thủ các nguyên tắc bảo mật thông tin bệnh án y khoa.
 
 ---
-
-## 📞 Support
-
-📧 Check logs: `tail -f /var/log/supervisor/*.log`  
-🔄 Restart: `sudo supervisorctl restart all`  
-📊 Status: `sudo supervisorctl status`
-
-
----
-
-## 🚀 Deployment (GitHub & Live Demo)
-
-Hệ thống đã được cấu hình để tự động build và deploy.
-
-1. **GitHub Actions**: Mỗi khi bạn `push` code lên branch `Nguyen_NT`, GitHub sẽ tự động chạy workflow để build và kiểm tra lỗi.
-2. **Xem Live Demo (Tức thì)**: 
-   - **Cách chạy ngay (Giao diện)**: Nhấn nút **Deploy with Vercel** ở trên.
-   - **Cách chạy ngay (Full Hệ Thống)**: Nhấn nút **Open in GitHub Codespaces**. Nó sẽ mở một máy ảo ngay trên trình duyệt, tự động cài đặt Database và Code. Sau khi mở xong, bạn chỉ cần gõ `./run_local.sh` trong terminal của Codespaces là web sẽ chạy.
-   - **Lưu ý**: Bản web trên GitHub Pages chỉ là Frontend. Để hệ thống hoạt động đầy đủ (đăng nhập, đặt lịch), bạn cần deploy Backend lên Render/Railway và Database lên Aiven/PlanetScale.
-
----
-
-**Made with ❤️ by MediSchedule Team**
-
+**Phát triển bởi MediSchedule Team ❤️**

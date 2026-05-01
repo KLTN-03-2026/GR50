@@ -36,18 +36,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-// Mock data cho các chuyên khoa (10 chuyên khoa)
-// Mock data removed in favor of API
-// const specialties = [...];
-
-// Mock data bác sĩ nổi bật
-// Mock data bác sĩ nổi bật (Removed in favor of real data)
-// const featuredDoctors = [...];
-
-// Mock data cơ sở y tế
-// Mock data cơ sở y tế
-
-
 // Dịch vụ toàn diện
 const comprehensiveServices = [
   { icon: Stethoscope, name: 'Khám Chuyên khoa', color: 'from-blue-500 to-cyan-500', slug: 'specialist-examination' },
@@ -77,7 +65,11 @@ export default function LandingPage() {
   const [showBooking, setShowBooking] = useState(false);
   const { token } = useContext(AuthContext);
 
+  const [showInfoDialog, setShowInfoDialog] = useState(false);
+  const [infoContent, setInfoContent] = useState({ title: '', content: '' });
+
   useEffect(() => {
+    console.log("DEBUG: LandingPage initialized. API URL:", API);
     fetchSystemSettings();
     fetchDoctors();
     fetchSpecialties();
@@ -94,37 +86,57 @@ export default function LandingPage() {
 
   const fetchSpecialties = async () => {
     try {
+      console.log("DEBUG: Fetching specialties...");
       const res = await axios.get(`${API}/specialties`);
-      setSpecialties(res.data.slice(0, 10)); // Limit to 10 like mock data
+      console.log("DEBUG: Specialties response:", res.data);
+      if (Array.isArray(res.data)) {
+        setSpecialties(res.data.slice(0, 10));
+      } else {
+        console.error("DEBUG: Specialties data is not an array:", res.data);
+      }
     } catch (error) {
-      console.error("Failed to fetch specialties", error);
+      console.error("DEBUG: Failed to fetch specialties", error);
     }
   };
 
   const fetchFacilities = async () => {
     try {
+      console.log("DEBUG: Fetching clinics...");
       const res = await axios.get(`${API}/clinics`);
-      setFacilities(res.data.slice(0, 3));
+      console.log("DEBUG: Clinics response:", res.data);
+      if (Array.isArray(res.data)) {
+        setFacilities(res.data.slice(0, 3));
+      } else {
+        console.error("DEBUG: Clinics data is not an array:", res.data);
+      }
     } catch (error) {
-      console.error("Failed to fetch facilities", error);
+      console.error("DEBUG: Failed to fetch facilities", error);
     }
   };
 
   const fetchDoctors = async () => {
     try {
+      console.log("DEBUG: Fetching doctors...");
       const res = await axios.get(`${API}/doctors`);
-      setDoctors(res.data.slice(0, 3));
+      console.log("DEBUG: Doctors response length:", res.data?.length);
+      if (Array.isArray(res.data)) {
+        setDoctors(res.data.slice(0, 3));
+      } else {
+        console.error("DEBUG: Doctors data is not an array:", res.data);
+      }
     } catch (error) {
-      console.error("Failed to fetch doctors", error);
+      console.error("DEBUG: Failed to fetch doctors", error);
     }
   };
 
   const fetchSystemSettings = async () => {
     try {
+      console.log("DEBUG: Fetching system settings...");
       const res = await axios.get(`${API}/system/public`);
-      setSystemSettings(res.data);
+      console.log("DEBUG: System settings response:", res.data);
+      setSystemSettings(res.data || {});
     } catch (error) {
-      console.error("Failed to fetch system settings", error);
+      console.error("DEBUG: Failed to fetch system settings", error);
     }
   };
 
@@ -132,8 +144,6 @@ export default function LandingPage() {
     logout();
     navigate('/login');
   };
-
-
 
   const handleDashboard = () => {
     if (!user) return;
@@ -181,6 +191,11 @@ export default function LandingPage() {
     if (avatarPath.startsWith('http') || avatarPath.startsWith('blob:')) return avatarPath;
     if (avatarPath.startsWith('/images/')) return avatarPath;
     return `${API.replace('/api', '')}${avatarPath}`;
+  };
+
+  const openInfo = (title, content) => {
+    setInfoContent({ title, content });
+    setShowInfoDialog(true);
   };
 
   return (
@@ -366,7 +381,7 @@ export default function LandingPage() {
       </section>
 
       {/* Comprehensive Services Section */}
-      < section id="dich-vu" className="py-16 bg-gray-50 dark:bg-gray-800/50" >
+      <section id="dich-vu" className="py-16 bg-gray-50 dark:bg-gray-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Dịch vụ toàn diện</h2>
@@ -395,7 +410,7 @@ export default function LandingPage() {
       </section>
 
       {/* Specialties Section */}
-      < section id="chuyen-khoa" className="py-16" >
+      <section id="chuyen-khoa" className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Chuyên khoa</h2>
@@ -407,10 +422,9 @@ export default function LandingPage() {
             </button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {specialties.map((specialty, idx) => (
+            {specialties.length > 0 ? specialties.map((specialty, idx) => (
               <div
                 key={specialty.id || specialty.Id_ChuyenKhoa || idx}
-
                 onClick={() => navigate(`/specialty/${specialty.id}`)}
                 className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-xl transition cursor-pointer group"
               >
@@ -419,6 +433,7 @@ export default function LandingPage() {
                     src={specialty.image || specialtyImageMap[specialty.name] || 'https://via.placeholder.com/300'}
                     alt={specialty.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                    onError={(e) => { e.target.src = 'https://via.placeholder.com/300'; }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                   <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -431,13 +446,15 @@ export default function LandingPage() {
                   </p>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-full py-10 text-center text-gray-500 italic">Đang tải chuyên khoa hoặc không có dữ liệu...</div>
+            )}
           </div>
         </div>
       </section>
 
       {/* Featured Doctors Section */}
-      < section id="bac-si" className="py-16 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800" >
+      <section id="bac-si" className="py-16 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Bác sĩ nổi bật</h2>
@@ -449,32 +466,31 @@ export default function LandingPage() {
             </button>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {doctors.map((doctor, idx) => (
+            {doctors.length > 0 ? doctors.map((doctor, idx) => (
               <div
                 key={doctor.id || idx}
-
                 onClick={() => navigate(`/doctors/${doctor.id}`)}
                 className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-xl transition cursor-pointer"
               >
                 <div className="aspect-[4/3] relative overflow-hidden">
                     <img
-                      src={getAvatarUrl(doctor.avatar) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(doctor.full_name)}`}
+                      src={getAvatarUrl(doctor.avatar) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(doctor.full_name || 'Doctor')}`}
                       alt={doctor.full_name}
                       className="w-full h-full object-cover"
+                      onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=BS'; }}
                     />
-
                 </div>
                 <div className="p-6">
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">{doctor.full_name}</h3>
+                  <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">{doctor.full_name || 'Bác sĩ'}</h3>
                   <p className="text-cyan-600 font-medium mb-3">{doctor.specialty_name || 'Bác sĩ chuyên khoa'}</p>
                   <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                     <span className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      {doctor.experience_years} năm
+                      {doctor.experience_years || 0} năm
                     </span>
                     <span className="font-semibold text-gray-900 dark:text-white">
                       <span className="font-semibold text-cyan-600">Phí: </span>
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(doctor.consultation_fee)}
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(doctor.consultation_fee || 0)}
                     </span>
                   </div>
                   
@@ -483,24 +499,12 @@ export default function LandingPage() {
                        <div className="flex items-start gap-2 text-sm">
                          <MapPin className="w-4 h-4 text-cyan-500 mt-0.5 flex-shrink-0" />
                          <div>
-                           {doctor.facilities.length === 1 ? (
-                             <>
-                               <p className="text-gray-700 dark:text-gray-300">
-                                 <span className="font-medium">Cơ sở: </span>
-                                 {doctor.facilities[0].name}
-                               </p>
-                               <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5 truncate max-w-[200px]">
-                                 {doctor.facilities[0].address}
-                               </p>
-                             </>
-                           ) : (
-                             <>
-                               <p className="text-gray-700 dark:text-gray-300 font-medium">Khám tại {doctor.facilities.length} cơ sở</p>
-                               <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5 truncate max-w-[200px]">
-                                 Chính: {doctor.facilities.find(f => f.is_primary)?.name || doctor.facilities[0].name}
-                               </p>
-                             </>
-                           )}
+                            <p className="text-gray-700 dark:text-gray-300 font-medium">
+                              {doctor.facilities[0].name}
+                            </p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5 truncate max-w-[200px]">
+                              {doctor.facilities[0].address}
+                            </p>
                          </div>
                        </div>
                      ) : (
@@ -524,18 +528,20 @@ export default function LandingPage() {
                           setShowBooking(true);
                         }}
                      >
-                       {doctor.facilities?.length > 1 ? 'Chọn cơ sở' : 'Đặt lịch'}
+                       Đặt lịch
                      </Button>
                   </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-full py-10 text-center text-gray-500 italic">Đang tải danh sách bác sĩ...</div>
+            )}
           </div>
         </div>
       </section>
 
       {/* Medical Facilities Section */}
-      < section id="co-so" className="py-16" >
+      <section id="co-so" className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Cơ sở y tế uy tín</h2>
@@ -547,24 +553,19 @@ export default function LandingPage() {
             </button>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {facilities.map((facility, idx) => (
+            {facilities.length > 0 ? facilities.map((facility, idx) => (
               <div
                 key={facility.id || facility.Id_PhongKham || idx}
-
                 onClick={() => facility.GoogleMapUrl ? window.open(facility.GoogleMapUrl, '_blank') : null}
                 className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-xl transition cursor-pointer"
               >
                 <div className="aspect-video relative overflow-hidden">
                   <img
-                    src={facility.UrlLogo || facility.UrlBanner || [
-                        'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800',
-                        'https://images.unsplash.com/photo-1586773860418-d3b97998c637?auto=format&fit=crop&q=80&w=800',
-                        'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=800'
-                    ][idx % 3]}
+                    src={facility.UrlLogo || facility.UrlBanner || 'https://via.placeholder.com/800x400?text=Clinic'}
                     alt={facility.TenPhongKham}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => { e.target.src = 'https://via.placeholder.com/800x400?text=Hospital'; }}
                   />
-
                 </div>
                 <div className="p-6">
                   <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">{facility.TenPhongKham}</h3>
@@ -572,18 +573,17 @@ export default function LandingPage() {
                     <MapPin className="w-4 h-4" />
                     {facility.DiaChi}
                   </p>
-                  {facility.GoogleMapUrl && (
-                    <p className="text-sm text-cyan-600 mt-2 font-medium">Bấm để xem trên Google Maps</p>
-                  )}
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-full py-10 text-center text-gray-500 italic">Đang tải danh sách cơ sở y tế...</div>
+            )}
           </div>
         </div>
       </section>
 
       {/* Telemedicine Section */}
-      < section className="py-16 bg-gradient-to-r from-teal-500 to-cyan-500" >
+      <section className="py-16 bg-gradient-to-r from-teal-500 to-cyan-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center text-white space-y-6">
             <h2 className="text-4xl font-bold">Khám bệnh từ xa</h2>
@@ -593,20 +593,10 @@ export default function LandingPage() {
             <div className="flex justify-center gap-4 mt-8">
               <Button
                 size="lg"
-                onClick={() => {
-                  navigate('/doctors');
-                }}
+                onClick={() => navigate('/doctors')}
                 className="bg-white text-teal-600 hover:bg-gray-100 text-lg px-8"
               >
                 Đặt lịch ngay
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => navigate('/services')}
-                className="border-2 border-white text-white hover:bg-white/10 text-lg px-8"
-              >
-                Tìm hiểu thêm
               </Button>
             </div>
           </div>
@@ -614,7 +604,7 @@ export default function LandingPage() {
       </section>
 
       {/* Call to Action Section */}
-      < section className="py-20 bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-gray-800 dark:to-gray-700" >
+      <section className="py-20 bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-gray-800 dark:to-gray-700">
         <div className="max-w-4xl mx-auto px-4 text-center space-y-8">
           <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white">
             Sẵn sàng chăm sóc sức khỏe của bạn?
@@ -633,7 +623,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      < footer className="bg-gray-900 text-white py-12" >
+      <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
@@ -645,29 +635,23 @@ export default function LandingPage() {
               </div>
               <p className="text-gray-400 text-sm">
                 Đồ án Tốt nghiệp Đại học
-                <br></br>
+                <br />
                 Đội ngũ phát triển MediSched AI _Nhóm 50_KLTN_ĐẠI HỌC DUY TÂN _2026
-                <br></br>
               </p>
             </div>
 
             <div>
               <h3 className="font-bold mb-4">Dịch vụ</h3>
               <ul className="space-y-2 text-gray-400 text-sm">
-                <li><a href="#" className="hover:text-cyan-400">Khám chuyên khoa</a></li>
-                <li><a href="#" className="hover:text-cyan-400">Khám từ xa</a></li>
-                <li><a href="#" className="hover:text-cyan-400">Xét nghiệm</a></li>
-                <li><a href="#" className="hover:text-cyan-400">Gói phẫu thuật</a></li>
+                <li><a href="#chuyen-khoa" className="hover:text-cyan-400">Khám chuyên khoa</a></li>
+                <li><button onClick={() => navigate('/services/remote-examination')} className="hover:text-cyan-400">Khám từ xa</button></li>
               </ul>
             </div>
 
             <div>
               <h3 className="font-bold mb-4">Hỗ trợ</h3>
               <ul className="space-y-2 text-gray-400 text-sm">
-                <li><a href="#" className="hover:text-cyan-400">Câu hỏi thường gặp</a></li>
-                <li><a href="#" className="hover:text-cyan-400">Hướng dẫn đặt lịch</a></li>
-                <li><a href="#" className="hover:text-cyan-400">Chính sách</a></li>
-                <li><a href="#" className="hover:text-cyan-400">Điều khoản</a></li>
+                <li><button onClick={() => openInfo('Câu hỏi thường gặp', 'Hệ thống hỗ trợ đặt lịch khám online 24/7.')} className="hover:text-cyan-400 text-left">Câu hỏi thường gặp</button></li>
               </ul>
             </div>
 
@@ -678,29 +662,7 @@ export default function LandingPage() {
                   <Phone className="w-4 h-4" />
                   <span>{systemSettings.hospital_phone || '0905-xxx-xxx'}</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  <span>{systemSettings.hospital_email || 'azy@gmail.com'}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  <span>{systemSettings.hospital_address || 'Đà Nẵng, Việt Nam'}</span>
-                </li>
               </ul>
-              <div className="flex gap-3 mt-4">
-                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 hover:bg-cyan-500 flex items-center justify-center transition">
-                  <Facebook className="w-4 h-4" />
-                </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 hover:bg-cyan-500 flex items-center justify-center transition">
-                  <Twitter className="w-4 h-4" />
-                </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 hover:bg-cyan-500 flex items-center justify-center transition">
-                  <Youtube className="w-4 h-4" />
-                </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 hover:bg-cyan-500 flex items-center justify-center transition">
-                  <Instagram className="w-4 h-4" />
-                </a>
-              </div>
             </div>
           </div>
 
@@ -711,7 +673,7 @@ export default function LandingPage() {
       </footer>
 
       {/* Avatar Upload Dialog */}
-      < Dialog open={showAvatarDialog} onOpenChange={setShowAvatarDialog} >
+      <Dialog open={showAvatarDialog} onOpenChange={setShowAvatarDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Đổi ảnh đại diện</DialogTitle>
@@ -732,7 +694,6 @@ export default function LandingPage() {
                 onChange={handleAvatarChange}
                 disabled={uploading}
               />
-              {uploading && <p className="text-sm text-muted-foreground animate-pulse">Đang tải lên...</p>}
             </div>
           </div>
         </DialogContent>

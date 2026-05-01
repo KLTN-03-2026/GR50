@@ -121,9 +121,16 @@ export default function FloatingChatButton() {
       const headers = {};
       if (token) headers.Authorization = `Bearer ${token}`;
 
+      // Convert local messages to history format
+      const chatHistory = messages.map(m => `${m.sender === 'user' ? 'Người dùng' : 'AI'}: ${m.text}`).join('\n');
+
       const response = await axios.post(
         `${API}/ai/chat`,
-        { message: userMsg, image: imgBase64 || undefined },
+        { 
+            message: userMsg, 
+            image: imgBase64 || undefined,
+            historyText: chatHistory
+        },
         { headers }
       );
       const aiResponse = response.data?.result || 'Không có phản hồi từ AI.';

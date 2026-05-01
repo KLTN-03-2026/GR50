@@ -55,6 +55,7 @@ exports.getFacilityById = async (req, res) => {
                     { model: ChuyenKhoa },
                     { 
                         model: PhongKham, 
+                        as: 'facilities',
                         where: { Id_PhongKham: id },
                         through: { attributes: [] }
                     }

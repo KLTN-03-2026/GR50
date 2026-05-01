@@ -85,7 +85,12 @@ async function callGemini(message, history) {
     const makeRequest = async (key) => {
         const response = await axios.post(
             `${base}/models/${model}:generateContent`,
-            { contents: [{ parts: [{ text: prompt }] }] },
+            { 
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.2
+                }
+            },
             {
                 headers: {
                     'Content-Type': 'application/json',
@@ -143,18 +148,49 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     return R * c; // Distance in km
 }
 
-async function findNearbyFacilities(lat, lng, specialty) {
-    const { PhongKham } = require('../models');
+async function findNearbyFacilities(lat, lng, specialtyName) {
+    const { PhongKham, BacSi, ChuyenKhoa } = require('../models');
+    const { Op } = require('sequelize');
     try {
-        // Find all clinics for now. In a real system, you'd filter by specialty/status.
-        const clinics = await PhongKham.findAll();
+        let includeOptions = [];
+        if (specialtyName) {
+            includeOptions.push({
+                model: BacSi,
+                as: 'doctors',
+                required: true,
+                include: [{
+                    model: ChuyenKhoa,
+                    required: true,
+                    where: { 
+                        TenChuyenKhoa: {
+                            [Op.like]: `%${specialtyName}%`
+                        }
+                    }
+                }]
+            });
+        }
+
+        let clinics = await PhongKham.findAll({
+            where: { TrangThai: 'HoatDong' },
+            include: includeOptions
+        });
+
+        // Fallback to all active clinics if no matches for the specific specialty
+        if (clinics.length === 0 && specialtyName) {
+            clinics = await PhongKham.findAll({
+                where: { TrangThai: 'HoatDong' }
+            });
+        }
+
         let facilities = clinics.map(c => {
             let distance = null;
             let time = null;
-            // Assuming we have lat/lng on the model, if not, we generate a mock distance based on ID
-            // For this implementation, we will mock distances if the model lacks real coordinates.
-            if (lat && lng && c.Latitude && c.Longitude) {
-                distance = getDistanceFromLatLonInKm(lat, lng, c.Latitude, c.Longitude);
+            
+            const cLat = c.ToaDo_Lat ? parseFloat(c.ToaDo_Lat) : null;
+            const cLng = c.ToaDo_Lng ? parseFloat(c.ToaDo_Lng) : null;
+
+            if (lat && lng && cLat && cLng) {
+                distance = getDistanceFromLatLonInKm(parseFloat(lat), parseFloat(lng), cLat, cLng);
             } else if (lat && lng) {
                 // Mock distance between 1km and 10km if real coordinates are missing
                 distance = (c.Id_PhongKham % 10) + 1.5; 
@@ -168,6 +204,8 @@ async function findNearbyFacilities(lat, lng, specialty) {
                 facility_id: c.Id_PhongKham,
                 name: c.TenPhongKham,
                 address: c.DiaChi,
+                lat: cLat,
+                lng: cLng,
                 distance_km: distance ? parseFloat(distance.toFixed(1)) : null,
                 estimated_travel_time_min: time,
                 route_type: time && time < 15 ? 'fastest' : 'nearest',
@@ -176,10 +214,10 @@ async function findNearbyFacilities(lat, lng, specialty) {
         });
 
         if (lat && lng) {
-            facilities = facilities.sort((a, b) => a.distance_km - b.distance_km);
+            facilities = facilities.sort((a, b) => (a.distance_km || Infinity) - (b.distance_km || Infinity));
         }
         
-        return facilities.slice(0, 3); // Return top 3
+        return facilities.slice(0, 5); // Return top 5
     } catch (error) {
         console.error("Error finding nearby facilities:", error);
         return [];

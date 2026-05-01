@@ -23,7 +23,12 @@ async function generateWithRetryAndFallback(keys, contents, isVision, preferredM
 
       while (attempt <= maxRetries) {
         try {
-          const model = genAI.getGenerativeModel({ model: modelName });
+          const model = genAI.getGenerativeModel({ 
+            model: modelName,
+            generationConfig: {
+              temperature: 0.2
+            }
+          });
           const result = await model.generateContent(contents);
           return result;
         } catch (error) {
@@ -80,17 +85,16 @@ exports.analyzeSymptoms = async (req, res) => {
 
     if (keys.length === 0) return res.status(500).json({ detail: 'Chưa cấu hình GEMINI_API_KEY' });
 
-    const prompt = `
+    const prompt = `Bạn là trợ lý AI y tế trực tuyến phân loại triệu chứng ban đầu.
       Tôi đang có các triệu chứng sau: "${symptoms}".
-      Bạn là một trợ lý y tế ảo. Dựa vào mô tả này, hãy đưa ra:
+      Dựa vào mô tả này, hãy đưa ra:
       1. Chẩn đoán sơ bộ chi tiết dựa vào triệu chứng.
-      2. Phân tích nguyên nhân có thể và lời khuyên chăm sóc ban đầu (hướng dẫn cụ thể, cặn kẽ).
+      2. Phân tích nguyên nhân có thể và lời khuyên chăm sóc ban đầu.
       3. Gợi ý tôi nên khám chuyên khoa nào.
       Tuyệt đối KHÔNG ĐƯA RA CÁC ĐỊNH DẠNG ĐƯỢC CHUẨN HOÁ MARKDOWN HAY LIST NHƯ * HAY #. Trả về đúng format text thuần tuý sau:
       Chẩn đoán sơ bộ: ...
-      Lời khuyên: ...
-      Chuyên khoa gợi ý: ...
-    `;
+      Lời khuyên: ... (Ngắn gọn, súc tích, tối đa 50 từ)
+      Chuyên khoa gợi ý: ...`;
 
     const result = await generateWithRetryAndFallback(keys, prompt, false, process.env.GEMINI_MODEL || 'gemini-1.5-flash');
     const response = await result.response;
@@ -105,7 +109,7 @@ exports.analyzeSymptoms = async (req, res) => {
 
 exports.chat = async (req, res) => {
   try {
-    const { message, image } = req.body;
+    const { message, image, historyText } = req.body;
     if (!message && !image) return res.status(400).json({ detail: 'Missing message or image' });
 
     let userId = null;
@@ -128,14 +132,18 @@ exports.chat = async (req, res) => {
 
     if (keys.length === 0) return res.status(500).json({ detail: 'Chưa cấu hình GEMINI_API_KEY' });
 
-    const promptText = `Bạn là trợ lý AI y tế chuyên nghiệp và tận tụy của MediSchedule.
-QUY TẮC BẮT BUỘC:
-- Tư vấn chi tiết, thấu đáo và phân tích rõ triệu chứng cho bệnh nhân.
-- Nếu người dùng chào → chào lại thân thiện + hỏi thăm sức khoẻ.
-- Nếu hỏi về triệu chứng → phân tích nguyên nhân tiềm năng, lời khuyên chăm sóc tại nhà và gợi ý chuyên khoa phù hợp.
-- Nếu có ảnh → nhận xét cặn kẽ biểu hiện trên ảnh và tư vấn hướng giải quyết.
-- Luôn kết thúc bằng: "Thông tin chỉ mang tính tham khảo, vui lòng đặt lịch khám để được bác sĩ chuyên khoa chẩn đoán chính xác."
-Người dùng nói: "${message || 'Tôi gửi một hình ảnh'}".`;
+    const promptText = `Bạn là trợ lý AI y tế trực tuyến phân loại triệu chứng ban đầu.
+Quy tắc bắt buộc:
+- Không chào hỏi dài dòng, không bày tỏ cảm xúc dư thừa (VD: bỏ ngay các câu như 'Tôi rất tiếc khi nghe bạn bị...', 'Đau bụng là một triệu chứng phổ biến...').
+- Đi thẳng vào trọng tâm: Đặt ngay 1 đến tối đa 2 câu hỏi thiết thực nhất để làm rõ triệu chứng.
+- Câu trả lời tối đa không quá 50 từ. Ngắn gọn, súc tích và chuyên nghiệp.
+- Tuyệt đối KHÔNG yêu cầu người dùng cung cấp vị trí địa lý hoặc địa chỉ để tìm cơ sở y tế (vì hệ thống đã tự động định vị ngầm).
+
+LỊCH SỬ TRƯỚC ĐÓ:
+${historyText || 'Chưa có'}
+
+NỘI DUNG MỚI TỪ NGƯỜI DÙNG:
+"${message || 'Tôi gửi một hình ảnh'}"`;
 
     let contents = [promptText];
 

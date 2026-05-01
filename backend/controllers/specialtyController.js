@@ -6,7 +6,8 @@ exports.getAll = async (req, res) => {
     res.json(specialties.map(s => ({
       id: s.Id_ChuyenKhoa,
       name: s.TenChuyenKhoa,
-      description: s.MoTa
+      description: s.MoTa,
+      image: s.image
     })));
   } catch (error) {
     console.error('Get specialties error:', error);
@@ -24,7 +25,8 @@ exports.create = async (req, res) => {
     res.json({
       id: specialty.Id_ChuyenKhoa,
       name: specialty.TenChuyenKhoa,
-      description: specialty.MoTa
+      description: specialty.MoTa,
+      image: specialty.image
     });
   } catch (error) {
     console.error('Create specialty error:', error);
@@ -42,7 +44,8 @@ exports.getById = async (req, res) => {
     res.json({
       id: s.Id_ChuyenKhoa,
       name: s.TenChuyenKhoa,
-      description: s.MoTa
+      description: s.MoTa,
+      image: s.image
     });
   } catch (error) {
     console.error('Get specialty error:', error);
@@ -65,7 +68,8 @@ exports.update = async (req, res) => {
     res.json({
       id: s.Id_ChuyenKhoa,
       name: s.TenChuyenKhoa,
-      description: s.MoTa
+      description: s.MoTa,
+      image: s.image
     });
   } catch (error) {
     console.error('Update specialty error:', error);

@@ -11,7 +11,7 @@ const ThanhToan = sequelize.define('ThanhToan', {
     MaGiaoDich: { type: DataTypes.STRING(100) },
     SoTien: { type: DataTypes.DECIMAL(12, 2) },
     PhuongThuc: { type: DataTypes.ENUM('VNPay', 'Momo', 'TienMat') },
-    TrangThai: { type: DataTypes.ENUM('PENDING', 'SUCCESS', 'FAILED', 'REFUNDED') },
+    TrangThai: { type: DataTypes.ENUM('PENDING', 'SUCCESS', 'FAILED', 'REFUNDED', 'UNPAID', 'PAID') },
     MoTa: { type: DataTypes.TEXT }
 }, { tableName: 'thanhtoan', timestamps: true, createdAt: 'NgayTao', updatedAt: 'NgayCapNhat' });
 

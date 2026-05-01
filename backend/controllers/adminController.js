@@ -1,4 +1,4 @@
-const { sequelize, ThanhToan, DatLich: Appointment, BenhNhan, NguoiDung, BacSi, VaiTro, ChuyenKhoa, NguoiDung_VaiTro, PhongKham: Clinic, BacSi_PhongKham: DoctorFacility, StaffProfile, Staff_Facility: StaffFacility, AITuVanPhien: AITriage, LichKham: DoctorSchedule, HoaDon } = require('../models');
+const { sequelize, ThanhToan, DatLich: Appointment, BenhNhan, NguoiDung, BacSi, VaiTro, ChuyenKhoa, NguoiDung_VaiTro, PhongKham: Clinic, BacSi_PhongKham: DoctorFacility, StaffProfile, Staff_Facility: StaffFacility, AITuVanPhien: AITriage, LichKham: DoctorSchedule, HoaDon, AdminProfile } = require('../models');
 
 const bcrypt = require('bcryptjs');
 const { Op, fn, col, literal } = require('sequelize');
@@ -19,30 +19,57 @@ const generatePassword = () => {
     return Math.random().toString(36).slice(-8); // 8 character random string
 };
 
+const getAdminScope = (req) => {
+    const { admin_type, facility_id } = req.user;
+    if (admin_type === 'SUPER_ADMIN') return {};
+    return { facility_id };
+};
+
+const getAdminWhere = (req, fieldName = 'Id_PhongKham') => {
+    const scope = getAdminScope(req);
+    if (!scope.facility_id) return {};
+    return { [fieldName]: scope.facility_id };
+};
+
+
 exports.getStats = async (req, res) => {
     try {
-        // Global User Counts
-        const total_users = await NguoiDung.count();
-        const total_doctors = await BacSi.count();
-        const approved_doctors = await BacSi.count({ where: { TrangThai: 'HoatDong' } });
-        const total_patients = await BenhNhan.count();
+        const facilityFilter = getAdminWhere(req);
+        const hasFacility = !!facilityFilter.Id_PhongKham;
 
-        // Global Appointment Stats
-        const total_appointments = await Appointment.count();
-        const pending_appointments = await Appointment.count({ where: { TrangThai: { [Op.in]: ['PENDING', 'ChoXacNhan'] } } });
-        const confirmed_appointments = await Appointment.count({ where: { TrangThai: { [Op.in]: ['CONFIRMED', 'DaXacNhan'] } } });
-        const completed_appointments = await Appointment.count({ where: { TrangThai: { [Op.in]: ['COMPLETED', 'DaKham'] } } });
-        const cancelled_appointments = await Appointment.count({ where: { TrangThai: { [Op.in]: ['CANCELLED', 'Huy'] } } });
+        // User Counts (Filter doctors/staff by facility if needed)
+        const total_users = hasFacility ? 0 : await NguoiDung.count(); // Global only
+        const total_doctors = await BacSi.count({
+            include: hasFacility ? [{ model: Clinic, as: 'facilities', where: { Id_PhongKham: facilityFilter.Id_PhongKham } }] : []
+        });
+        const approved_doctors = await BacSi.count({ 
+            where: { TrangThai: 'HoatDong' },
+            include: hasFacility ? [{ model: Clinic, as: 'facilities', where: { Id_PhongKham: facilityFilter.Id_PhongKham } }] : []
+        });
+        const total_patients = await BenhNhan.count({
+            include: hasFacility ? [{ 
+                model: Appointment, 
+                where: facilityFilter,
+                required: true
+            }] : [],
+            distinct: true
+        });
 
+        // Appointment Stats
+        const total_appointments = await Appointment.count({ where: facilityFilter });
+        const pending_appointments = await Appointment.count({ where: { ...facilityFilter, TrangThai: { [Op.in]: ['PENDING', 'ChoXacNhan'] } } });
+        const confirmed_appointments = await Appointment.count({ where: { ...facilityFilter, TrangThai: { [Op.in]: ['CONFIRMED', 'DaXacNhan'] } } });
+        const completed_appointments = await Appointment.count({ where: { ...facilityFilter, TrangThai: { [Op.in]: ['COMPLETED', 'DaKham'] } } });
+        const cancelled_appointments = await Appointment.count({ where: { ...facilityFilter, TrangThai: { [Op.in]: ['CANCELLED', 'Huy'] } } });
 
-        // Global Revenue
+        // Revenue
         const payments = await ThanhToan.findAll({ 
             where: { 
-                TrangThai: { [Op.in]: ['ThanhCong', 'PAID'] } 
+                TrangThai: { [Op.in]: ['ThanhCong', 'PAID'] },
+                ...facilityFilter
             } 
         });
         const total_revenue = payments.reduce((sum, p) => sum + parseFloat(p.SoTien || 0), 0);
-
 
         res.json({
             total_users,
@@ -55,8 +82,10 @@ exports.getStats = async (req, res) => {
             completed_appointments,
             cancelled_appointments,
             total_revenue,
-            active_sessions: 0 // Mocked for now
+            admin_type: req.user.admin_type,
+            active_sessions: 0
         });
+
     } catch (error) {
         console.error('AdminGlobalStats Error:', error);
         res.status(500).json({ detail: 'Lỗi máy chủ khi lấy thống kê hệ thống' });
@@ -65,9 +94,20 @@ exports.getStats = async (req, res) => {
 
 exports.getDoctors = async (req, res) => {
     try {
+        const facilityFilter = getAdminWhere(req);
         const bacsis = await BacSi.findAll({
-            include: [{ model: NguoiDung }, { model: ChuyenKhoa }]
+            include: [
+                { model: NguoiDung }, 
+                { model: ChuyenKhoa },
+                { 
+                    model: Clinic, 
+                    as: 'facilities', 
+                    where: facilityFilter.Id_PhongKham ? { Id_PhongKham: facilityFilter.Id_PhongKham } : {},
+                    required: !!facilityFilter.Id_PhongKham
+                }
+            ]
         });
+
 
         res.json(bacsis.map(d => ({
             user_id: d.Id_NguoiDung,
@@ -173,18 +213,22 @@ exports.getPayments = async (req, res) => {
 
 exports.getAdmins = async (req, res) => {
     try {
-        const adminRole = await VaiTro.findOne({ where: { MaVaiTro: 'admin' } });
-        if (!adminRole) return res.json([]);
         const admins = await NguoiDung.findAll({
-            include: [{ model: VaiTro, where: { MaVaiTro: 'admin' }, through: { attributes: [] } }]
+            include: [
+                { model: VaiTro, where: { MaVaiTro: 'admin' }, through: { attributes: [] } },
+                { model: AdminProfile, as: 'adminProfile', include: [{ model: Clinic, as: 'assignedFacility' }] }
+            ]
         });
         res.json(admins.map(a => ({
             id: a.Id_NguoiDung,
             full_name: `${a.Ho} ${a.Ten}`,
             email: a.Email,
             phone: a.SoDienThoai,
-            created_at: a.NgayTao
+            created_at: a.NgayTao,
+            admin_type: a.adminProfile?.admin_type || 'SUPER_ADMIN',
+            assigned_facility: a.adminProfile?.assignedFacility?.TenPhongKham || 'Toàn hệ thống'
         })));
+
     } catch (error) {
         console.error('Get admins error:', error);
         res.status(500).json({ detail: 'Internal server error' });
@@ -313,14 +357,29 @@ exports.createUser = async (req, res) => {
 };
 
 exports.createAdmin = async (req, res) => {
+    const t = await sequelize.transaction();
     try {
-        const { email, password, full_name, phone } = req.body;
+        const { 
+            email, password, full_name, phone, 
+            admin_type, facility_id, 
+            permissions 
+        } = req.body;
+
+        if (req.user.admin_type !== 'SUPER_ADMIN') {
+            await t.rollback();
+            return res.status(403).json({ detail: 'Chỉ Super Admin mới có quyền tạo Admin mới.' });
+        }
+
         if (!email || !password || !full_name) {
+            await t.rollback();
             return res.status(400).json({ detail: 'Thiếu thông tin bắt buộc (Email, Mật khẩu, Họ tên).' });
         }
 
         const exists = await NguoiDung.findOne({ where: { Email: email } });
-        if (exists) return res.status(400).json({ detail: 'Email đã tồn tại.' });
+        if (exists) {
+            await t.rollback();
+            return res.status(400).json({ detail: 'Email đã tồn tại.' });
+        }
 
         const hashed = await bcrypt.hash(password, 10);
         const names = full_name.split(' ');
@@ -334,19 +393,36 @@ exports.createAdmin = async (req, res) => {
             Ten: ten,
             SoDienThoai: phone || null,
             TrangThai: 'HoatDong'
-        });
+        }, { transaction: t });
 
         const vt = await VaiTro.findOne({ where: { MaVaiTro: 'admin' } });
         if (vt) {
-            await NguoiDung_VaiTro.create({ Id_NguoiDung: user.Id_NguoiDung, Id_VaiTro: vt.Id_VaiTro });
+            await NguoiDung_VaiTro.create({ Id_NguoiDung: user.Id_NguoiDung, Id_VaiTro: vt.Id_VaiTro }, { transaction: t });
         }
 
+        // Create Admin Profile
+        await AdminProfile.create({
+            user_id: user.Id_NguoiDung,
+            admin_type: admin_type || 'FACILITY_ADMIN',
+            facility_id: admin_type === 'FACILITY_ADMIN' ? facility_id : null,
+            can_manage_doctors: permissions?.can_manage_doctors || false,
+            can_manage_staff: permissions?.can_manage_staff || false,
+            can_manage_patients: permissions?.can_manage_patients || false,
+            can_view_stats: permissions?.can_view_stats || false,
+            can_manage_payments: permissions?.can_manage_payments || false,
+            can_manage_specialties: admin_type === 'SUPER_ADMIN',
+            can_manage_admins: admin_type === 'SUPER_ADMIN'
+        }, { transaction: t });
+
+        await t.commit();
         res.status(201).json({ message: 'Tạo tài khoản quản trị viên thành công', id: user.Id_NguoiDung });
     } catch (error) {
+        if (t) await t.rollback();
         console.error('Admin.createAdmin Error:', error);
         res.status(500).json({ detail: 'Lỗi máy chủ khi tạo quản trị viên' });
     }
 };
+
 
 exports.deleteAdmin = async (req, res) => {
     try {
@@ -467,7 +543,7 @@ exports.getAllAppointments = async (req, res) => {
                 { 
                     model: DoctorSchedule,
                     include: [
-                        { model: BacSi, include: [{ model: NguoiDung, attributes: ['Ho', 'Ten'] }] }
+                        { model: BacSi, as: 'Doctor', include: [{ model: NguoiDung, attributes: ['Ho', 'Ten'] }] }
                     ]
                 },
                 { model: Clinic, as: 'Clinic', attributes: ['TenPhongKham'] }
@@ -482,7 +558,7 @@ exports.getAllAppointments = async (req, res) => {
                 id: d.Id_DatLich,
                 MaDatLich: d.MaDatLich,
                 patient_name: `${d.BenhNhan?.NguoiDung?.Ho || ''} ${d.BenhNhan?.NguoiDung?.Ten || ''}`.trim(),
-                doctor_name: `${d.DoctorSchedule?.BacSi?.NguoiDung?.Ho || ''} ${d.DoctorSchedule?.BacSi?.NguoiDung?.Ten || ''}`.trim(),
+                doctor_name: `${d.DoctorSchedule?.Doctor?.NguoiDung?.Ho || ''} ${d.DoctorSchedule?.Doctor?.NguoiDung?.Ten || ''}`.trim(),
                 NgayKham: d.DoctorSchedule?.NgayDate || 'N/A',
                 GioKham: d.DoctorSchedule?.GioBatDau || 'N/A',
                 TrangThai: d.TrangThai,
@@ -577,6 +653,7 @@ exports.getDetailedStats = async (req, res) => {
                     attributes: [],
                     include: [{
                         model: BacSi,
+                        as: 'Doctor',
                         attributes: [],
                         include: [{ model: ChuyenKhoa, attributes: [] }]
                     }]

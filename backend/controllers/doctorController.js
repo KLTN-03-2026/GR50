@@ -86,7 +86,7 @@ exports.getProfile = async (req, res) => {
             Id_BenhNhan: patient.Id_BenhNhan, 
             TrangThai: { [Op.in]: ['COMPLETED', 'DaKham'] } 
           },
-          include: [{ model: LichKham, where: { Id_BacSi: doctorId } }],
+          include: [{ model: LichKham, as: 'DoctorSchedule', where: { Id_BacSi: doctorId } }],
           order: [['NgayTao', 'DESC']]
         });
         
@@ -109,15 +109,25 @@ exports.getProfile = async (req, res) => {
       email: d.NguoiDung.Email,
       phone: d.NguoiDung.SoDienThoai,
       avatar: d.NguoiDung.AnhDaiDien,
+      specialty_id: d.Id_ChuyenKhoa,
       specialty_name: d.ChuyenKhoa ? d.ChuyenKhoa.TenChuyenKhoa : null,
       degree: d.HocHamHocVi,
+      training: d.NoiDaoTao,
       workplace: d.NoiLamViec,
+      languages: d.NgonNgu,
+      services: d.DichVuCungCap,
       certificate_number: d.SoChungChiHanhNghe,
+      approval_status: d.TrangThaiHoSo,
+      certificates: d.AnhBangCap ? (typeof d.AnhBangCap === 'string' ? JSON.parse(d.AnhBangCap) : d.AnhBangCap) : [],
       facilities: d.facilities ? d.facilities.map(pk => ({
           id: pk.Id_PhongKham,
           name: pk.TenPhongKham,
           address: pk.DiaChi,
-          is_primary: pk.BacSi_PhongKham ? pk.BacSi_PhongKham.is_primary : false
+          is_primary: pk.BacSi_PhongKham ? pk.BacSi_PhongKham.is_primary : false,
+          supports_online: pk.BacSi_PhongKham ? pk.BacSi_PhongKham.supports_online : true,
+          supports_offline: pk.BacSi_PhongKham ? pk.BacSi_PhongKham.supports_offline : true,
+          fee_online: pk.BacSi_PhongKham ? pk.BacSi_PhongKham.consultation_fee_online : d.PhiTuVan,
+          fee_offline: pk.BacSi_PhongKham ? pk.BacSi_PhongKham.consultation_fee_offline : d.PhiTuVan
       })) : [],
       reviews: reviews.map(r => ({
         id: r.Id_DanhGia,
@@ -131,10 +141,10 @@ exports.getProfile = async (req, res) => {
       })),
       average_rating: parseFloat(average_rating.toFixed(1)),
       review_count: reviews.length,
-      review_count: reviews.length,
       can_review: canReview,
       available_slots: d.LichLamViec || '[]'
     };
+
 
 
     res.json(result);
@@ -152,7 +162,8 @@ exports.getMyProfile = async (req, res) => {
       include: [
         { model: NguoiDung },
         { model: ChuyenKhoa },
-        { model: PhongKham, as: 'facilities' }
+        { model: PhongKham, as: 'facilities' },
+        { model: DanhGia, as: 'reviews', include: [{ model: BenhNhan, include: [NguoiDung] }] }
       ]
     });
 
@@ -162,6 +173,11 @@ exports.getMyProfile = async (req, res) => {
     }
 
     const d = doctor.toJSON();
+    const reviews = d.reviews || [];
+    const average_rating = reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.SoSao, 0) / reviews.length
+      : 5.0;
+
     const result = {
       ...d,
       id: d.Id_BacSi,
@@ -173,18 +189,38 @@ exports.getMyProfile = async (req, res) => {
       email: d.NguoiDung.Email,
       phone: d.NguoiDung.SoDienThoai,
       avatar: d.NguoiDung.AnhDaiDien,
+      specialty_id: d.Id_ChuyenKhoa,
       specialty_name: d.ChuyenKhoa ? d.ChuyenKhoa.TenChuyenKhoa : null,
       degree: d.HocHamHocVi,
+      training: d.NoiDaoTao,
       workplace: d.NoiLamViec,
+      languages: d.NgonNgu,
+      services: d.DichVuCungCap,
       certificate_number: d.SoChungChiHanhNghe,
+      approval_status: d.TrangThaiHoSo,
+      certificates: d.AnhBangCap ? (typeof d.AnhBangCap === 'string' ? JSON.parse(d.AnhBangCap) : d.AnhBangCap) : [],
       facilities: d.facilities ? d.facilities.map(pk => ({
           id: pk.Id_PhongKham,
           name: pk.TenPhongKham,
-          address: pk.DiaChi
+          address: pk.DiaChi,
+          is_primary: pk.BacSi_PhongKham ? pk.BacSi_PhongKham.is_primary : false,
+          supports_online: pk.BacSi_PhongKham ? pk.BacSi_PhongKham.supports_online : true,
+          supports_offline: pk.BacSi_PhongKham ? pk.BacSi_PhongKham.supports_offline : true,
+          fee_online: pk.BacSi_PhongKham ? pk.BacSi_PhongKham.consultation_fee_online : d.PhiTuVan,
+          fee_offline: pk.BacSi_PhongKham ? pk.BacSi_PhongKham.consultation_fee_offline : d.PhiTuVan
       })) : [],
-      reviews: [],
-      average_rating: 5.0,
-      review_count: 0,
+      reviews: reviews.map(r => ({
+        id: r.Id_DanhGia,
+        rating: r.SoSao,
+        comment: r.BinhLuan,
+        createdAt: r.NgayTao,
+        Patient: {
+          full_name: r.BenhNhan ? `${r.BenhNhan.NguoiDung.Ho} ${r.BenhNhan.NguoiDung.Ten}` : 'Bệnh nhân',
+          avatar: r.BenhNhan ? r.BenhNhan.NguoiDung.AnhDaiDien : null
+        }
+      })),
+      average_rating: parseFloat(average_rating.toFixed(1)),
+      review_count: reviews.length,
       available_slots: d.LichLamViec || '[]'
     };
 
@@ -213,6 +249,7 @@ exports.addReview = async (req, res) => {
       },
       include: [{
         model: LichKham,
+        as: 'DoctorSchedule',
         where: { Id_BacSi: doctorId }
       }]
     });
@@ -285,7 +322,11 @@ exports.getReviewByPatient = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { specialty_id, bio, experience_years, consultation_fee, degree, workplace, certificate_number } = req.body;
+    const { 
+      specialty_id, bio, experience_years, consultation_fee, 
+      degree, training, workplace, languages, services,
+      certificate_number, certificates 
+    } = req.body;
 
     const doctor = await BacSi.findOne({ where: { Id_NguoiDung: userId } });
     if (!doctor) {
@@ -297,8 +338,12 @@ exports.updateProfile = async (req, res) => {
     if (experience_years !== undefined) doctor.SoNamKinhNghiem = experience_years;
     if (consultation_fee !== undefined) doctor.PhiTuVan = consultation_fee;
     if (degree !== undefined) doctor.HocHamHocVi = degree;
+    if (training !== undefined) doctor.NoiDaoTao = training;
     if (workplace !== undefined) doctor.NoiLamViec = workplace;
+    if (languages !== undefined) doctor.NgonNgu = languages;
+    if (services !== undefined) doctor.DichVuCungCap = services;
     if (certificate_number !== undefined) doctor.SoChungChiHanhNghe = certificate_number;
+    if (certificates !== undefined) doctor.AnhBangCap = JSON.stringify(certificates);
 
     await doctor.save();
     res.json({ message: 'Profile updated successfully', doctor });
@@ -440,6 +485,7 @@ exports.addReview = async (req, res) => {
       },
       include: [{
         model: LichKham,
+        as: 'DoctorSchedule',
         where: { Id_BacSi: doctorId }
       }]
     });

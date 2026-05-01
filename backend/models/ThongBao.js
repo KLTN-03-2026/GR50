@@ -22,6 +22,23 @@ const ThongBao = sequelize.define('ThongBao', {
     DaDoc: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
+    },
+    Id_DatLich: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: { model: 'datlich', key: 'Id_DatLich' }
+    },
+    ScheduledAt: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    SentAt: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    Status: {
+        type: DataTypes.ENUM('PENDING', 'SENT', 'FAILED'),
+        defaultValue: 'PENDING'
     }
 }, {
     tableName: 'ThongBao',

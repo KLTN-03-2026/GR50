@@ -40,6 +40,7 @@ const PORT = process.env.PORT || 8001;
 
 // Middleware
 app.use(cors());
+app.use(require('morgan')('dev'));
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
@@ -73,7 +74,7 @@ const logFile = 'server_debug.log';
 sequelize.authenticate()
   .then(() => {
     console.log('Database connection established successfully.');
-    return sequelize.sync(); // Create tables if they don't exist, but don't alter
+    // return sequelize.sync({ alter: false }); 
   })
   .then(async () => {
     console.log('Database synced (MySQL)...');
@@ -94,6 +95,10 @@ sequelize.authenticate()
     server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       fs.appendFileSync(logFile, `[${new Date().toISOString()}] Server running on port ${PORT}\n`);
+      
+      // Start Automated Reminder Service
+      const ReminderService = require('./services/ReminderService');
+      ReminderService.start(io);
     });
   })
   .catch(err => {

@@ -5,7 +5,7 @@ import { API } from '@/config';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, MessageSquare, Bot } from 'lucide-react';
+import { Calendar, Clock, MessageSquare, Bot, User } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { toast } from 'sonner';
 import {
@@ -21,6 +21,8 @@ import { Textarea } from '@/components/ui/textarea';
 import CreateMedicalRecordDialog from '@/components/CreateMedicalRecordDialog';
 import { FileText, Video } from 'lucide-react';
 import ChatService from '@/services/ChatService';
+import PatientProfileDialog from '@/components/PatientProfileDialog';
+
 
 export default function DoctorAppointments() {
   const navigate = useNavigate();
@@ -37,6 +39,11 @@ export default function DoctorAppointments() {
     open: false,
     appointment: null
   });
+  const [profileDialog, setProfileDialog] = useState({
+    open: false,
+    patientId: null
+  });
+
 
   useEffect(() => {
     fetchAppointments();
@@ -128,7 +135,9 @@ export default function DoctorAppointments() {
                   navigate={navigate}
                   onOpenMedicalRecord={() => handleOpenMedicalRecord(apt)}
                   onCompleteExam={() => setCompleteExamDialog({ open: true, appointment: apt })}
+                  onViewProfile={(patientId) => setProfileDialog({ open: true, patientId })}
                 />
+
               ))}
             </div>
           )}
@@ -152,11 +161,20 @@ export default function DoctorAppointments() {
           }}
         />
       )}
+
+      <PatientProfileDialog
+        open={profileDialog.open}
+        onOpenChange={(open) => setProfileDialog(prev => ({ ...prev, open }))}
+        patientId={profileDialog.patientId}
+        reason={`Doctor viewing patient during appointment management`}
+      />
     </Layout>
+
   );
 }
 
-function AppointmentCard({ appointment, onStatusChange, navigate, onOpenMedicalRecord, onCompleteExam }) {
+function AppointmentCard({ appointment, onStatusChange, navigate, onOpenMedicalRecord, onCompleteExam, onViewProfile }) {
+
   const statusColors = {
     pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
     confirmed: 'bg-green-100 text-green-800 border-green-200',
@@ -217,7 +235,17 @@ function AppointmentCard({ appointment, onStatusChange, navigate, onOpenMedicalR
             )}
           </div>
         </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="rounded-xl border-teal-200 text-teal-600 hover:bg-teal-50"
+          onClick={() => onViewProfile(appointment.patient_id || appointment.Id_BenhNhan)}
+        >
+          <User className="w-4 h-4 mr-2" />
+          Hồ sơ
+        </Button>
       </div>
+
 
 
       <div className="flex gap-3">

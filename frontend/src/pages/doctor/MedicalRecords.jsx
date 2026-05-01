@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Layout from '@/components/Layout';
+import FollowUpModal from '@/components/doctor/FollowUpModal';
 
 export default function DoctorMedicalRecords() {
     const [records, setRecords] = useState([]);
@@ -202,6 +203,10 @@ export default function DoctorMedicalRecords() {
                                                                 </Button>
                                                             </div>
                                                         )}
+
+                                                        <div className="border-t pt-4">
+                                                            <FollowUpModal record={record} />
+                                                        </div>
                                                     </div>
                                                 </DialogContent>
                                             </Dialog>

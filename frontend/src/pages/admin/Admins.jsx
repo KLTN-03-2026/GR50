@@ -2,13 +2,16 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
 import { API } from '@/config';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import Layout from '@/components/Layout';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { UserPlus, Shield, Trash2, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Shield, Trash2, Eye, EyeOff, Building2, Globe, Lock } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 export default function AdminsManagement() {
   const { token, user } = useContext(AuthContext);
@@ -20,17 +23,37 @@ export default function AdminsManagement() {
     email: '',
     password: '',
     full_name: '',
-    can_create_admins: false,
-    can_manage_doctors: true,
-    can_manage_patients: true,
-    can_view_stats: true
+    admin_type: 'FACILITY_ADMIN',
+    facility_id: '',
+    permissions: {
+      can_manage_doctors: true,
+      can_manage_staff: true,
+      can_manage_patients: true,
+      can_view_stats: true,
+      can_manage_payments: false,
+      can_manage_specialties: false,
+      can_create_admins: false
+    }
   });
+  const [facilities, setFacilities] = useState([]);
+
 
   const currentUserPermissions = user?.admin_permissions || {};
 
   useEffect(() => {
     fetchAdmins();
+    fetchFacilities();
   }, []);
+
+  const fetchFacilities = async () => {
+    try {
+      const response = await axios.get(`${API}/facilities`);
+      setFacilities(response.data);
+    } catch (error) {
+      console.error('Error fetching facilities:', error);
+    }
+  };
+
 
   const fetchAdmins = async () => {
     try {
@@ -59,12 +82,20 @@ export default function AdminsManagement() {
         email: '',
         password: '',
         full_name: '',
-        can_create_admins: false,
-        can_manage_doctors: true,
-        can_manage_patients: true,
-        can_view_stats: true
+        admin_type: 'FACILITY_ADMIN',
+        facility_id: '',
+        permissions: {
+          can_manage_doctors: true,
+          can_manage_staff: true,
+          can_manage_patients: true,
+          can_view_stats: true,
+          can_manage_payments: false,
+          can_manage_specialties: false,
+          can_create_admins: false
+        }
       });
       fetchAdmins();
+
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Không thể tạo admin');
     } finally {
@@ -100,7 +131,8 @@ export default function AdminsManagement() {
     }
   };
 
-  const canCreateAdmins = currentUserPermissions.can_create_admins === true;
+  const canCreateAdmins = currentUserPermissions.can_create_admins === true || user?.admin_type === 'SUPER_ADMIN';
+
 
   return (
     <Layout>
@@ -173,51 +205,104 @@ export default function AdminsManagement() {
                   </div>
                 </div>
 
-                <div>
-                  <Label className="mb-3 block">Phân quyền</Label>
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="can_create_admins"
-                        checked={formData.can_create_admins}
-                        onCheckedChange={(checked) => setFormData({ ...formData, can_create_admins: checked })}
-                      />
-                      <label htmlFor="can_create_admins" className="text-sm cursor-pointer">
-                        Tạo và quản lý admin khác
-                      </label>
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <Label className="text-teal-600 font-bold uppercase text-xs tracking-widest">Cấu hình vai trò</Label>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <Label>Loại Admin</Label>
+                        <Select 
+                          value={formData.admin_type} 
+                          onValueChange={(val) => setFormData({ ...formData, admin_type: val, facility_id: val === 'SUPER_ADMIN' ? '' : formData.facility_id })}
+                        >
+                          <SelectTrigger className="mt-2 bg-gray-50 border-none rounded-xl">
+                            <SelectValue placeholder="Chọn loại admin" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-none shadow-xl">
+                            <SelectItem value="SUPER_ADMIN" className="rounded-lg">Super Admin (Toàn hệ thống)</SelectItem>
+                            <SelectItem value="FACILITY_ADMIN" className="rounded-lg">Facility Admin (Theo cơ sở)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {formData.admin_type === 'FACILITY_ADMIN' && (
+                        <div>
+                          <Label>Cơ sở y tế phụ trách</Label>
+                          <Select 
+                            value={formData.facility_id} 
+                            onValueChange={(val) => setFormData({ ...formData, facility_id: val })}
+                          >
+                            <SelectTrigger className="mt-2 bg-gray-50 border-none rounded-xl">
+                              <SelectValue placeholder="Chọn cơ sở y tế" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-none shadow-xl">
+                              {facilities.map(f => (
+                                <SelectItem key={f.id} value={f.id.toString()} className="rounded-lg">{f.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="can_manage_doctors"
-                        checked={formData.can_manage_doctors}
-                        onCheckedChange={(checked) => setFormData({ ...formData, can_manage_doctors: checked })}
-                      />
-                      <label htmlFor="can_manage_doctors" className="text-sm cursor-pointer">
-                        Quản lý bác sĩ
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="can_manage_patients"
-                        checked={formData.can_manage_patients}
-                        onCheckedChange={(checked) => setFormData({ ...formData, can_manage_patients: checked })}
-                      />
-                      <label htmlFor="can_manage_patients" className="text-sm cursor-pointer">
-                        Quản lý bệnh nhân
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="can_view_stats"
-                        checked={formData.can_view_stats}
-                        onCheckedChange={(checked) => setFormData({ ...formData, can_view_stats: checked })}
-                      />
-                      <label htmlFor="can_view_stats" className="text-sm cursor-pointer">
-                        Xem thống kê
-                      </label>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Label className="text-teal-600 font-bold uppercase text-xs tracking-widest">Phạm vi quyền hạn</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-xl hover:bg-teal-50 transition-colors">
+                        <Checkbox
+                          id="can_manage_doctors"
+                          checked={formData.permissions.can_manage_doctors}
+                          onCheckedChange={(checked) => setFormData({ ...formData, permissions: { ...formData.permissions, can_manage_doctors: checked }})}
+                        />
+                        <label htmlFor="can_manage_doctors" className="text-sm cursor-pointer font-medium">Quản lý bác sĩ</label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-xl hover:bg-teal-50 transition-colors">
+                        <Checkbox
+                          id="can_manage_staff"
+                          checked={formData.permissions.can_manage_staff}
+                          onCheckedChange={(checked) => setFormData({ ...formData, permissions: { ...formData.permissions, can_manage_staff: checked }})}
+                        />
+                        <label htmlFor="can_manage_staff" className="text-sm cursor-pointer font-medium">Quản lý nhân viên</label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-xl hover:bg-teal-50 transition-colors">
+                        <Checkbox
+                          id="can_manage_patients"
+                          checked={formData.permissions.can_manage_patients}
+                          onCheckedChange={(checked) => setFormData({ ...formData, permissions: { ...formData.permissions, can_manage_patients: checked }})}
+                        />
+                        <label htmlFor="can_manage_patients" className="text-sm cursor-pointer font-medium">Quản lý bệnh nhân</label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-xl hover:bg-teal-50 transition-colors">
+                        <Checkbox
+                          id="can_view_stats"
+                          checked={formData.permissions.can_view_stats}
+                          onCheckedChange={(checked) => setFormData({ ...formData, permissions: { ...formData.permissions, can_view_stats: checked }})}
+                        />
+                        <label htmlFor="can_view_stats" className="text-sm cursor-pointer font-medium">Xem thống kê</label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-xl hover:bg-teal-50 transition-colors">
+                        <Checkbox
+                          id="can_manage_payments"
+                          checked={formData.permissions.can_manage_payments}
+                          onCheckedChange={(checked) => setFormData({ ...formData, permissions: { ...formData.permissions, can_manage_payments: checked }})}
+                        />
+                        <label htmlFor="can_manage_payments" className="text-sm cursor-pointer font-medium">Quản lý thanh toán</label>
+                      </div>
+                      {formData.admin_type === 'SUPER_ADMIN' && (
+                        <div className="flex items-center space-x-2 p-3 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-100">
+                          <Checkbox
+                            id="can_create_admins"
+                            checked={formData.permissions.can_create_admins}
+                            onCheckedChange={(checked) => setFormData({ ...formData, permissions: { ...formData.permissions, can_create_admins: checked }})}
+                          />
+                          <label htmlFor="can_create_admins" className="text-sm cursor-pointer font-bold text-indigo-700">Quản lý Admin khác</label>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
+
 
                 <div className="flex gap-3">
                   <Button type="submit" disabled={loading} className="bg-gradient-to-r from-teal-500 to-cyan-500">
@@ -259,6 +344,7 @@ export default function AdminsManagement() {
 function AdminCard({ admin, currentUserId, canCreateAdmins, onDelete, onUpdatePermissions }) {
   const [showPermissions, setShowPermissions] = useState(false);
   const [permissions, setPermissions] = useState(admin.admin_permissions || {});
+
   const isCurrentUser = admin.id === currentUserId;
 
   const handleSavePermissions = () => {
@@ -274,16 +360,29 @@ function AdminCard({ admin, currentUserId, canCreateAdmins, onDelete, onUpdatePe
             {admin.full_name.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">
-              {admin.full_name}
-              {isCurrentUser && <span className="ml-2 text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded">Bạn</span>}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                {admin.full_name}
+              </h3>
+              {admin.admin_type === 'SUPER_ADMIN' ? (
+                <Badge className="bg-indigo-100 text-indigo-700 border-none text-[10px] uppercase font-black">Super Admin</Badge>
+              ) : (
+                <Badge className="bg-teal-100 text-teal-700 border-none text-[10px] uppercase font-black">Facility Admin</Badge>
+              )}
+              {isCurrentUser && <Badge className="bg-amber-100 text-amber-700 border-none text-[10px] uppercase font-black">Bạn</Badge>}
+            </div>
             <p className="text-sm text-gray-600 dark:text-gray-300">{admin.email}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Tạo: {new Date(admin.created_at).toLocaleDateString('vi-VN')}
-            </p>
+            <div className="flex items-center gap-3 mt-2">
+              <span className="text-[10px] flex items-center gap-1 text-gray-500 uppercase font-bold">
+                <Building2 className="w-3 h-3" /> {admin.assigned_facility || 'Toàn hệ thống'}
+              </span>
+              <span className="text-[10px] flex items-center gap-1 text-gray-500 uppercase font-bold">
+                <Globe className="w-3 h-3" /> {new Date(admin.created_at).toLocaleDateString('vi-VN')}
+              </span>
+            </div>
           </div>
         </div>
+
         
         <div className="flex gap-2">
           {canCreateAdmins && (

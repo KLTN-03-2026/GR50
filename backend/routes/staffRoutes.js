@@ -37,6 +37,7 @@ router.put('/invoices/:id/pay', staffController.payInvoice);
 
 // STAFF-10: Update Patient Info
 router.put('/patients/:id', staffController.updatePatientInfo);
+router.delete('/patients/:id', staffController.deletePatient);
 
 // STAFF-11: Live Support & Video Monitor
 router.get('/online-consultations', staffController.getOnlineConsultations);

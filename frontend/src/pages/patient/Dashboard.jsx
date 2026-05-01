@@ -28,7 +28,7 @@ export default function PatientDashboard() {
     try {
       const [aptRes, statsRes] = await Promise.all([
         axios.get(`${API}/appointments/my`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API}/patient/dashboard-stats`, { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(`${API}/patients/dashboard-stats`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setAppointments(aptRes.data);
       setStats(statsRes.data);
@@ -233,8 +233,9 @@ function AppointmentCard({ appointment, navigate }) {
     <div className="border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700 transition">
       <div>
         <h3 className="font-bold text-gray-900 dark:text-white text-lg">{appointment.doctor_name || 'Bác sĩ'}</h3>
+        <p className="text-teal-600 text-xs font-semibold">{appointment.specialty_name}</p>
         <p className="text-gray-500 text-sm mt-1">
-          {appointment.appointment_date} - {appointment.appointment_time}
+          {appointment.facility_name} • {appointment.appointment_date} - {appointment.appointment_time}
         </p>
       </div>
       <div className="flex items-center gap-3">

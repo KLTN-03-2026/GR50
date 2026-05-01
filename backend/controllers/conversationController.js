@@ -39,7 +39,8 @@ exports.getOrCreateAppointmentConversation = async (req, res) => {
         { model: BenhNhan, include: [{ model: NguoiDung }] },
         { 
           model: DoctorSchedule, 
-          include: [{ model: BacSi, include: [{ model: NguoiDung }] }] 
+          as: 'DoctorSchedule',
+          include: [{ model: BacSi, as: 'Doctor', include: [{ model: NguoiDung }] }] 
         }
       ]
     });
@@ -50,13 +51,13 @@ exports.getOrCreateAppointmentConversation = async (req, res) => {
 
     // Permission check
     const numericUserId = Number(userId);
-    const isDoctor = userRole === 'doctor' && appointment.DoctorSchedule?.BacSi?.Id_NguoiDung === numericUserId;
+    const isDoctor = userRole === 'doctor' && appointment.DoctorSchedule?.Doctor?.Id_NguoiDung === numericUserId;
     const isPatient = userRole === 'patient' && appointment.BenhNhan?.Id_NguoiDung === numericUserId;
     const isStaff = userRole === 'staff' || userRole === 'admin';
 
     console.log(`[ChatDebug] Permissions: isDoctor=${isDoctor}, isPatient=${isPatient}, isStaff=${isStaff}`);
-    if (appointment.DoctorSchedule?.BacSi) {
-      console.log(`[ChatDebug] Appointment Doctor UserID: ${appointment.DoctorSchedule.BacSi.Id_NguoiDung}`);
+    if (appointment.DoctorSchedule?.Doctor) {
+      console.log(`[ChatDebug] Appointment Doctor UserID: ${appointment.DoctorSchedule.Doctor.Id_NguoiDung}`);
     }
 
     if (!isDoctor && !isPatient && !isStaff) {
@@ -73,12 +74,12 @@ exports.getOrCreateAppointmentConversation = async (req, res) => {
 
     if (!conversation) {
       conversation = await Conversation.create({
-        conversation_type: 'appointment_chat',
-        appointment_id: appointmentId,
-        facility_id: appointment.Id_PhongKham || null,
-        created_by: userId,
+        conversationType: 'appointment_chat',
+        appointmentId: appointmentId,
+        facilityId: appointment.Id_PhongKham || null,
+        createdBy: userId,
         status: 'open',
-        title: `Tư vấn: ${appointment.DoctorSchedule.BacSi.NguoiDung.Ho} ${appointment.DoctorSchedule.BacSi.NguoiDung.Ten} - ${appointment.BenhNhan.NguoiDung.Ho} ${appointment.BenhNhan.NguoiDung.Ten}`
+        title: `Tư vấn: ${appointment.DoctorSchedule.Doctor.NguoiDung.Ho} ${appointment.DoctorSchedule.Doctor.NguoiDung.Ten} - ${appointment.BenhNhan.NguoiDung.Ho} ${appointment.BenhNhan.NguoiDung.Ten}`
       });
 
       // Add participants
@@ -86,17 +87,17 @@ exports.getOrCreateAppointmentConversation = async (req, res) => {
       
       if (appointment.BenhNhan?.Id_NguoiDung) {
         participants.push({
-          conversation_id: conversation.id,
-          user_id: appointment.BenhNhan.Id_NguoiDung,
-          role_in_conversation: 'patient'
+          conversationId: conversation.id,
+          userId: appointment.BenhNhan.Id_NguoiDung,
+          roleInConversation: 'patient'
         });
       }
       
-      if (appointment.DoctorSchedule?.BacSi?.Id_NguoiDung) {
+      if (appointment.DoctorSchedule?.Doctor?.Id_NguoiDung) {
         participants.push({
-          conversation_id: conversation.id,
-          user_id: appointment.DoctorSchedule.BacSi.Id_NguoiDung,
-          role_in_conversation: 'doctor'
+          conversationId: conversation.id,
+          userId: appointment.DoctorSchedule.Doctor.Id_NguoiDung,
+          roleInConversation: 'doctor'
         });
       }
 
@@ -107,8 +108,13 @@ exports.getOrCreateAppointmentConversation = async (req, res) => {
 
     res.json(conversation);
   } catch (error) {
-    console.error('getOrCreateAppointmentConversation error:', error);
-    res.status(500).json({ detail: 'Internal server error' });
+    console.error('getOrCreateAppointmentConversation error detail:', {
+        message: error.message,
+        stack: error.stack,
+        appointmentId,
+        userId
+    });
+    res.status(500).json({ detail: `Lỗi lấy hội thoại: ${error.message}` });
   }
 };
 
@@ -130,10 +136,10 @@ exports.createSupportConversation = async (req, res) => {
 
     // Create conversation
     const conversation = await Conversation.create({
-      conversation_type: 'support_chat',
-      support_case_id: supportCase.id,
-      facility_id: facility_id || null,
-      created_by: userId,
+      conversationType: 'support_chat',
+      supportCaseId: supportCase.id,
+      facilityId: facility_id || null,
+      createdBy: userId,
       status: 'open',
       title: `Hỗ trợ: ${support_case_type}`
     });
@@ -144,17 +150,17 @@ exports.createSupportConversation = async (req, res) => {
     // Add participants
     const participants = [
       {
-        conversation_id: conversation.id,
-        user_id: patient.Id_NguoiDung,
-        role_in_conversation: 'patient'
+        conversationId: conversation.id,
+        userId: patient.Id_NguoiDung,
+        roleInConversation: 'patient'
       }
     ];
 
     if (staff_id) {
       participants.push({
-        conversation_id: conversation.id,
-        user_id: staff_id,
-        role_in_conversation: 'staff'
+        conversationId: conversation.id,
+        userId: staff_id,
+        roleInConversation: 'staff'
       });
     }
 
@@ -217,10 +223,10 @@ exports.getMyConversations = async (req, res) => {
           model: Message,
           as: 'messages',
           limit: 1,
-          order: [['created_at', 'DESC']]
+          order: [['createdAt', 'DESC']]
         }
       ],
-      order: [['last_message_at', 'DESC'], ['created_at', 'DESC']]
+      order: [['lastMessageAt', 'DESC'], ['createdAt', 'DESC']]
     });
 
     res.json(conversations);
@@ -233,10 +239,10 @@ exports.getMyConversations = async (req, res) => {
 // Helper
 async function getParticipantConvIds(userId) {
     const participants = await ConversationParticipant.findAll({
-        where: { user_id: userId, is_active: true },
-        attributes: ['conversation_id']
+        where: { userId: userId, isActive: true },
+        attributes: ['conversationId']
     });
-    return participants.map(p => p.conversation_id);
+    return participants.map(p => p.conversationId);
 }
 
 
@@ -254,7 +260,7 @@ exports.getConversationDetails = async (req, res) => {
         },
         {
           model: Appointment,
-          as: 'appointment'
+          as: 'Appointment'
         },
         {
           model: SupportCase,
@@ -288,7 +294,7 @@ exports.getMessages = async (req, res) => {
 
     // Check participation
     const participant = await ConversationParticipant.findOne({
-      where: { conversation_id: id, user_id: userId }
+      where: { conversationId: id, userId: userId }
     });
 
     if (!participant && req.user.role !== 'admin') {
@@ -297,12 +303,12 @@ exports.getMessages = async (req, res) => {
 
     const offset = (page - 1) * limit;
     const messages = await Message.findAll({
-      where: { conversation_id: id, is_deleted: false },
+      where: { conversationId: id, isDeleted: false },
       include: [
         { model: NguoiDung, as: 'sender', attributes: ['Id_NguoiDung', 'Ho', 'Ten', 'AnhDaiDien'] },
         { model: MessageAttachment, as: 'attachments' }
       ],
-      order: [['created_at', 'DESC']],
+      order: [['createdAt', 'DESC']],
       limit: parseInt(limit),
       offset: parseInt(offset)
     });
@@ -323,7 +329,7 @@ exports.sendMessage = async (req, res) => {
 
     // Check participation
     const participant = await ConversationParticipant.findOne({
-      where: { conversation_id: id, user_id: userId }
+      where: { conversationId: id, userId: userId }
     });
 
     if (!participant) {
@@ -331,17 +337,17 @@ exports.sendMessage = async (req, res) => {
     }
 
     const message = await Message.create({
-      conversation_id: id,
-      sender_id: userId,
-      sender_role: getUserRoleInConversation(userRole),
-      message_type,
+      conversationId: id,
+      senderId: userId,
+      senderRole: getUserRoleInConversation(userRole),
+      messageType: message_type,
       content,
-      reply_to_message_id
+      replyToMessageId: reply_to_message_id
     });
 
     // Update conversation last message timestamp
     await Conversation.update(
-      { last_message_at: new Date() },
+      { lastMessageAt: new Date() },
       { where: { id } }
     );
 
@@ -370,17 +376,17 @@ exports.markAsRead = async (req, res) => {
     const userId = req.user.id;
 
     const lastMessage = await Message.findOne({
-      where: { conversation_id: id },
-      order: [['created_at', 'DESC']]
+      where: { conversationId: id },
+      order: [['createdAt', 'DESC']]
     });
 
     if (lastMessage) {
       await ConversationParticipant.update(
         { 
-          last_read_message_id: lastMessage.id,
-          last_read_at: new Date()
+          lastReadMessageId: lastMessage.id,
+          lastReadAt: new Date()
         },
-        { where: { conversation_id: id, user_id: userId } }
+        { where: { conversationId: id, userId: userId } }
       );
     }
 
@@ -403,32 +409,32 @@ exports.startCall = async (req, res) => {
     const roomCode = `room_${id}_${Date.now()}`;
 
     const callSession = await CallSession.create({
-      conversation_id: id,
-      appointment_id: conversation.appointment_id,
-      facility_id: conversation.facility_id,
-      call_type,
+      conversationId: id,
+      appointmentId: conversation.appointmentId || conversation.appointment_id,
+      facilityId: conversation.facilityId || conversation.facility_id,
+      callType: call_type,
       provider: 'webrtc',
-      room_code: roomCode,
-      started_by: userId,
+      roomCode: roomCode,
+      startedBy: userId,
       status: 'waiting',
-      started_at: new Date()
+      startedAt: new Date()
     });
 
     // Create message about call starting
     const message = await Message.create({
-      conversation_id: id,
-      sender_id: userId,
-      sender_role: getUserRoleInConversation(req.user.role),
-      message_type: 'call_event',
+      conversationId: id,
+      senderId: userId,
+      senderRole: getUserRoleInConversation(req.user.role),
+      messageType: 'call_event',
       content: `${req.user.role === 'doctor' ? 'Bác sĩ' : 'Bệnh nhân'} đã bắt đầu cuộc gọi ${call_type === 'video' ? 'video' : 'thoại'}.`
     });
 
     // Add starter as participant
     await CallParticipant.create({
-      call_session_id: callSession.id,
-      user_id: userId,
-      joined_at: new Date(),
-      join_status: 'joined'
+      callSessionId: callSession.id,
+      userId: userId,
+      joinedAt: new Date(),
+      joinStatus: 'joined'
     });
 
     // Emit socket event
@@ -447,7 +453,12 @@ exports.startCall = async (req, res) => {
 
     res.json(callSession);
   } catch (error) {
-    console.error('startCall error:', error);
-    res.status(500).json({ detail: 'Internal server error' });
+    console.error('startCall error detail:', {
+        message: error.message,
+        stack: error.stack,
+        conversation_id: id,
+        user_id: userId
+    });
+    res.status(500).json({ detail: `Không thể khởi tạo cuộc gọi: ${error.message}` });
   }
 };

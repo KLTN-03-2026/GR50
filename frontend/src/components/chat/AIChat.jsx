@@ -8,6 +8,7 @@ import { Bot, User, Send, Loader2, Sparkles, BrainCircuit, MapPin, Navigation, P
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import MapDirections from '@/components/map/MapDirections';
 
 export default function AIChat() {
   const { token } = useContext(AuthContext);
@@ -18,6 +19,8 @@ export default function AIChat() {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
   const [location, setLocation] = useState(null);
+  const [selectedDestination, setSelectedDestination] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
 
   useEffect(() => {
     // Xin quyền truy cập vị trí ngay khi mở chat
@@ -46,18 +49,22 @@ export default function AIChat() {
     setLoading(true);
 
     try {
-      // Gọi tới endpoint mới với location data
+      // Gọi tới endpoint mới với location data và sessionId
       const response = await axios.post(
         `${API}/ai/chat-session`,
         { 
           message: userMessage,
           latitude: location?.lat,
-          longitude: location?.lng
+          longitude: location?.lng,
+          sessionId: sessionId
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       const aiData = response.data.data;
+      if (aiData.sessionId && !sessionId) {
+        setSessionId(aiData.sessionId);
+      }
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: aiData.reply,
@@ -76,6 +83,19 @@ export default function AIChat() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  if (selectedDestination && location) {
+    return (
+      <div className="flex flex-col h-full relative">
+        <MapDirections 
+          origin={location} 
+          destination={{ lat: selectedDestination.lat, lng: selectedDestination.lng }} 
+          destinationName={selectedDestination.name}
+          onBack={() => setSelectedDestination(null)} 
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
@@ -160,12 +180,39 @@ export default function AIChat() {
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="mt-3 flex gap-2">
-                                                <Button size="sm" variant="outline" className="h-8 text-xs flex-1 border-teal-200 text-teal-700 hover:bg-teal-50" onClick={() => window.open(facility.maps_url, '_blank')}>
-                                                    <MapPin className="w-3 h-3 mr-1" /> Chỉ đường
+                                            <div className="mt-3 grid grid-cols-3 gap-2">
+                                                <Button 
+                                                  size="sm" 
+                                                  variant="outline" 
+                                                  className="h-8 text-[10px] sm:text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-1" 
+                                                  onClick={() => window.open(`/facilities/${facility.facility_id}`, '_blank')}
+                                                >
+                                                    Xem chi tiết
                                                 </Button>
-                                                <Button size="sm" className="h-8 text-xs flex-1 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white shadow-md shadow-teal-500/20">
-                                                    <CalendarPlus className="w-3 h-3 mr-1" /> Đặt lịch
+                                                <Button 
+                                                  size="sm" 
+                                                  variant="outline" 
+                                                  className="h-8 text-[10px] sm:text-xs border-teal-200 text-teal-700 hover:bg-teal-50 px-1" 
+                                                  onClick={() => {
+                                                    if (location && facility.lat && facility.lng) {
+                                                      setSelectedDestination({
+                                                        lat: facility.lat,
+                                                        lng: facility.lng,
+                                                        name: facility.name
+                                                      });
+                                                    } else {
+                                                      window.open(facility.maps_url, '_blank');
+                                                    }
+                                                  }}
+                                                >
+                                                    <MapPin className="w-3 h-3 mr-1 hidden sm:inline" /> Chỉ đường
+                                                </Button>
+                                                <Button 
+                                                  size="sm" 
+                                                  className="h-8 text-[10px] sm:text-xs bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white shadow-md shadow-teal-500/20 px-1"
+                                                  onClick={() => window.open(`/booking?facility_id=${facility.facility_id}`, '_blank')}
+                                                >
+                                                    <CalendarPlus className="w-3 h-3 mr-1 hidden sm:inline" /> Đặt lịch
                                                 </Button>
                                             </div>
                                         </Card>
@@ -194,8 +241,58 @@ export default function AIChat() {
       {/* Input */}
       <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 z-10 relative shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
         {location === null && (
-            <div className="text-[10px] text-amber-500 mb-2 flex items-center gap-1 justify-center">
-                <AlertTriangle className="w-3 h-3" /> Vui lòng cấp quyền vị trí để AI tìm bệnh viện gần nhất
+            <div className="mb-3">
+                <div className="text-[10px] text-amber-500 mb-2 flex items-center gap-1 justify-center">
+                    <AlertTriangle className="w-3 h-3" /> Không thể lấy vị trí tự động. Bạn có thể nhập địa chỉ thủ công để tìm bệnh viện gần nhất.
+                </div>
+                <div className="flex gap-2">
+                    <Input 
+                        id="manual-address-input"
+                        placeholder="Nhập địa chỉ hiện tại của bạn..."
+                        className="text-xs h-8"
+                        onKeyDown={async (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const val = e.target.value.trim();
+                                if (!val) return;
+                                try {
+                                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}`);
+                                    const data = await res.json();
+                                    if (data && data.length > 0) {
+                                        setLocation({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+                                        toast.success("Đã cập nhật vị trí");
+                                    } else {
+                                        toast.error("Không tìm thấy địa chỉ này");
+                                    }
+                                } catch (error) {
+                                    toast.error("Lỗi khi tìm vị trí");
+                                }
+                            }
+                        }}
+                    />
+                    <Button 
+                        size="sm" 
+                        className="h-8 text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200"
+                        onClick={async () => {
+                            const val = document.getElementById('manual-address-input')?.value.trim();
+                            if (!val) return;
+                            try {
+                                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}`);
+                                const data = await res.json();
+                                if (data && data.length > 0) {
+                                    setLocation({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+                                    toast.success("Đã cập nhật vị trí");
+                                } else {
+                                    toast.error("Không tìm thấy địa chỉ này");
+                                }
+                            } catch (error) {
+                                toast.error("Lỗi khi tìm vị trí");
+                            }
+                        }}
+                    >
+                        Cập nhật
+                    </Button>
+                </div>
             </div>
         )}
         <form onSubmit={handleSend} className="flex gap-3 bg-gray-50 dark:bg-gray-800 p-2 rounded-2xl border border-gray-100 dark:border-gray-700 focus-within:border-purple-500 transition-all">

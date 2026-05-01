@@ -9,5 +9,7 @@ router.get('/available', authMiddleware, isMedicalStaff, patientController.getAl
 router.get('/dashboard-stats', authMiddleware, isPatient, patientController.getDashboardStats);
 router.get('/profile', authMiddleware, isPatient, patientController.getProfile);
 router.put('/profile', authMiddleware, isPatient, patientController.updateProfile);
+router.get('/:id', authMiddleware, patientController.getPatientDetail);
+
 
 module.exports = router;

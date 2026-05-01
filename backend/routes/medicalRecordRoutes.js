@@ -32,4 +32,6 @@ router.get('/doctor', authMiddleware, isDoctor, medicalRecordController.getDocto
 router.get('/:id', authMiddleware, medicalRecordController.getRecordDetail);
 router.post('/', authMiddleware, isDoctor, upload.single('file'), medicalRecordController.createRecord);
 
+router.post('/:id/follow-up', authMiddleware, isDoctor, medicalRecordController.createFollowUpAppointment);
+
 module.exports = router;

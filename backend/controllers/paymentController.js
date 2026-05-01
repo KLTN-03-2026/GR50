@@ -12,6 +12,7 @@ exports.getMyPayments = async (req, res) => {
       include: [
         {
           model: Appointment,
+          as: 'Appointment',
           include: [
             {
               model: BenhNhan,
@@ -19,7 +20,8 @@ exports.getMyPayments = async (req, res) => {
             },
             {
               model: DoctorSchedule,
-              include: [{ model: BacSi, include: [{ model: NguoiDung }] }]
+              as: 'DoctorSchedule',
+              include: [{ model: BacSi, as: 'Doctor', include: [{ model: NguoiDung }] }]
             }
           ]
         }
@@ -28,8 +30,8 @@ exports.getMyPayments = async (req, res) => {
 
     res.json(payments.map(p => {
       let doctor_name = 'Bác Sĩ';
-      if (p.Appointment && p.Appointment.DoctorSchedule && p.Appointment.DoctorSchedule.BacSi && p.Appointment.DoctorSchedule.BacSi.NguoiDung) {
-        doctor_name = p.Appointment.DoctorSchedule.BacSi.NguoiDung.Ho + ' ' + p.Appointment.DoctorSchedule.BacSi.NguoiDung.Ten;
+      if (p.Appointment && p.Appointment.DoctorSchedule && p.Appointment.DoctorSchedule.Doctor && p.Appointment.DoctorSchedule.Doctor.NguoiDung) {
+        doctor_name = p.Appointment.DoctorSchedule.Doctor.NguoiDung.Ho + ' ' + p.Appointment.DoctorSchedule.Doctor.NguoiDung.Ten;
       }
       return {
         payment_id: p.Id_ThanhToan,
@@ -55,6 +57,7 @@ exports.getPaymentById = async (req, res) => {
       include: [
         {
           model: Appointment,
+          as: 'Appointment',
           include: [
             {
               model: BenhNhan,
@@ -62,7 +65,8 @@ exports.getPaymentById = async (req, res) => {
             },
             {
               model: DoctorSchedule,
-              include: [{ model: BacSi, include: [{ model: NguoiDung }] }]
+              as: 'DoctorSchedule',
+              include: [{ model: BacSi, as: 'Doctor', include: [{ model: NguoiDung }] }]
             }
           ]
         }
@@ -78,8 +82,8 @@ exports.getPaymentById = async (req, res) => {
       if (payment.Appointment.BenhNhan?.NguoiDung) {
         patient_name = payment.Appointment.BenhNhan.NguoiDung.Ho + ' ' + payment.Appointment.BenhNhan.NguoiDung.Ten;
       }
-      if (payment.Appointment.DoctorSchedule?.BacSi?.NguoiDung) {
-        doctor_name = payment.Appointment.DoctorSchedule.BacSi.NguoiDung.Ho + ' ' + payment.Appointment.DoctorSchedule.BacSi.NguoiDung.Ten;
+      if (payment.Appointment.DoctorSchedule?.Doctor?.NguoiDung) {
+        doctor_name = payment.Appointment.DoctorSchedule.Doctor.NguoiDung.Ho + ' ' + payment.Appointment.DoctorSchedule.Doctor.NguoiDung.Ten;
       }
     }
 
@@ -123,7 +127,8 @@ exports.processPayment = async (req, res) => {
 
     res.json({ status: 'completed', transaction_id: payment.MaGiaoDich });
   } catch (error) {
-    res.status(500).json({ detail: 'Internal server error' });
+    console.error('Process payment error:', error);
+    res.status(500).json({ detail: 'Internal server error: ' + error.message });
   }
 };
 

@@ -22,7 +22,9 @@ const DatLich = sequelize.define('DatLich', {
     IdentityStatus: { type: DataTypes.ENUM('VERIFIED_ACCOUNT', 'VERIFIED_GUEST', 'UNVERIFIED_GUEST'), defaultValue: 'VERIFIED_ACCOUNT' },
     STT_HangCho: { type: DataTypes.INTEGER },
     CheckedInAt: { type: DataTypes.DATE },
-    CheckedInBy: { type: DataTypes.INTEGER, references: { model: 'nguoidung', key: 'Id_NguoiDung' } }
+    CheckedInBy: { type: DataTypes.INTEGER, references: { model: 'nguoidung', key: 'Id_NguoiDung' } },
+    IsFollowUp: { type: DataTypes.BOOLEAN, defaultValue: false },
+    TriggeringMedicalRecordId: { type: DataTypes.INTEGER, references: { model: 'hosobenhan', key: 'Id_HoSo' } }
 }, { tableName: 'datlich', timestamps: true, createdAt: 'NgayTao', updatedAt: 'NgayCapNhat' });
 
 module.exports = DatLich;

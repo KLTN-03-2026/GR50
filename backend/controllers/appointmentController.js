@@ -1,4 +1,4 @@
-const { DatLich, BenhNhan, NguoiDung, BacSi, LichKham, ThanhToan, HoaDon, AuthToken, VaiTro, NguoiDung_VaiTro } = require('../models');
+const { DatLich, BenhNhan, NguoiDung, BacSi, LichKham, ThanhToan, HoaDon, AuthToken, VaiTro, NguoiDung_VaiTro, PhongKham, ChuyenKhoa } = require('../models');
 const generateOtp = require('../utils/generateOtp');
 const { sendOtpToEmail, sendOtpToPhone } = require('../utils/sendOtp');
 const bcrypt = require('bcryptjs');
@@ -32,6 +32,7 @@ exports.create = async (req, res) => {
       const activeApt = await DatLich.findOne({
         include: [{
           model: LichKham,
+          as: 'DoctorSchedule',
           where: { Id_BacSi: bacsi.Id_BacSi }
         }],
         where: {
@@ -137,7 +138,14 @@ exports.getMyAppointments = async (req, res) => {
         appointments = await DatLich.findAll({
           where: whereClause,
           include: [
-            { model: LichKham, include: [{ model: BacSi, include: [NguoiDung] }] },
+            { 
+              model: LichKham, 
+              as: 'DoctorSchedule',
+              include: [
+                { model: PhongKham, as: 'Clinic' },
+                { model: BacSi, as: 'Doctor', include: [NguoiDung, ChuyenKhoa] }
+              ] 
+            },
             { model: BenhNhan, include: [NguoiDung] },
             { model: ThanhToan }
           ]
@@ -153,7 +161,15 @@ exports.getMyAppointments = async (req, res) => {
         appointments = await DatLich.findAll({
           where: whereClause,
           include: [
-            { model: LichKham, where: { Id_BacSi: bs.Id_BacSi }, include: [{ model: BacSi, include: [NguoiDung] }] },
+            { 
+              model: LichKham, 
+              as: 'DoctorSchedule',
+              where: { Id_BacSi: bs.Id_BacSi }, 
+              include: [
+                { model: PhongKham, as: 'Clinic' },
+                { model: BacSi, as: 'Doctor', include: [NguoiDung, ChuyenKhoa] }
+              ] 
+            },
             { model: BenhNhan, include: [NguoiDung] },
             { model: ThanhToan }
           ]
@@ -180,11 +196,18 @@ exports.getMyAppointments = async (req, res) => {
         code: d.MaDatLich,
         status: statusMap[d.TrangThai] || 'pending',
         payment_status: pStatus,
-        doctor_name: `${d.LichKham.BacSi.NguoiDung.Ho} ${d.LichKham.BacSi.NguoiDung.Ten}`,
-        patient_name: `${d.BenhNhan.NguoiDung.Ho} ${d.BenhNhan.NguoiDung.Ten}`,
-        appointment_date: d.LichKham.NgayDate,
-        appointment_time: d.LichKham.GioBatDau,
-        appointment_type: d.LichKham.LoaiKham === 'Online' ? 'online' : 'in-person',
+        doctor_name: (d.DoctorSchedule && d.DoctorSchedule.Doctor && d.DoctorSchedule.Doctor.NguoiDung) 
+          ? `${d.DoctorSchedule.Doctor.NguoiDung.Ho} ${d.DoctorSchedule.Doctor.NguoiDung.Ten}` 
+          : 'Bác sĩ',
+        patient_name: (d.BenhNhan && d.BenhNhan.NguoiDung) 
+          ? `${d.BenhNhan.NguoiDung.Ho} ${d.BenhNhan.NguoiDung.Ten}` 
+          : 'Bệnh nhân',
+        patient_id: d.Id_BenhNhan,
+        appointment_date: d.DoctorSchedule ? d.DoctorSchedule.NgayDate : null,
+        appointment_time: d.DoctorSchedule ? d.DoctorSchedule.GioBatDau : null,
+        appointment_type: (d.DoctorSchedule && d.DoctorSchedule.LoaiKham === 'Online') ? 'online' : 'in-person',
+        facility_name: (d.DoctorSchedule && d.DoctorSchedule.Clinic) ? d.DoctorSchedule.Clinic.TenPhongKham : 'Bệnh viện',
+        specialty_name: (d.DoctorSchedule && d.DoctorSchedule.Doctor && d.DoctorSchedule.Doctor.ChuyenKhoa) ? d.DoctorSchedule.Doctor.ChuyenKhoa.TenChuyenKhoa : '',
         symptoms: d.TrieuChungSoBo,
         queue_number: d.STT_HangCho
       };
@@ -217,14 +240,14 @@ exports.updateStatus = async (req, res) => {
 
     const appointment = await DatLich.findOne({
       where: { Id_DatLich: id },
-      include: [{ model: LichKham }]
+      include: [{ model: LichKham, as: 'DoctorSchedule' }]
     });
 
     if (!appointment) return res.status(404).json({ detail: 'Not found' });
 
     if (req.user.role === 'doctor') {
       const bs = await BacSi.findOne({ where: { Id_NguoiDung: req.user.id } });
-      if (!bs || appointment.LichKham.Id_BacSi !== bs.Id_BacSi) {
+      if (!bs || (appointment.DoctorSchedule && appointment.DoctorSchedule.Id_BacSi !== bs.Id_BacSi)) {
         return res.status(403).json({ detail: 'Bạn không có quyền xử lý lịch hẹn này.' });
       }
     }
@@ -249,14 +272,14 @@ exports.completeExam = async (req, res) => {
 
     const appointment = await DatLich.findOne({
       where: { Id_DatLich: id },
-      include: [{ model: LichKham }]
+      include: [{ model: LichKham, as: 'DoctorSchedule' }]
     });
 
     if (!appointment) return res.status(404).json({ detail: 'Appointment not found' });
 
     if (req.user.role === 'doctor') {
       const bs = await BacSi.findOne({ where: { Id_NguoiDung: req.user.id } });
-      if (!bs || appointment.LichKham.Id_BacSi !== bs.Id_BacSi) {
+      if (!bs || (appointment.DoctorSchedule && appointment.DoctorSchedule.Id_BacSi !== bs.Id_BacSi)) {
         return res.status(403).json({ detail: 'Bạn không có quyền hoàn tất khám cho lịch hẹn này.' });
       }
     }

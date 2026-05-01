@@ -69,12 +69,7 @@ export default function LoginPage() {
       }
 
     } catch (error) {
-      let errorMessage = t('loginFailed');
-
-      if (error.response?.status === 401) {
-        errorMessage = getErrorMessage(error, t('invalidCredentials'));
-      }
-
+      const errorMessage = error.response?.data?.detail || error.response?.data?.message || t('loginFailed');
       toast.error(errorMessage);
     } finally {
       setLoading(false);

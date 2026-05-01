@@ -31,6 +31,21 @@ const isAdmin = (req, res, next) => {
     return res.status(403).json({ detail: 'Access denied: Admin role required.' });
 };
 
+const isSuperAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin' && req.user.admin_type === 'SUPER_ADMIN') {
+        return next();
+    }
+    return res.status(403).json({ detail: 'Access denied: Super Admin role required.' });
+};
+
+const isFacilityAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin' && req.user.admin_type === 'FACILITY_ADMIN') {
+        return next();
+    }
+    return res.status(403).json({ detail: 'Access denied: Facility Admin role required.' });
+};
+
+
 /**
  * Composite middleware for inherited clinical roles.
  * Allows Doctors AND Department Heads to access clinical functions.
@@ -48,5 +63,8 @@ module.exports = {
     isDoctor,
     isStaff,
     isAdmin,
+    isSuperAdmin,
+    isFacilityAdmin,
     isMedicalStaff
 };
+

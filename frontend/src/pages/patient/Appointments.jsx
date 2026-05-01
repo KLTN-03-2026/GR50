@@ -168,13 +168,17 @@ function AppointmentCard({ appointment, navigate, onReview, onPayNow, onCancel }
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
             <h3 className="font-bold text-xl text-gray-900 dark:text-white">{appointment.doctor_name || 'Bác sĩ'}</h3>
+            <span className="text-teal-600 font-semibold text-sm">({appointment.specialty_name})</span>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusColors[appointment.status]}`}>
               {statusText[appointment.status]}
             </span>
           </div>
 
           <div className="space-y-2 mb-4">
-            <p className="text-sm font-bold text-teal-600">
+            <p className="text-sm font-bold text-gray-700 dark:text-gray-200">
+               {appointment.facility_name}
+            </p>
+            <p className="text-xs font-bold text-teal-600">
                Mã lịch hẹn: {appointment.code}
             </p>
             <p className="text-gray-600 dark:text-gray-300">
@@ -255,7 +259,7 @@ function AppointmentCard({ appointment, navigate, onReview, onPayNow, onCancel }
                     const session = await ChatService.startCall(token, conv.id, 'video');
                     navigate(`/patient/video-consultation/${session.id}`);
                   } catch (error) {
-                    toast.error('Không thể khởi tạo cuộc gọi');
+                    toast.error(error.response?.data?.detail || 'Không thể khởi tạo cuộc gọi');
                   }
                 }}
                 className="bg-gradient-to-r from-indigo-500 to-purple-600 w-full shadow-lg shadow-indigo-500/20"
