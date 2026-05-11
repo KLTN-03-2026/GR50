@@ -10,7 +10,8 @@ const BacSi_PhongKham = sequelize.define('BacSi_PhongKham', {
     supports_online: { type: DataTypes.BOOLEAN, defaultValue: true },
     supports_offline: { type: DataTypes.BOOLEAN, defaultValue: true },
     consultation_fee_online: { type: DataTypes.DECIMAL(12, 2) },
-    consultation_fee_offline: { type: DataTypes.DECIMAL(12, 2) }
+    consultation_fee_offline: { type: DataTypes.DECIMAL(12, 2) },
+    online_quota: { type: DataTypes.INTEGER, defaultValue: 8 }
 }, { 
     tableName: 'bacsi_phongkham', 
     timestamps: false

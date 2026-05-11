@@ -66,6 +66,10 @@ export default function CreateAccounts() {
   };
 
   const handleAddFacility = () => {
+    if (selectedRole === 'doctor' && formData.selectedFacilities.length >= 1) {
+        toast.warning('Theo quy định mới, mỗi bác sĩ chỉ được gán cho 1 cơ sở y tế duy nhất.');
+        return;
+    }
     if (formData.selectedFacilities.length >= facilities.length) return;
     
     const newFacilityAssignment = {

@@ -41,3 +41,25 @@ exports.getPublicSettings = async (req, res) => {
         res.json({ site_name: 'BookingCare' });
     }
 };
+
+const { BangGiaDichVu, ThuocDanhMuc } = require('../models');
+
+exports.getServices = async (req, res) => {
+    try {
+        const services = await BangGiaDichVu.findAll({ where: { TrangThai: 1 } });
+        res.json(services);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ detail: 'Error fetching services' });
+    }
+};
+
+exports.getMedicines = async (req, res) => {
+    try {
+        const medicines = await ThuocDanhMuc.findAll({ where: { TrangThai: 1 } });
+        res.json(medicines);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ detail: 'Error fetching medicines' });
+    }
+};

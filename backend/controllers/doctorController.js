@@ -1,4 +1,5 @@
-const { BacSi, NguoiDung, ChuyenKhoa, VaiTro, PhongKham, DanhGia, DatLich, BenhNhan, AITuVanPhien, LichKham } = require('../models');
+const { BacSi, NguoiDung, ChuyenKhoa, VaiTro, PhongKham, DanhGia, DatLich, BenhNhan, AITuVanPhien, LichKham, DoctorFacilitySchedule, DoctorOnlineSchedule } = require('../models');
+const { Op } = require('sequelize');
 
 
 exports.getAll = async (req, res) => {
@@ -353,24 +354,181 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-exports.updateSchedule = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { available_slots } = req.body;
+exports.getSchedules = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const doctor = await BacSi.findOne({ where: { Id_NguoiDung: userId } });
+        if (!doctor) return res.status(404).json({ detail: 'Doctor not found' });
 
-    const doctor = await BacSi.findOne({ where: { Id_NguoiDung: userId } });
-    if (!doctor) {
-      return res.status(404).json({ detail: 'Doctor profile not found' });
+        const facilitySchedules = await DoctorFacilitySchedule.findAll({
+            where: { doctorId: doctor.Id_BacSi, status: 'ACTIVE' },
+            include: [{ model: PhongKham, as: 'facility' }, { model: ChuyenKhoa, as: 'specialty' }]
+        });
+
+        const onlineSchedules = await DoctorOnlineSchedule.findAll({
+            where: { doctorId: doctor.Id_BacSi },
+            order: [['dayOfWeek', 'ASC'], ['startTime', 'ASC']]
+        });
+
+        res.json({
+            facilitySchedules: facilitySchedules,
+            onlineSchedules: onlineSchedules
+        });
+    } catch (error) {
+        res.status(500).json({ detail: 'Error fetching schedules' });
     }
+};
 
-    doctor.LichLamViec = JSON.stringify(available_slots);
-    await doctor.save();
+exports.createOnlineSlot = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const doctor = await BacSi.findOne({ where: { Id_NguoiDung: userId } });
+        if (!doctor) return res.status(404).json({ detail: 'Doctor not found' });
 
-    res.json({ message: 'Lịch làm việc đã được cập nhật thành công', available_slots });
-  } catch (error) {
-    console.error('Update schedule error:', error);
-    res.status(500).json({ detail: 'Internal server error' });
-  }
+        const { dayOfWeek, startTime, endTime, slotDuration = 20 } = req.body;
+
+        // 1. Business Hours Validation
+        const isBusinessHours = (time) => {
+            return (time >= "08:00:00" && time < "11:30:00") || (time >= "13:30:00" && time < "17:00:00");
+        };
+
+        if (isBusinessHours(startTime) || isBusinessHours(endTime)) {
+            return res.status(400).json({ detail: 'Không thể tạo lịch online trong giờ hành chính (08:00-11:30, 13:30-17:00).' });
+        }
+
+        // 2. Max 22:30
+        if (endTime > "22:30:00") {
+            return res.status(400).json({ detail: 'Lịch khám online không được vượt quá 22:30 hằng ngày.' });
+        }
+
+        // 3. Overlap with Facility Schedule
+        const overlapFacility = await DoctorFacilitySchedule.findOne({
+            where: {
+                doctorId: doctor.Id_BacSi,
+                dayOfWeek,
+                [Op.or]: [
+                    { startTime: { [Op.between]: [startTime, endTime] } },
+                    { endTime: { [Op.between]: [startTime, endTime] } },
+                    { [Op.and]: [{ startTime: { [Op.lte]: startTime } }, { endTime: { [Op.gte]: endTime } }] }
+                ],
+                status: 'ACTIVE'
+            }
+        });
+        if (overlapFacility) return res.status(400).json({ detail: 'Khung giờ này trùng với lịch làm việc tại cơ sở y tế.' });
+
+        // 4. Overlap with existing Online Schedule
+        const overlapOnline = await DoctorOnlineSchedule.findOne({
+            where: {
+                doctorId: doctor.Id_BacSi,
+                dayOfWeek,
+                [Op.or]: [
+                    { startTime: { [Op.between]: [startTime, endTime] } },
+                    { endTime: { [Op.between]: [startTime, endTime] } },
+                    { [Op.and]: [{ startTime: { [Op.lte]: startTime } }, { endTime: { [Op.gte]: endTime } }] }
+                ]
+            }
+        });
+        if (overlapOnline) return res.status(400).json({ detail: 'Khung giờ này trùng với một lịch online khác đã tạo.' });
+
+        const slot = await DoctorOnlineSchedule.create({
+            doctorId: doctor.Id_BacSi,
+            dayOfWeek,
+            startTime,
+            endTime,
+            slotDuration,
+            createdByDoctorId: userId
+        });
+
+        res.status(201).json(slot);
+    } catch (error) {
+        console.error('Create online slot error:', error);
+        res.status(500).json({ detail: 'Error creating online slot' });
+    }
+};
+
+exports.deleteOnlineSlot = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        const doctor = await BacSi.findOne({ where: { Id_NguoiDung: userId } });
+        
+        const slot = await DoctorOnlineSchedule.findOne({ where: { id, doctorId: doctor.Id_BacSi } });
+        if (!slot) return res.status(404).json({ detail: 'Slot not found' });
+
+        await slot.destroy();
+        res.json({ message: 'Deleted' });
+    } catch (error) {
+        res.status(500).json({ detail: 'Error deleting online slot' });
+    }
+};
+
+exports.bulkUpdateOnlineSlots = async (req, res) => {
+    const transaction = await DoctorOnlineSchedule.sequelize.transaction();
+    try {
+        const userId = req.user.id;
+        const doctor = await BacSi.findOne({ where: { Id_NguoiDung: userId } });
+        if (!doctor) return res.status(404).json({ detail: 'Doctor not found' });
+
+        const { slots } = req.body; // Array of { dayOfWeek, startTime, endTime }
+
+        // 1. Delete all existing online slots
+        await DoctorOnlineSchedule.destroy({ 
+            where: { doctorId: doctor.Id_BacSi },
+            transaction
+        });
+
+        // 2. Validate and create each slot
+        for (const slotData of slots) {
+            const { dayOfWeek, startTime, endTime } = slotData;
+
+            // Business Hours Validation (simplified for now, ideally same as createOnlineSlot)
+            const isBusinessHours = (time) => {
+                return (time >= "08:00:00" && time < "11:30:00") || (time >= "13:30:00" && time < "17:00:00");
+            };
+
+            if (isBusinessHours(startTime) || isBusinessHours(endTime)) {
+                throw new Error(`Khung giờ ${startTime}-${endTime} vào ${dayOfWeek} trùng với giờ hành chính.`);
+            }
+
+            if (endTime > "22:30:00") {
+                throw new Error(`Khung giờ ${startTime}-${endTime} vượt quá 22:30.`);
+            }
+
+            // Check overlap with Facility
+            const overlapFacility = await DoctorFacilitySchedule.findOne({
+                where: {
+                    doctorId: doctor.Id_BacSi,
+                    dayOfWeek,
+                    [Op.or]: [
+                        { startTime: { [Op.between]: [startTime, endTime] } },
+                        { endTime: { [Op.between]: [startTime, endTime] } },
+                        { [Op.and]: [{ startTime: { [Op.lte]: startTime } }, { endTime: { [Op.gte]: endTime } }] }
+                    ],
+                    status: 'ACTIVE'
+                },
+                transaction
+            });
+            if (overlapFacility) {
+                throw new Error(`Khung giờ ${startTime}-${endTime} trùng với lịch tại cơ sở y tế.`);
+            }
+
+            await DoctorOnlineSchedule.create({
+                doctorId: doctor.Id_BacSi,
+                dayOfWeek,
+                startTime,
+                endTime,
+                slotDuration: 20,
+                createdByDoctorId: userId
+            }, { transaction });
+        }
+
+        await transaction.commit();
+        res.json({ message: 'Lịch làm việc đã được cập nhật thành công.' });
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Bulk update online slots error:', error);
+        res.status(400).json({ detail: error.message || 'Lỗi khi cập nhật lịch làm việc.' });
+    }
 };
 
 exports.getStaffMembers = async (req, res) => {
@@ -437,10 +595,11 @@ exports.getAIDiagnoses = async (req, res) => {
     const doctor = await BacSi.findOne({ where: { Id_NguoiDung: userId } });
     if (!doctor) return res.status(403).json({ detail: 'Doctor profile required' });
 
+    console.log(`[DEBUG] getAIDiagnoses request for User: ${userId}, Doctor: ${doctor.Id_BacSi}`);
     const diagnoses = await AITuVanPhien.findAll({
       where: { Id_BacSi_PhuTrach: doctor.Id_BacSi },
       include: [
-        { model: NguoiDung, as: 'nguoiDung', attributes: ['Id_NguoiDung', 'Ho', 'Ten', 'Email'] }
+        { model: NguoiDung, as: 'aituvanUser', attributes: ['Id_NguoiDung', 'Ho', 'Ten', 'Email'] }
       ],
       order: [['NgayCapNhat', 'DESC']]
     });
@@ -455,12 +614,13 @@ exports.getAIDiagnoses = async (req, res) => {
       specialty: d.GoiYChuyenKhoa,
       priority: d.MucDoUuTien,
       status: d.TrangThaiChuyenGiao,
-      User: d.nguoiDung ? {
-        full_name: `${d.nguoiDung.Ho} ${d.nguoiDung.Ten}`,
-        email: d.nguoiDung.Email
+      User: d.aituvanUser ? {
+        full_name: `${d.aituvanUser.Ho} ${d.aituvanUser.Ten}`,
+        email: d.aituvanUser.Email
       } : null
     }));
 
+    console.log(`[DEBUG] getAIDiagnoses returning ${result.length} items`);
     res.json(result);
   } catch (error) {
     console.error('getAIDiagnoses error:', error);
@@ -555,5 +715,22 @@ exports.getReviewByPatient = async (req, res) => {
   } catch (error) {
     console.error('Get review error:', error);
     res.status(500).json({ detail: 'Lỗi khi lấy thông tin đánh giá' });
+  }
+};
+
+exports.updateOperationalStatus = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { status } = req.body; // AVAILABLE, BUSY, ON_BREAK, OFFLINE
+
+    const doctor = await BacSi.findOne({ where: { Id_NguoiDung: userId } });
+    if (!doctor) return res.status(404).json({ detail: 'Doctor profile not found' });
+
+    doctor.TrangThaiVanHanh = status;
+    await doctor.save();
+
+    res.json({ message: 'Trạng thái vận hành đã được cập nhật', status: doctor.TrangThaiVanHanh });
+  } catch (error) {
+    res.status(500).json({ detail: 'Lỗi khi cập nhật trạng thái vận hành' });
   }
 };

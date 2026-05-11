@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Calendar, Clock, MapPin, User as UserIcon, Phone, Mail, ChevronRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { API } from "@/config";
 import { Button } from "@/components/ui/button";
@@ -25,17 +25,16 @@ import { toast } from "sonner";
 
 export default function BookingDialog({ doctor, open, onClose, token, aiDiagnosis }) {
     const navigate = useNavigate();
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const urlAiSessionId = queryParams.get('aiSessionId');
     const [step, setStep] = useState("booking_info"); // booking_info, guest_info, otp_verify, success
     const [loading, setLoading] = useState(false);
     const [guestAppointmentId, setGuestAppointmentId] = useState(null);
     const [otp, setOtp] = useState("");
-
-    const getAvatarUrl = (avatarPath) => {
-        if (!avatarPath) return null;
-        if (avatarPath.startsWith('http') || avatarPath.startsWith('blob:')) return avatarPath;
-        if (avatarPath.startsWith('/images/')) return avatarPath;
-        return `${API.replace('/api', '')}${avatarPath}`;
-    };
+    const [policyAccepted, setPolicyAccepted] = useState(false);
+    const [availableSlots, setAvailableSlots] = useState([]);
+    const [fetchingSlots, setFetchingSlots] = useState(false);
 
     const [formData, setFormData] = useState({
         facility_id: doctor?.facilities?.[0]?.id || "",
@@ -44,6 +43,7 @@ export default function BookingDialog({ doctor, open, onClose, token, aiDiagnosi
         appointment_time: "",
         symptoms: "",
         ai_diagnosis: aiDiagnosis || "",
+        aiSessionId: urlAiSessionId || null
     });
 
     const [guestData, setGuestData] = useState({
@@ -55,10 +55,51 @@ export default function BookingDialog({ doctor, open, onClose, token, aiDiagnosi
     });
 
     React.useEffect(() => {
+        if (formData.appointment_date && doctor) {
+            fetchSlots();
+        } else {
+            setAvailableSlots([]);
+        }
+    }, [formData.appointment_date, formData.facility_id, formData.appointment_type, doctor]);
+
+    const fetchSlots = async () => {
+        setFetchingSlots(true);
+        try {
+            const res = await axios.get(`${API}/appointments/slots`, {
+                params: {
+                    doctorId: doctor.id,
+                    facilityId: formData.facility_id,
+                    date: formData.appointment_date,
+                    appointment_type: formData.appointment_type
+                }
+            });
+            setAvailableSlots(res.data);
+            // Auto-select first slot if current time is not in new slots
+            if (res.data.length > 0 && !res.data.find(s => s.time === formData.appointment_time)) {
+                // Don't auto-select to avoid accidental bookings, but maybe it's better UX
+                // setFormData(prev => ({ ...prev, appointment_time: res.data[0].time }));
+            }
+        } catch (error) {
+            console.error("Error fetching slots:", error);
+            setAvailableSlots([]);
+        } finally {
+            setFetchingSlots(false);
+        }
+    };
+
+    const getAvatarUrl = (avatarPath) => {
+        if (!avatarPath) return null;
+        if (avatarPath.startsWith('http') || avatarPath.startsWith('blob:')) return avatarPath;
+        if (avatarPath.startsWith('/images/')) return avatarPath;
+        return `${API.replace('/api', '')}${avatarPath}`;
+    };
+
+    React.useEffect(() => {
         if (open && doctor) {
+            const primaryFac = doctor.facilities?.find(f => f.is_primary) || doctor.facilities?.[0];
             setFormData(prev => ({
                 ...prev,
-                facility_id: prev.facility_id || doctor.facilities?.[0]?.id || "",
+                facility_id: primaryFac?.id || "",
                 ai_diagnosis: prev.ai_diagnosis || aiDiagnosis || ""
             }));
             setStep("booking_info");
@@ -79,11 +120,17 @@ export default function BookingDialog({ doctor, open, onClose, token, aiDiagnosi
     const createAuthenticatedBooking = async () => {
         setLoading(true);
         try {
-            await axios.post(
+            const res = await axios.post(
                 `${API}/appointments`,
-                { ...formData, doctor_id: doctor.id },
+                { ...formData, doctor_id: doctor.id, aiSessionId: formData.aiSessionId || urlAiSessionId },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
+            
+            // Accept policy record
+            await axios.post(`${API}/appointments/${res.data.id}/accept-policy`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
             toast.success("Đặt lịch thành công!");
             onClose();
             navigate("/patient/appointments");
@@ -101,7 +148,8 @@ export default function BookingDialog({ doctor, open, onClose, token, aiDiagnosi
             const res = await axios.post(`${API}/appointments/guest`, {
                 ...formData,
                 ...guestData,
-                doctor_id: doctor.id
+                doctor_id: doctor.id,
+                aiSessionId: formData.aiSessionId || urlAiSessionId
             });
             setStep("success");
             toast.success("Đặt lịch thành công!");
@@ -151,26 +199,21 @@ export default function BookingDialog({ doctor, open, onClose, token, aiDiagnosi
                         <div className="space-y-4 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
                             {doctor?.facilities && doctor.facilities.length > 0 && (
                                 <div>
-                                    <Label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Chọn cơ sở y tế</Label>
-                                    <Select
-                                        value={formData.facility_id?.toString()}
-                                        onValueChange={(v) => setFormData({ ...formData, facility_id: parseInt(v) })}
-                                        required
-                                    >
-                                        <SelectTrigger className="bg-white dark:bg-gray-800 border-gray-200 h-12 rounded-xl">
-                                            <SelectValue placeholder="Chọn cơ sở khám" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {doctor.facilities.map((fac) => (
-                                                <SelectItem key={fac.id} value={fac.id.toString()}>
-                                                    <div className="flex flex-col items-start py-1">
-                                                        <span className="font-bold">{fac.name}</span>
-                                                        <span className="text-[10px] text-gray-500">{fac.address}</span>
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Cơ sở y tế</Label>
+                                    {(() => {
+                                        const primaryFac = doctor.facilities.find(f => f.is_primary) || doctor.facilities[0];
+                                        return (
+                                            <div className="bg-white dark:bg-gray-800 border border-teal-100 dark:border-teal-900/30 p-3 rounded-xl flex items-start gap-3">
+                                                <div className="w-10 h-10 rounded-lg bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center text-teal-600">
+                                                    <MapPin className="w-5 h-5" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="font-bold text-sm text-gray-900 dark:text-white">{primaryFac.name}</div>
+                                                    <div className="text-[10px] text-gray-500 line-clamp-1">{primaryFac.address}</div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             )}
 
@@ -186,7 +229,7 @@ export default function BookingDialog({ doctor, open, onClose, token, aiDiagnosi
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="in_person">Trực tiếp tại phòng khám</SelectItem>
-                                            <SelectItem value="online">Tư vấn video trực tuyến</SelectItem>
+                                            <SelectItem value="online">Tư vấn video trực tuyến (Tối đa 8 ca/ngày)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -205,35 +248,68 @@ export default function BookingDialog({ doctor, open, onClose, token, aiDiagnosi
 
                             <div>
                                 <Label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Giờ khám mong muốn</Label>
-                                <div className="relative">
-                                    <Clock className="absolute left-3 top-4 w-4 h-4 text-gray-400" />
-                                    <Input
-                                        type="time"
-                                        value={formData.appointment_time}
-                                        onChange={(e) => setFormData({ ...formData, appointment_time: e.target.value })}
-                                        required
-                                        className="bg-white dark:bg-gray-800 border-gray-200 h-12 rounded-xl pl-10"
-                                    />
-                                </div>
+                                {fetchingSlots ? (
+                                    <div className="flex items-center justify-center h-24 bg-white dark:bg-gray-800 border border-dashed rounded-xl">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className="w-5 h-5 border-2 border-teal-500 border-t-transparent animate-spin rounded-full" />
+                                            <span className="text-[10px] text-gray-400">Đang tìm lịch trống...</span>
+                                        </div>
+                                    </div>
+                                ) : availableSlots.length > 0 ? (
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {availableSlots.map((slot) => (
+                                            <button
+                                                key={slot.time}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, appointment_time: slot.time })}
+                                                className={`py-2 px-1 rounded-lg text-xs font-bold transition-all border ${
+                                                    formData.appointment_time === slot.time
+                                                        ? "bg-teal-600 border-teal-600 text-white shadow-md shadow-teal-100"
+                                                        : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-teal-300"
+                                                }`}
+                                            >
+                                                {slot.time}
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-24 bg-gray-50 dark:bg-gray-900/30 border border-dashed rounded-xl">
+                                        <Clock className="w-5 h-5 text-gray-300 mb-1" />
+                                        <span className="text-[10px] text-gray-400">
+                                            {formData.appointment_date ? "Không có lịch trống vào ngày này" : "Vui lòng chọn ngày khám"}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        <div className="space-y-3">
-                            <Label className="text-xs font-bold text-gray-500 uppercase block">Triệu chứng hoặc Lý do khám</Label>
-                            <Textarea
-                                value={formData.symptoms}
-                                onChange={(e) => setFormData({ ...formData, symptoms: e.target.value })}
-                                placeholder="Hãy mô tả tình trạng sức khỏe của bạn để bác sĩ chuẩn bị tốt hơn..."
-                                className="rounded-2xl min-h-[100px] border-gray-200 bg-white dark:bg-gray-800"
-                            />
+                        <div className="space-y-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl border border-yellow-100 dark:border-yellow-900/30">
+                            <h4 className="text-xs font-black text-yellow-800 dark:text-yellow-400 uppercase tracking-widest">Điều kiện thanh toán & hoàn tiền</h4>
+                            <p className="text-[10px] leading-relaxed text-yellow-700 dark:text-yellow-300">
+                                1. Bệnh nhân cần thanh toán trước để xác nhận lịch.<br/>
+                                2. Không đến khám (No-show) khấu trừ 20% phí.<br/>
+                                3. Không trễ quá 20-25 phút. Quá thời gian lịch có thể bị hủy.<br/>
+                                4. Hủy trước 6-24h hoàn 80-90%. Hủy dưới 6h khấu trừ 20%.
+                            </p>
+                            <label className="flex items-start gap-3 cursor-pointer group">
+                                <input 
+                                    type="checkbox" 
+                                    required 
+                                    className="mt-1 w-4 h-4 rounded border-yellow-300 text-yellow-600 focus:ring-yellow-500" 
+                                    onChange={(e) => setPolicyAccepted(e.target.checked)}
+                                />
+                                <span className="text-xs font-bold text-gray-700 dark:text-gray-200 group-hover:text-yellow-700 transition-colors">
+                                    Tôi đã đọc và đồng ý với điều kiện thanh toán, hủy lịch và hoàn tiền.
+                                </span>
+                            </label>
                         </div>
 
                         <div className="flex gap-4 pt-2">
                             <Button type="button" variant="ghost" onClick={onClose} className="flex-1 h-12 rounded-xl">Hủy bỏ</Button>
                             <Button 
                                 type="submit" 
-                                disabled={loading} 
-                                className="flex-2 h-12 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 font-bold shadow-lg shadow-teal-500/20"
+                                disabled={loading || !policyAccepted || !formData.appointment_time} 
+                                className="flex-2 h-12 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 font-bold shadow-lg shadow-teal-500/20 disabled:opacity-50"
                             >
                                 {token ? "Xác nhận đặt lịch" : "Tiếp theo: Nhập thông tin bệnh nhân"}
                                 <ChevronRight className="w-4 h-4 ml-2" />

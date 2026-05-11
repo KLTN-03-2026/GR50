@@ -8,15 +8,16 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import FloatingChatButton from '@/components/FloatingChatButton';
 import PatientDashboard from "@/pages/patient/Dashboard";
-import AIHistory from "@/pages/patient/AIHistory";
 import SearchDoctors from "@/pages/patient/SearchDoctors";
 import PatientAppointments from "@/pages/patient/Appointments";
 import PatientChat from "@/pages/patient/Chat";
 import PatientChatList from "@/pages/patient/ChatList";
 import PatientUnifiedChat from "@/pages/patient/UnifiedChat";
+import AIConsultation from "@/pages/patient/AIConsultation";
 
 import PatientPayments from "@/pages/patient/Payments";
 import PaymentProcess from "@/pages/patient/PaymentProcess";
+import PaymentInitiate from "@/pages/patient/PaymentInitiate";
 import PatientDoctorDetails from "@/pages/patient/DoctorDetails";
 import PatientAccountSettings from "@/pages/patient/AccountSettings";
 import DoctorDashboard from "@/pages/doctor/Dashboard";
@@ -230,14 +231,15 @@ function App() {
               <Route path="/patient/video-consultation/:id" element={<ProtectedRoute allowedRoles={['patient']}><VideoConsultation /></ProtectedRoute>} />
               <Route path="/patient/search-doctors" element={<ProtectedRoute allowedRoles={['patient']}><SearchDoctors /></ProtectedRoute>} />
               <Route path="/patient/appointments" element={<ProtectedRoute allowedRoles={['patient']}><PatientAppointments /></ProtectedRoute>} />
+              <Route path="/patient/ai-consultation" element={<ProtectedRoute allowedRoles={['patient']}><AIConsultation /></ProtectedRoute>} />
               <Route path="/patient/chat" element={<ProtectedRoute allowedRoles={['patient']}><PatientChatList /></ProtectedRoute>} />
               <Route path="/patient/chat/:appointmentId" element={<ProtectedRoute allowedRoles={['patient']}><PatientChat /></ProtectedRoute>} />
-              <Route path="/patient/ai-history" element={<ProtectedRoute allowedRoles={['patient']}><AIHistory /></ProtectedRoute>} />
               <Route path="/patient/conversations" element={<ProtectedRoute allowedRoles={['patient']}><PatientUnifiedChat /></ProtectedRoute>} />
               <Route path="/patient/conversation/:id" element={<ProtectedRoute allowedRoles={['patient']}><PatientUnifiedChat /></ProtectedRoute>} />
               <Route path="/patient/messages" element={<ProtectedRoute allowedRoles={['patient']}><PatientUnifiedChat /></ProtectedRoute>} />
               <Route path="/patient/payments" element={<ProtectedRoute allowedRoles={['patient']}><PatientPayments /></ProtectedRoute>} />
               <Route path="/patient/payment/:paymentId" element={<ProtectedRoute allowedRoles={['patient']}><PaymentProcess /></ProtectedRoute>} />
+              <Route path="/patient/payment-initiate/:appointmentId" element={<ProtectedRoute allowedRoles={['patient']}><PaymentInitiate /></ProtectedRoute>} />
               <Route path="/patient/doctor/:id" element={<ProtectedRoute allowedRoles={['patient']}><PatientDoctorDetails /></ProtectedRoute>} />
               <Route path="/patient/medical-records" element={<ProtectedRoute allowedRoles={['patient']}><PatientMedicalRecords /></ProtectedRoute>} />
               <Route path="/patient/account-settings" element={<ProtectedRoute allowedRoles={['patient']}><PatientAccountSettings /></ProtectedRoute>} />
@@ -261,16 +263,40 @@ function App() {
 
               {/* Admin Routes */}
               <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
-
-
-              <Route path="/admin/doctors" element={<ProtectedRoute allowedRoles={['admin']}><AdminDoctors /></ProtectedRoute>} />
-              <Route path="/admin/staffs" element={<ProtectedRoute allowedRoles={['admin']}><AdminStaffs /></ProtectedRoute>} />
-              <Route path="/admin/patients" element={<ProtectedRoute allowedRoles={['admin']}><AdminPatients /></ProtectedRoute>} />
               <Route path="/admin/stats" element={<ProtectedRoute allowedRoles={['admin']}><AdminStats /></ProtectedRoute>} />
+              
+              <Route path="/admin/doctors" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  {user?.admin_type === 'SUPER_ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <AdminDoctors />}
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/staffs" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  {user?.admin_type === 'SUPER_ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <AdminStaffs />}
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/patients" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  {user?.admin_type === 'SUPER_ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <AdminPatients />}
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/create-accounts" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  {user?.admin_type === 'SUPER_ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <CreateAccounts />}
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/payments" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  {user?.admin_type === 'SUPER_ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <AdminPayments />}
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/reports" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  {user?.admin_type === 'SUPER_ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <AdminReports />}
+                </ProtectedRoute>
+              } />
+
               <Route path="/admin/admins" element={<ProtectedRoute allowedRoles={['admin']}><AdminsManagement /></ProtectedRoute>} />
-              <Route path="/admin/create-accounts" element={<ProtectedRoute allowedRoles={['admin']}><CreateAccounts /></ProtectedRoute>} />
-              <Route path="/admin/payments" element={<ProtectedRoute allowedRoles={['admin']}><AdminPayments /></ProtectedRoute>} />
-              <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['admin']}><AdminReports /></ProtectedRoute>} />
               <Route path="/admin/system-settings" element={<ProtectedRoute allowedRoles={['admin']}><SystemSettings /></ProtectedRoute>} />
               <Route path="/admin/ai-diagnoses" element={<ProtectedRoute allowedRoles={['admin']}><AIDiagnoses /></ProtectedRoute>} />
               <Route path="/admin/specialties" element={<ProtectedRoute allowedRoles={['admin']}><AdminSpecialties /></ProtectedRoute>} />
@@ -288,6 +314,7 @@ function App() {
               <Route path="/staff/video-support" element={<ProtectedRoute allowedRoles={['staff']}><ReceptionVideoSupport /></ProtectedRoute>} />
               <Route path="/staff/video-support/:id" element={<ProtectedRoute allowedRoles={['staff']}><VideoConsultation /></ProtectedRoute>} />
               <Route path="/staff/video-consultation/:id" element={<ProtectedRoute allowedRoles={['staff']}><VideoConsultation /></ProtectedRoute>} />
+              <Route path="/staff/ai-diagnoses" element={<ProtectedRoute allowedRoles={['staff']}><AIDiagnoses /></ProtectedRoute>} />
             </Routes>
             <FloatingChatButton />
             <Toaster position="top-right" />

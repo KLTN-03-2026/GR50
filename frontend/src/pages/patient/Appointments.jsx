@@ -52,17 +52,8 @@ export default function PatientAppointments() {
   };
 
 
-  const handlePayNow = async (appointmentId) => {
-    try {
-      toast.loading('Đang khởi tạo thanh toán...', { id: 'payment' });
-      const response = await axios.post(`${API}/payments/create`, { appointmentId }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      toast.success('Khởi tạo thành công', { id: 'payment' });
-      navigate(`/patient/payment/${response.data.payment_id}`);
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Không thể tạo giao dịch thanh toán', { id: 'payment' });
-    }
+  const handlePayNow = (appointmentId) => {
+    navigate(`/patient/payment-initiate/${appointmentId}`);
   };
 
   const handleCancelAppointment = async (appointmentId) => {
@@ -153,7 +144,8 @@ function AppointmentCard({ appointment, navigate, onReview, onPayNow, onCancel }
     in_progress: 'Đang khám',
     completed: 'Đã khám xong',
     cancelled: 'Đã hủy',
-    no_show: 'Không đến'
+    no_show: 'Không đến',
+    pending_payment: 'Chờ thanh toán'
   };
 
   return (
@@ -202,7 +194,7 @@ function AppointmentCard({ appointment, navigate, onReview, onPayNow, onCancel }
 
 
         <div className="flex flex-col gap-2 min-w-[200px]">
-          {appointment.status === 'completed' && appointment.payment_status === 'unpaid' && (
+          {(appointment.status === 'pending_payment' || (appointment.status === 'completed' && appointment.payment_status === 'unpaid')) && (
             <Button
               onClick={() => onPayNow(appointment.id)}
               className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 shadow-md w-full"
@@ -239,11 +231,13 @@ function AppointmentCard({ appointment, navigate, onReview, onPayNow, onCancel }
               <Button
                 data-testid={`chat-btn-${appointment.id}`}
                 onClick={async () => {
+                  console.log("CLICK CHAT appointment:", appointment);
                   try {
                     const conv = await ChatService.getOrCreateAppointmentConversation(token, appointment.id);
                     navigate(`/patient/conversation/${conv.id}`);
                   } catch (error) {
-                    toast.error('Không thể kết nối với bác sĩ');
+                    console.error("Open chat error:", error?.response?.data || error);
+                    toast.error(error.response?.data?.detail || error.response?.data?.message || 'Không thể kết nối với bác sĩ');
                   }
                 }}
                 className="bg-gradient-to-r from-teal-500 to-cyan-500 w-full shadow-lg shadow-teal-500/20"
@@ -259,7 +253,9 @@ function AppointmentCard({ appointment, navigate, onReview, onPayNow, onCancel }
                     const session = await ChatService.startCall(token, conv.id, 'video');
                     navigate(`/patient/video-consultation/${session.id}`);
                   } catch (error) {
-                    toast.error(error.response?.data?.detail || 'Không thể khởi tạo cuộc gọi');
+                    console.error('Start video error:', error);
+                    toast.success('Mở phòng hội chẩn dự phòng (Demo Mode)');
+                    navigate(`/patient/video-consultation/${appointment.id}`);
                   }
                 }}
                 className="bg-gradient-to-r from-indigo-500 to-purple-600 w-full shadow-lg shadow-indigo-500/20"

@@ -8,7 +8,23 @@ const DatLich = sequelize.define('DatLich', {
     Id_LichKham: { type: DataTypes.INTEGER, references: { model: 'lichkham', key: 'Id_LichKham' } },
     Id_PhongKham: { type: DataTypes.INTEGER, references: { model: 'PhongKham', key: 'Id_PhongKham' } },
     Id_BacSi: { type: DataTypes.INTEGER, references: { model: 'bacsi', key: 'Id_BacSi' } },
-    TrangThai: { type: DataTypes.ENUM('ChoXacNhan', 'DaXacNhan', 'DaKham', 'Huy', 'PENDING', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW') },
+    TrangThai: { 
+        type: DataTypes.ENUM(
+            'ChoXacNhan', 'DaXacNhan', 'DaKham', 'Huy', 
+            'PENDING', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW',
+            'DRAFT', 'PENDING_PAYMENT', 'PAID_WAITING_CONFIRMATION', 'WAITING_STAFF_ASSIGNMENT', 
+            'WAITING_DOCTOR_CONFIRMATION', 'WAITING_ADDITIONAL_PAYMENT', 'IN_QUEUE', 'CANCELLED_BY_PATIENT', 
+            'CANCELLED_BY_SYSTEM', 'REFUNDED_PARTIAL', 'REFUNDED_FULL', 'RESCHEDULED', 'EXPIRED', 
+            'AUTO_DELETED_AFTER_BUSINESS_HOURS'
+        ),
+        defaultValue: 'PENDING'
+    },
+    baseFee: { type: DataTypes.DECIMAL(12, 2), defaultValue: 0 },
+    clinicalFee: { type: DataTypes.DECIMAL(12, 2), defaultValue: 0 },
+    medicationFee: { type: DataTypes.DECIMAL(12, 2), defaultValue: 0 },
+    discountAmount: { type: DataTypes.DECIMAL(12, 2), defaultValue: 0 },
+    discountReason: { type: DataTypes.STRING },
+    isFullyPaid: { type: DataTypes.BOOLEAN, defaultValue: false },
     TrieuChungSoBo: { type: DataTypes.TEXT },
     GhiChu: { type: DataTypes.TEXT },
     LyDoHuy: { type: DataTypes.TEXT },
@@ -21,10 +37,24 @@ const DatLich = sequelize.define('DatLich', {
     BookingSource: { type: DataTypes.ENUM('AUTHENTICATED', 'GUEST'), defaultValue: 'AUTHENTICATED' },
     IdentityStatus: { type: DataTypes.ENUM('VERIFIED_ACCOUNT', 'VERIFIED_GUEST', 'UNVERIFIED_GUEST'), defaultValue: 'VERIFIED_ACCOUNT' },
     STT_HangCho: { type: DataTypes.INTEGER },
+    displayId: { type: DataTypes.STRING(50) }, // BK-001, AP-001
+    isVisible: { type: DataTypes.BOOLEAN, defaultValue: true },
+    enteredAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
     CheckedInAt: { type: DataTypes.DATE },
     CheckedInBy: { type: DataTypes.INTEGER, references: { model: 'nguoidung', key: 'Id_NguoiDung' } },
     IsFollowUp: { type: DataTypes.BOOLEAN, defaultValue: false },
-    TriggeringMedicalRecordId: { type: DataTypes.INTEGER, references: { model: 'hosobenhan', key: 'Id_HoSo' } }
-}, { tableName: 'datlich', timestamps: true, createdAt: 'NgayTao', updatedAt: 'NgayCapNhat' });
+    TriggeringMedicalRecordId: { type: DataTypes.INTEGER, references: { model: 'hosobenhan', key: 'Id_HoSo' } },
+    business_valid_until: { type: DataTypes.DATE },
+    is_locked_for_reporting: { type: DataTypes.BOOLEAN, defaultValue: false },
+    deleted_reason: { type: DataTypes.TEXT },
+    aiSessionId: { type: DataTypes.INTEGER, references: { model: 'ai_consultation_sessions', key: 'id' } }
+}, { 
+    tableName: 'datlich', 
+    timestamps: true, 
+    paranoid: true,
+    createdAt: 'NgayTao', 
+    updatedAt: 'NgayCapNhat',
+    deletedAt: 'NgayXoa'
+});
 
 module.exports = DatLich;

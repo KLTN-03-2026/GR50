@@ -1,8 +1,11 @@
-const { HoSoBenhAn, DatLich, BenhNhan, BacSi, NguoiDung, LichKham, ThongBao, PhongKham } = require('../models');
+const { HoSoBenhAn, DatLich, BenhNhan, BacSi, NguoiDung, LichKham, ThongBao, PhongKham, AIConsultationSession, AIConsultationResult, DoctorMedicalRecordRetention } = require('../models');
 
 exports.getPatientRecords = async (req, res) => {
     try {
-        const bn = await BenhNhan.findOne({ where: { Id_NguoiDung: req.user.id } });
+        let bn = await BenhNhan.findOne({ where: { Id_NguoiDung: req.user.id } });
+        if (!bn) {
+            bn = await BenhNhan.create({ Id_NguoiDung: req.user.id });
+        }
         if (!bn) return res.json([]);
 
         const records = await HoSoBenhAn.findAll({
@@ -17,17 +20,25 @@ exports.getPatientRecords = async (req, res) => {
         res.json(records.map(r => ({
             id: r.Id_HoSo,
             date: r.NgayTao,
-            patient_name: `${r.BenhNhan.NguoiDung.Ho} ${r.BenhNhan.NguoiDung.Ten}`,
             diagnosis: r.ChanDoan,
             prescription: r.KeHoachDieuTri,
             notes: r.GhiChu,
-            Doctor: { 
-                full_name: `${r.BacSi.NguoiDung.Ho} ${r.BacSi.NguoiDung.Ten}`,
-                email: r.BacSi.NguoiDung.Email 
+            Patient: {
+                full_name: r.BenhNhan ? `${r.BenhNhan.NguoiDung?.Ho || ''} ${r.BenhNhan.NguoiDung?.Ten || ''}`.trim() : 'Unknown',
+                email: r.BenhNhan?.NguoiDung?.Email
             },
-            Appointment: { schedule_time: (r.DatLich && r.DatLich.DoctorSchedule) ? r.DatLich.DoctorSchedule.NgayDate : null }
+            Doctor: { 
+                full_name: r.BacSi ? `${r.BacSi.NguoiDung?.Ho || ''} ${r.BacSi.NguoiDung?.Ten || ''}`.trim() : 'Bác sĩ',
+                email: r.BacSi?.NguoiDung?.Email 
+            },
+            Appointment: { 
+                schedule_time: (r.DatLich && r.DatLich.DoctorSchedule) ? r.DatLich.DoctorSchedule.NgayDate : null,
+                appointment_date: (r.DatLich && r.DatLich.DoctorSchedule) ? r.DatLich.DoctorSchedule.NgayDate : null,
+                appointment_time: (r.DatLich && r.DatLich.DoctorSchedule) ? r.DatLich.DoctorSchedule.GioBatDau : null
+            }
         })));
     } catch (error) {
+        console.error('getPatientRecords error:', error);
         res.status(500).json({ detail: 'Internal server error' });
     }
 };
@@ -48,12 +59,21 @@ exports.getDoctorRecords = async (req, res) => {
         res.json(records.map(r => ({
             id: r.Id_HoSo,
             date: r.NgayTao,
-            patient_name: `${r.BenhNhan.NguoiDung.Ho} ${r.BenhNhan.NguoiDung.Ten}`,
             diagnosis: r.ChanDoan,
             prescription: r.KeHoachDieuTri,
-            Appointment: { schedule_time: (r.DatLich && r.DatLich.DoctorSchedule) ? r.DatLich.DoctorSchedule.NgayDate : null }
+            notes: r.GhiChu,
+            Patient: {
+                full_name: r.BenhNhan ? `${r.BenhNhan.NguoiDung?.Ho || ''} ${r.BenhNhan.NguoiDung?.Ten || ''}`.trim() : 'Unknown',
+                email: r.BenhNhan?.NguoiDung?.Email
+            },
+            Appointment: { 
+                schedule_time: (r.DatLich && r.DatLich.DoctorSchedule) ? r.DatLich.DoctorSchedule.NgayDate : null,
+                appointment_date: (r.DatLich && r.DatLich.DoctorSchedule) ? r.DatLich.DoctorSchedule.NgayDate : null,
+                appointment_time: (r.DatLich && r.DatLich.DoctorSchedule) ? r.DatLich.DoctorSchedule.GioBatDau : null
+            }
         })));
     } catch (error) {
+        console.error('getDoctorRecords error:', error);
         res.status(500).json({ detail: 'Internal server error' });
     }
 };
@@ -117,6 +137,8 @@ exports.createRecord = async (req, res) => {
             return res.status(403).json({ detail: 'Bạn không có quyền tạo hồ sơ cho lịch hẹn này.' });
         }
 
+        const { DoctorMedicalRecordRetention } = require('../models');
+
         const record = await HoSoBenhAn.create({
             Id_BenhNhan: appointment.Id_BenhNhan,
             Id_BacSi: bs.Id_BacSi,
@@ -124,6 +146,19 @@ exports.createRecord = async (req, res) => {
             ChanDoan: diagnosis,
             KeHoachDieuTri: prescription,
             GhiChu: notes
+        });
+
+        // --- NEW: Initialize 7-day retention window ---
+        const retentionUntil = new Date();
+        retentionUntil.setDate(retentionUntil.getDate() + 7);
+
+        await DoctorMedicalRecordRetention.create({
+            medicalRecordId: record.Id_HoSo,
+            patientId: appointment.Id_BenhNhan,
+            doctorId: bs.Id_BacSi,
+            appointmentId: appointment_id,
+            facilityId: appointment.Id_PhongKham,
+            retentionUntil: retentionUntil
         });
 
         res.status(201).json({ id: record.Id_HoSo });

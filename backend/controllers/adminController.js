@@ -1,4 +1,4 @@
-const { sequelize, ThanhToan, DatLich: Appointment, BenhNhan, NguoiDung, BacSi, VaiTro, ChuyenKhoa, NguoiDung_VaiTro, PhongKham: Clinic, BacSi_PhongKham: DoctorFacility, StaffProfile, Staff_Facility: StaffFacility, AITuVanPhien: AITriage, LichKham: DoctorSchedule, HoaDon, AdminProfile } = require('../models');
+const { sequelize, ThanhToan, DatLich: Appointment, BenhNhan, NguoiDung, BacSi, VaiTro, ChuyenKhoa, NguoiDung_VaiTro, PhongKham: Clinic, BacSi_PhongKham: DoctorFacility, StaffProfile, Staff_Facility: StaffFacility, AITuVanPhien: AITriage, LichKham: DoctorSchedule, HoaDon, AdminProfile, DoctorFacilitySchedule, DoctorOnlineSchedule } = require('../models');
 
 const bcrypt = require('bcryptjs');
 const { Op, fn, col, literal } = require('sequelize');
@@ -34,66 +34,81 @@ const getAdminWhere = (req, fieldName = 'Id_PhongKham') => {
 
 exports.getStats = async (req, res) => {
     try {
-        const facilityFilter = getAdminWhere(req);
-        const hasFacility = !!facilityFilter.Id_PhongKham;
+        const { admin_type } = req.user;
 
-        // User Counts (Filter doctors/staff by facility if needed)
-        const total_users = hasFacility ? 0 : await NguoiDung.count(); // Global only
+        if (admin_type === 'SUPER_ADMIN') {
+            // Super Admin gets System Overview
+            const total_facilities = await Clinic.count();
+            const total_admins = await AdminProfile.count();
+            const total_accounts = await NguoiDung.count();
+            const inactive_facilities = await Clinic.count({ where: { TrangThai: 'NgungHoatDong' } });
+
+            return res.json({
+                admin_type: 'SUPER_ADMIN',
+                system_overview: {
+                    total_facilities,
+                    inactive_facilities,
+                    total_admins,
+                    total_accounts,
+                    api_status: 'online',
+                    ai_service_status: 'active'
+                }
+            });
+        }
+
+        // Facility Admin gets detailed operational stats
+        const facilityFilter = getAdminWhere(req);
+        
         const total_doctors = await BacSi.count({
-            include: hasFacility ? [{ model: Clinic, as: 'facilities', where: { Id_PhongKham: facilityFilter.Id_PhongKham } }] : []
-        });
-        const approved_doctors = await BacSi.count({ 
-            where: { TrangThai: 'HoatDong' },
-            include: hasFacility ? [{ model: Clinic, as: 'facilities', where: { Id_PhongKham: facilityFilter.Id_PhongKham } }] : []
+            include: [{ model: Clinic, as: 'facilities', where: { Id_PhongKham: facilityFilter.Id_PhongKham } }]
         });
         const total_patients = await BenhNhan.count({
-            include: hasFacility ? [{ 
+            include: [{ 
                 model: Appointment, 
+                as: 'appointments',
                 where: facilityFilter,
                 required: true
-            }] : [],
+            }],
             distinct: true
         });
 
-        // Appointment Stats
-        const total_appointments = await Appointment.count({ where: facilityFilter });
-        const pending_appointments = await Appointment.count({ where: { ...facilityFilter, TrangThai: { [Op.in]: ['PENDING', 'ChoXacNhan'] } } });
-        const confirmed_appointments = await Appointment.count({ where: { ...facilityFilter, TrangThai: { [Op.in]: ['CONFIRMED', 'DaXacNhan'] } } });
-        const completed_appointments = await Appointment.count({ where: { ...facilityFilter, TrangThai: { [Op.in]: ['COMPLETED', 'DaKham'] } } });
-        const cancelled_appointments = await Appointment.count({ where: { ...facilityFilter, TrangThai: { [Op.in]: ['CANCELLED', 'Huy'] } } });
+        const total_appointments = await Appointment.count({ where: { ...facilityFilter, isVisible: true } });
+        const pending_appointments = await Appointment.count({ where: { ...facilityFilter, isVisible: true, TrangThai: { [Op.in]: ['PENDING', 'ChoXacNhan'] } } });
+        const completed_appointments = await Appointment.count({ where: { ...facilityFilter, isVisible: true, TrangThai: { [Op.in]: ['COMPLETED', 'DaKham'] } } });
 
-        // Revenue
         const payments = await ThanhToan.findAll({ 
             where: { 
-                TrangThai: { [Op.in]: ['ThanhCong', 'PAID'] },
+                TrangThai: { [Op.in]: ['SUCCESS', 'PAID', 'ThanhCong'] },
                 ...facilityFilter
             } 
         });
         const total_revenue = payments.reduce((sum, p) => sum + parseFloat(p.SoTien || 0), 0);
 
+        // Lấy thông tin cơ sở
+        const myClinic = await Clinic.findByPk(facilityFilter.Id_PhongKham);
+
         res.json({
-            total_users,
+            admin_type: 'FACILITY_ADMIN',
+            facility_name: myClinic ? myClinic.TenPhongKham : 'Cơ sở của tôi',
             total_patients,
             total_doctors,
-            approved_doctors,
             total_appointments,
             pending_appointments,
-            confirmed_appointments,
             completed_appointments,
-            cancelled_appointments,
-            total_revenue,
-            admin_type: req.user.admin_type,
-            active_sessions: 0
+            total_revenue
         });
 
     } catch (error) {
-        console.error('AdminGlobalStats Error:', error);
-        res.status(500).json({ detail: 'Lỗi máy chủ khi lấy thống kê hệ thống' });
+        console.error('AdminStats Error:', error);
+        res.status(500).json({ detail: 'Lỗi máy chủ khi lấy thống kê' });
     }
 };
 
 exports.getDoctors = async (req, res) => {
     try {
+        if (req.user.admin_type === 'SUPER_ADMIN') {
+            return res.status(403).json({ detail: 'Chức năng này thuộc quyền Admin cơ sở y tế.' });
+        }
         const facilityFilter = getAdminWhere(req);
         const bacsis = await BacSi.findAll({
             include: [
@@ -110,6 +125,7 @@ exports.getDoctors = async (req, res) => {
 
 
         res.json(bacsis.map(d => ({
+            id: d.Id_BacSi,
             user_id: d.Id_NguoiDung,
             full_name: `${d.NguoiDung.Ho} ${d.NguoiDung.Ten}`,
             email: d.NguoiDung.Email,
@@ -130,19 +146,43 @@ exports.getDoctors = async (req, res) => {
 
 exports.getPatients = async (req, res) => {
     try {
-        const benhnhans = await BenhNhan.findAll({ include: [{ model: NguoiDung }] });
+        if (req.user.admin_type === 'SUPER_ADMIN') {
+            return res.status(403).json({ detail: 'Chức năng này thuộc quyền Admin cơ sở y tế.' });
+        }
+        const facilityFilter = getAdminWhere(req);
+        const hasFacility = !!facilityFilter.Id_PhongKham;
+        
+        let benhnhans;
+        if (hasFacility) {
+            benhnhans = await BenhNhan.findAll({ 
+                include: [
+                    { model: NguoiDung },
+                    { 
+                        model: Appointment, 
+                        as: 'appointments',
+                        where: facilityFilter,
+                        required: true,
+                        attributes: []
+                    }
+                ],
+                distinct: true
+            });
+        } else {
+            benhnhans = await BenhNhan.findAll({ include: [{ model: NguoiDung }] });
+        }
+
         res.json(benhnhans.map(p => ({
             user_id: p.Id_NguoiDung,
-            full_name: `${p.NguoiDung.Ho} ${p.NguoiDung.Ten}`,
-            email: p.NguoiDung.Email,
-            phone_number: p.NguoiDung.SoDienThoai,
-            avatar_url: p.NguoiDung.AnhDaiDien,
-            date_of_birth: p.NguoiDung.NgaySinh,
-            gender: p.NguoiDung.GioiTinh,
+            full_name: `${p.NguoiDung?.Ho || ''} ${p.NguoiDung?.Ten || ''}`.trim(),
+            email: p.NguoiDung?.Email,
+            phone_number: p.NguoiDung?.SoDienThoai,
+            avatar_url: p.NguoiDung?.AnhDaiDien,
+            date_of_birth: p.NguoiDung?.NgaySinh,
+            gender: p.NguoiDung?.GioiTinh,
             address: ''
         })));
-
     } catch (error) {
+        console.error('getPatients error:', error);
         res.status(500).json({ detail: 'Internal server error' });
     }
 };
@@ -181,11 +221,18 @@ exports.deleteUser = async (req, res) => {
 
 exports.getPayments = async (req, res) => {
     try {
-        const payments = await ThanhToan.findAll({ include: [{ model: BenhNhan, include: [NguoiDung] }] });
+        if (req.user.admin_type === 'SUPER_ADMIN') {
+            return res.status(403).json({ detail: 'Chức năng này thuộc quyền Admin cơ sở y tế.' });
+        }
+        const facilityFilter = getAdminWhere(req);
+        const payments = await ThanhToan.findAll({ 
+            where: facilityFilter,
+            include: [{ model: BenhNhan, include: [NguoiDung] }] 
+        });
 
         const formattedPayments = payments.map(p => ({
             payment_id: p.Id_ThanhToan,
-            status: ['ThanhCong', 'PAID'].includes(p.TrangThai) ? 'completed' : 'pending',
+            status: ['SUCCESS', 'PAID', 'ThanhCong'].includes(p.TrangThai) ? 'completed' : 'pending',
 
             doctor_name: 'Unknown Doctor',
             patient_name: p.BenhNhan ? `${p.BenhNhan.NguoiDung.Ho} ${p.BenhNhan.NguoiDung.Ten}` : 'Unknown',
@@ -211,29 +258,6 @@ exports.getPayments = async (req, res) => {
     }
 };
 
-exports.getAdmins = async (req, res) => {
-    try {
-        const admins = await NguoiDung.findAll({
-            include: [
-                { model: VaiTro, where: { MaVaiTro: 'admin' }, through: { attributes: [] } },
-                { model: AdminProfile, as: 'adminProfile', include: [{ model: Clinic, as: 'assignedFacility' }] }
-            ]
-        });
-        res.json(admins.map(a => ({
-            id: a.Id_NguoiDung,
-            full_name: `${a.Ho} ${a.Ten}`,
-            email: a.Email,
-            phone: a.SoDienThoai,
-            created_at: a.NgayTao,
-            admin_type: a.adminProfile?.admin_type || 'SUPER_ADMIN',
-            assigned_facility: a.adminProfile?.assignedFacility?.TenPhongKham || 'Toàn hệ thống'
-        })));
-
-    } catch (error) {
-        console.error('Get admins error:', error);
-        res.status(500).json({ detail: 'Internal server error' });
-    }
-};
 
 exports.createUser = async (req, res) => {
     const t = await sequelize.transaction();
@@ -258,6 +282,9 @@ exports.createUser = async (req, res) => {
             await t.rollback();
             return res.status(400).json({ detail: `${role === 'doctor' ? 'Bác sĩ' : 'Nhân viên'} phải được gán ít nhất một cơ sở y tế.` });
         }
+
+        const facilityFilter = getAdminWhere(req);
+        const hasFacility = !!facilityFilter.Id_PhongKham;
 
         const generatedEmail = email || generateEmail(full_name);
         const generatedPassword = password || generatePassword();
@@ -303,16 +330,19 @@ exports.createUser = async (req, res) => {
                 TrangThai: 'HoatDong'
             }, { transaction: t });
 
-            for (const f of facilities) {
+            // Enforce single facility for doctors
+            const primaryFacility = facilities.find(f => !hasFacility || f.facility_id == facilityFilter.Id_PhongKham);
+            
+            if (primaryFacility) {
                 await DoctorFacility.create({
                     doctor_id: doctor.Id_BacSi,
-                    facility_id: f.facility_id,
-                    is_primary: f.is_primary || false,
-                    supports_online: f.supports_online !== undefined ? f.supports_online : true,
-                    supports_offline: f.supports_offline !== undefined ? f.supports_offline : true,
-                    consultation_fee_online: f.consultation_fee_online || 0,
-                    consultation_fee_offline: f.consultation_fee_offline || 0,
-                    is_active: f.is_active !== undefined ? f.is_active : true
+                    facility_id: primaryFacility.facility_id,
+                    is_primary: true, // Always primary for single facility
+                    supports_online: primaryFacility.supports_online !== undefined ? primaryFacility.supports_online : true,
+                    supports_offline: primaryFacility.supports_offline !== undefined ? primaryFacility.supports_offline : true,
+                    consultation_fee_online: primaryFacility.consultation_fee_online || 0,
+                    consultation_fee_offline: primaryFacility.consultation_fee_offline || 0,
+                    is_active: primaryFacility.is_active !== undefined ? primaryFacility.is_active : true
                 }, { transaction: t });
             }
         } else if (role === 'staff') {
@@ -324,6 +354,9 @@ exports.createUser = async (req, res) => {
             }, { transaction: t });
 
             for (const f of facilities) {
+                // If sub-admin, only allow assigning to their own facility
+                if (hasFacility && f.facility_id != facilityFilter.Id_PhongKham) continue;
+
                 await StaffFacility.create({
                     staff_id: staff.id,
                     facility_id: f.facility_id,
@@ -424,6 +457,46 @@ exports.createAdmin = async (req, res) => {
 };
 
 
+exports.getAdmins = async (req, res) => {
+    try {
+        const facilityFilter = getAdminWhere(req);
+        
+        // If not Super Admin, only show admins from the same facility
+        const whereClause = facilityFilter.Id_PhongKham ? { facility_id: facilityFilter.Id_PhongKham } : {};
+
+        const admins = await AdminProfile.findAll({
+            where: whereClause,
+            include: [
+                { model: NguoiDung, as: 'user', attributes: ['Ho', 'Ten', 'Email', 'SoDienThoai', 'TrangThai', 'AnhDaiDien'] },
+                { model: Clinic, as: 'assignedFacility', attributes: ['TenPhongKham'] }
+            ]
+        });
+
+        const mapped = admins.map(a => ({
+            id: a.user_id,
+            full_name: a.user ? `${a.user.Ho} ${a.user.Ten}` : 'Unknown',
+            email: a.user?.Email,
+            admin_type: a.admin_type,
+            assigned_facility: a.assignedFacility?.TenPhongKham || 'Toàn hệ thống',
+            created_at: a.createdAt,
+            admin_permissions: {
+                can_manage_doctors: a.can_manage_doctors,
+                can_manage_staff: a.can_manage_staff,
+                can_manage_patients: a.can_manage_patients,
+                can_view_stats: a.can_view_stats,
+                can_manage_payments: a.can_manage_payments,
+                can_manage_specialties: a.can_manage_specialties,
+                can_create_admins: a.can_manage_admins
+            }
+        }));
+
+        res.json(mapped);
+    } catch (error) {
+        console.error('getAdmins error:', error);
+        res.status(500).json({ detail: 'Lỗi khi lấy danh sách admin' });
+    }
+};
+
 exports.deleteAdmin = async (req, res) => {
     try {
         const { id } = req.params;
@@ -442,24 +515,47 @@ exports.deleteAdmin = async (req, res) => {
 };
 
 exports.updatePermissions = async (req, res) => {
-    // Permissions are typically stored in a separate field or meta-table.
-    // For now, store as a JSON note on the user object if available.
-    res.json({ message: 'Permissions acknowledged (no separate permissions table in DB schema)' });
+    try {
+        const { admin_id, permissions } = req.body;
+        
+        const ap = await AdminProfile.findOne({ where: { user_id: admin_id } });
+        if (!ap) return res.status(404).json({ detail: 'Không tìm thấy hồ sơ admin' });
+
+        await ap.update({
+            can_manage_doctors: permissions.can_manage_doctors !== undefined ? permissions.can_manage_doctors : ap.can_manage_doctors,
+            can_manage_staff: permissions.can_manage_staff !== undefined ? permissions.can_manage_staff : ap.can_manage_staff,
+            can_manage_patients: permissions.can_manage_patients !== undefined ? permissions.can_manage_patients : ap.can_manage_patients,
+            can_view_stats: permissions.can_view_stats !== undefined ? permissions.can_view_stats : ap.can_view_stats,
+            can_manage_payments: permissions.can_manage_payments !== undefined ? permissions.can_manage_payments : ap.can_manage_payments,
+            can_manage_admins: permissions.can_create_admins !== undefined ? permissions.can_create_admins : ap.can_manage_admins
+        });
+
+        res.json({ message: 'Cập nhật quyền thành công' });
+    } catch (error) {
+        console.error('updatePermissions error:', error);
+        res.status(500).json({ detail: 'Lỗi khi cập nhật quyền' });
+    }
 };
 
 exports.getReports = async (req, res) => {
     try {
-        const { from, to } = req.query;
-        const whereClause = {};
-        if (from && to) {
-            whereClause.NgayTao = { [Op.between]: [new Date(from), new Date(to)] };
+        if (req.user.admin_type === 'SUPER_ADMIN') {
+            return res.status(403).json({ detail: 'Chức năng này thuộc quyền Admin cơ sở y tế.' });
         }
+        const { from, to } = req.query;
+        const facilityFilter = getAdminWhere(req);
+        const dateWhere = {};
+        if (from && to) {
+            dateWhere.NgayTao = { [Op.between]: [new Date(from), new Date(to)] };
+        }
+
+        const whereClause = { ...dateWhere, ...facilityFilter };
 
         const appointments = await Appointment.findAll({ where: whereClause });
         const payments = await ThanhToan.findAll({ where: whereClause });
 
         const totalRevenue = payments
-            .filter(p => ['ThanhCong', 'PAID'].includes(p.TrangThai))
+            .filter(p => ['SUCCESS', 'PAID', 'ThanhCong'].includes(p.TrangThai))
             .reduce((sum, p) => sum + parseFloat(p.SoTien || 0), 0);
 
 
@@ -473,7 +569,7 @@ exports.getReports = async (req, res) => {
             }
         });
 
-        payments.filter(p => ['ThanhCong', 'PAID'].includes(p.TrangThai)).forEach(p => {
+        payments.filter(p => ['SUCCESS', 'PAID', 'ThanhCong'].includes(p.TrangThai)).forEach(p => {
             const date = new Date(p.NgayTao);
             if (!isNaN(date.getTime())) {
                 const month = date.toISOString().slice(0, 7);
@@ -500,7 +596,9 @@ exports.getAIDiagnoses = async (req, res) => {
     try {
         // Admin view: Global monitoring of AI diagnoses
         // Assuming a model or table for AI logs/sessions exists
-        // For now, we reuse the pattern but across all specialties
+        const facilityFilter = getAdminWhere(req, 'dl.Id_PhongKham');
+        const facilityClause = facilityFilter['dl.Id_PhongKham'] ? `AND dl.Id_PhongKham = ${facilityFilter['dl.Id_PhongKham']}` : '';
+
         const logs = await sequelize.query(`
             SELECT nd.Ho, nd.Ten, nd.Email, ck.TenChuyenKhoa, lk.NgayDate, lk.GioBatDau, dl.TrieuChungSoBo
             FROM datlich dl
@@ -509,9 +607,9 @@ exports.getAIDiagnoses = async (req, res) => {
             JOIN lichkham lk ON dl.Id_LichKham = lk.Id_LichKham
             LEFT JOIN bacsi bs ON lk.Id_BacSi = bs.Id_BacSi
             LEFT JOIN chuyenkhoa ck ON bs.Id_ChuyenKhoa = ck.Id_ChuyenKhoa
-            WHERE dl.TrieuChungSoBo LIKE '%AI:%'
-            ORDER BY lk.NgayDate DESC
-            LIMIT 50
+            WHERE (dl.TrieuChungSoBo LIKE '%AI:%' OR dl.TrieuChungSoBo LIKE '%Chuẩn đoán AI:%') ${facilityClause}
+            ORDER BY lk.NgayDate DESC, lk.GioBatDau DESC
+            LIMIT 100
         `, { type: sequelize.QueryTypes.SELECT });
 
         res.json({
@@ -534,7 +632,14 @@ exports.getAIDiagnoses = async (req, res) => {
 
 exports.getAllAppointments = async (req, res) => {
     try {
+        const whereClause = {};
+        if (req.user.admin_type === 'FACILITY_ADMIN') {
+            whereClause.Id_PhongKham = req.user.facility_id;
+        }
+        whereClause.isVisible = true;
+
         const appointments = await Appointment.findAll({
+            where: whereClause,
             include: [
                 { 
                     model: BenhNhan, 
@@ -542,13 +647,14 @@ exports.getAllAppointments = async (req, res) => {
                 },
                 { 
                     model: DoctorSchedule,
+                    as: 'DoctorSchedule',
                     include: [
                         { model: BacSi, as: 'Doctor', include: [{ model: NguoiDung, attributes: ['Ho', 'Ten'] }] }
                     ]
                 },
                 { model: Clinic, as: 'Clinic', attributes: ['TenPhongKham'] }
             ],
-            order: [[DoctorSchedule, 'NgayDate', 'DESC']]
+            order: [[{ model: DoctorSchedule, as: 'DoctorSchedule' }, 'NgayDate', 'DESC']]
         });
 
 
@@ -559,8 +665,8 @@ exports.getAllAppointments = async (req, res) => {
                 MaDatLich: d.MaDatLich,
                 patient_name: `${d.BenhNhan?.NguoiDung?.Ho || ''} ${d.BenhNhan?.NguoiDung?.Ten || ''}`.trim(),
                 doctor_name: `${d.DoctorSchedule?.Doctor?.NguoiDung?.Ho || ''} ${d.DoctorSchedule?.Doctor?.NguoiDung?.Ten || ''}`.trim(),
-                NgayKham: d.DoctorSchedule?.NgayDate || 'N/A',
-                GioKham: d.DoctorSchedule?.GioBatDau || 'N/A',
+                NgayKham: apt.DoctorSchedule?.NgayDate || 'N/A',
+                GioKham: apt.DoctorSchedule?.GioBatDau || 'N/A',
                 TrangThai: d.TrangThai,
                 Clinic: d.Clinic?.TenPhongKham || 'N/A'
             };
@@ -577,29 +683,71 @@ exports.getAllAppointments = async (req, res) => {
 
 exports.getDetailedStats = async (req, res) => {
     try {
-        const { from, to, facility_id, specialty_id } = req.query;
-        
+        const { from, to, facility_id } = req.query;
+
+        // Security check: If FACILITY_ADMIN, only allow their own facility
+        let effectiveFacilityId = facility_id;
+        if (req.user.admin_type === 'FACILITY_ADMIN') {
+            effectiveFacilityId = req.user.facility_id;
+        }
+
         const dateFilter = {};
         if (from && to) {
             dateFilter.NgayTao = { [Op.between]: [new Date(from), new Date(to)] };
         }
 
         const commonWhere = { ...dateFilter };
-        if (facility_id) commonWhere.Id_PhongKham = facility_id;
+        if (effectiveFacilityId) commonWhere.Id_PhongKham = effectiveFacilityId;
 
         // 1. User Stats
+        // For sub-admins, we might want to filter users belonging to that facility
+        // Patients are usually global, but we can filter by who has booked at this facility
+        
+        const userStatsWhere = {};
+        if (effectiveFacilityId) {
+            // Complex filtering for users in a facility
+        }
+
         const users = {
-            total: await NguoiDung.count(),
-            patients: await BenhNhan.count(),
-            doctors: await BacSi.count(),
-            staff: await StaffProfile.count(),
-            active: await NguoiDung.count({ where: { TrangThai: 'HoatDong' } }),
-            locked: await NguoiDung.count({ where: { TrangThai: 'Khoa' } })
+            total: await NguoiDung.count({
+                include: effectiveFacilityId ? [{
+                    model: BenhNhan,
+                    required: true,
+                    include: [{ model: Appointment, as: 'appointments', where: { Id_PhongKham: effectiveFacilityId }, required: true }]
+                }] : []
+            }),
+            patients: await BenhNhan.count({
+                include: effectiveFacilityId ? [{
+                    model: Appointment,
+                    as: 'appointments',
+                    where: { Id_PhongKham: effectiveFacilityId },
+                    required: true
+                }] : [],
+                distinct: true
+            }),
+            doctors: await BacSi.count({ 
+                where: effectiveFacilityId ? { 
+                    Id_BacSi: { [Op.in]: literal(`(SELECT doctor_id FROM bacsi_phongkham WHERE facility_id = ${effectiveFacilityId})`) } 
+                } : {} 
+            }),
+            staff: await StaffProfile.count({ 
+                where: effectiveFacilityId ? { 
+                    user_id: { [Op.in]: literal(`(SELECT staff_id FROM staff_facilities WHERE facility_id = ${effectiveFacilityId})`) } 
+                } : {} 
+            }),
+            active: await NguoiDung.count({ 
+                where: { TrangThai: 'HoatDong' },
+                include: effectiveFacilityId ? [{
+                    model: BenhNhan,
+                    required: true,
+                    include: [{ model: Appointment, as: 'appointments', where: { Id_PhongKham: effectiveFacilityId }, required: true }]
+                }] : []
+            }),
         };
 
         // 2. Appointment Stats
-        const appointmentWhere = { ...dateFilter };
-        if (facility_id) appointmentWhere.Id_PhongKham = facility_id;
+        const appointmentWhere = { ...dateFilter, isVisible: true };
+        if (effectiveFacilityId) appointmentWhere.Id_PhongKham = effectiveFacilityId;
         
         const appointments = {
             total: await Appointment.count({ where: appointmentWhere }),
@@ -609,30 +757,28 @@ exports.getDetailedStats = async (req, res) => {
             cancelled: await Appointment.count({ where: { ...appointmentWhere, TrangThai: { [Op.in]: ['CANCELLED', 'Huy'] } } }),
             online: await Appointment.count({ 
                 where: appointmentWhere,
-                include: [{ model: DoctorSchedule, where: { LoaiKham: 'Online' } }]
+                include: [{ model: DoctorSchedule, as: 'DoctorSchedule', where: { LoaiKham: 'Online' } }]
             }),
             offline: await Appointment.count({ 
                 where: appointmentWhere,
-                include: [{ model: DoctorSchedule, where: { LoaiKham: 'TrucTiep' } }]
+                include: [{ model: DoctorSchedule, as: 'DoctorSchedule', where: { LoaiKham: 'TrucTiep' } }]
             })
         };
 
 
         // 3. Revenue Stats
-        const paymentWhere = { ...dateFilter, TrangThai: 'ThanhCong' };
-        if (facility_id) paymentWhere.Id_PhongKham = facility_id;
+        const paymentWhere = { ...dateFilter, TrangThai: { [Op.in]: ['SUCCESS', 'PAID', 'ThanhCong'] } };
+        if (effectiveFacilityId) paymentWhere.Id_PhongKham = effectiveFacilityId;
         
         const total_revenue = await ThanhToan.sum('SoTien', { where: paymentWhere }) || 0;
         
-        // Revenue by period (Monthly for the last 6 months)
+        // Revenue by period
         const revenue_by_period = await ThanhToan.findAll({
             attributes: [
                 [fn('date_format', col('NgayTao'), '%Y-%m'), 'period'],
                 [fn('sum', col('SoTien')), 'revenue']
             ],
-            where: { 
-                TrangThai: { [Op.in]: ['ThanhCong', 'PAID'] } 
-            },
+            where: paymentWhere,
             group: ['period'],
             order: [[literal('period'), 'ASC']],
             limit: 6,
@@ -642,14 +788,17 @@ exports.getDetailedStats = async (req, res) => {
 
 
         // 4. Specialty Stats (Appointments by Specialty)
+        const specialtyWhere = { ...appointmentWhere };
         const specialty_stats = await Appointment.findAll({
             attributes: [
-                [col('LichKham.BacSi.ChuyenKhoa.TenChuyenKhoa'), 'specialty'],
+                [col('DoctorSchedule.Doctor.ChuyenKhoa.TenChuyenKhoa'), 'specialty'],
                 [fn('count', col('DatLich.Id_DatLich')), 'appointment_count']
             ],
+            where: specialtyWhere,
             include: [
                 {
                     model: DoctorSchedule,
+                    as: 'DoctorSchedule',
                     attributes: [],
                     include: [{
                         model: BacSi,
@@ -659,7 +808,7 @@ exports.getDetailedStats = async (req, res) => {
                     }]
                 }
             ],
-            group: ['LichKham.BacSi.ChuyenKhoa.TenChuyenKhoa'],
+            group: [col('DoctorSchedule.Doctor.ChuyenKhoa.TenChuyenKhoa')],
             raw: true
         });
 
@@ -674,15 +823,16 @@ exports.getDetailedStats = async (req, res) => {
         // 5. Facility Stats
         const facility_counts = await Appointment.findAll({
             attributes: [
-                'Id_PhongKham',
-                [fn('count', col('Id_DatLich')), 'count']
+                [col('DatLich.Id_PhongKham'), 'Id_PhongKham'],
+                [fn('count', col('DatLich.Id_DatLich')), 'count']
             ],
+            where: { isVisible: true, ...(effectiveFacilityId ? { Id_PhongKham: effectiveFacilityId } : {}) },
             include: [{ 
                 model: Clinic, 
                 attributes: ['TenPhongKham'],
-                as: 'Clinic' // Force alias to match our naming convention
+                as: 'Clinic'
             }],
-            group: ['DatLich.Id_PhongKham', 'Clinic.Id_PhongKham', 'Clinic.TenPhongKham'],
+            group: [col('DatLich.Id_PhongKham'), col('Clinic.Id_PhongKham'), col('Clinic.TenPhongKham')],
             raw: true
         });
 
@@ -695,14 +845,13 @@ exports.getDetailedStats = async (req, res) => {
 
         // 6. AI Stats
         const ai_stats = {
-            total_sessions: await AITriage.count({ where: facility_id ? { Id_PhongKham: facility_id } : {} }),
+            total_sessions: await AITriage.count({ where: effectiveFacilityId ? { Id_PhongKham: effectiveFacilityId } : {} }),
             converted_to_booking: await Appointment.count({ 
                 where: { 
                     TrieuChungSoBo: { [Op.like]: '%AI:%' },
-                    ...(facility_id ? { Id_PhongKham: facility_id } : {})
+                    ...(effectiveFacilityId ? { Id_PhongKham: effectiveFacilityId } : {})
                 } 
             })
-
         };
 
         res.json({
@@ -724,13 +873,21 @@ exports.getDetailedStats = async (req, res) => {
         res.status(500).json({ detail: 'Lỗi khi lấy dữ liệu thống kê chi tiết: ' + error.message });
     }
 };
-
 exports.getStaffs = async (req, res) => {
     try {
+        const facilityFilter = getAdminWhere(req);
+        const hasFacility = !!facilityFilter.Id_PhongKham;
+
         const staffs = await StaffProfile.findAll({
             include: [
                 { model: NguoiDung, attributes: ['Ho', 'Ten', 'Email', 'SoDienThoai', 'TrangThai', 'AnhDaiDien'] },
-                { model: Clinic, as: 'facilities', attributes: ['TenPhongKham'] }
+                { 
+                    model: Clinic, 
+                    as: 'facilities', 
+                    attributes: ['TenPhongKham'],
+                    where: hasFacility ? { Id_PhongKham: facilityFilter.Id_PhongKham } : {},
+                    required: hasFacility
+                }
             ]
         });
         
@@ -755,6 +912,87 @@ exports.getStaffs = async (req, res) => {
     } catch (error) {
         console.error('getStaffs error:', error);
         res.status(500).json({ detail: 'Lỗi khi lấy danh sách nhân viên' });
+    }
+};
+
+exports.assignDoctorSchedule = async (req, res) => {
+    try {
+        const { doctor_id, facility_id, specialty_id, room_id, dayOfWeek, startTime, endTime, effectiveFrom, effectiveTo } = req.body;
+        
+        const fId = facility_id === '' ? null : parseInt(facility_id);
+        const sId = specialty_id === '' ? null : parseInt(specialty_id);
+
+        if (req.user.admin_type === 'FACILITY_ADMIN' && fId != req.user.facility_id) {
+            return res.status(403).json({ detail: 'Bạn không có quyền gán lịch cho cơ sở khác.' });
+        }
+
+        // Enforce single facility rule: Check doctor's current assignment
+        const currentAssignment = await DoctorFacility.findOne({ where: { doctor_id } });
+        if (currentAssignment && currentAssignment.facility_id != fId) {
+            return res.status(400).json({ detail: 'Bác sĩ này đã được phân công công tác tại một cơ sở y tế khác. Mỗi bác sĩ chỉ được làm việc tại 1 cơ sở duy nhất.' });
+        }
+
+        const schedule = await DoctorFacilitySchedule.create({
+            doctorId: doctor_id,
+            facilityId: fId,
+            specialtyId: sId,
+            roomId: room_id || null,
+            dayOfWeek: parseInt(dayOfWeek),
+            startTime,
+            endTime,
+            assignedByAdminId: req.user.id,
+            effectiveFrom: effectiveFrom || null,
+            effectiveTo: effectiveTo || null
+        });
+
+        res.status(201).json(schedule);
+    } catch (error) {
+        console.error('assignDoctorSchedule error:', error);
+        res.status(500).json({ detail: 'Lỗi khi phân công lịch khám: ' + error.message });
+    }
+};
+
+exports.getDoctorFacilitySchedules = async (req, res) => {
+    try {
+        const { doctor_id, facility_id } = req.query;
+        const whereClause = {};
+        if (doctor_id) whereClause.doctorId = doctor_id;
+        if (facility_id) whereClause.facilityId = facility_id;
+        
+        if (req.user.admin_type === 'FACILITY_ADMIN') {
+            whereClause.facilityId = req.user.facility_id;
+        }
+
+        const schedules = await DoctorFacilitySchedule.findAll({
+            where: whereClause,
+            include: [
+                { model: BacSi, as: 'doctor', include: [{ model: NguoiDung, attributes: ['Ho', 'Ten'] }] },
+                { model: Clinic, as: 'facility', attributes: ['TenPhongKham'] },
+                { model: ChuyenKhoa, as: 'specialty', attributes: ['TenChuyenKhoa'] }
+            ]
+        });
+
+        res.json(schedules);
+    } catch (error) {
+        console.error('getDoctorFacilitySchedules error:', error);
+        res.status(500).json({ detail: 'Lỗi khi tải danh sách lịch: ' + error.message });
+    }
+};
+
+exports.deleteDoctorFacilitySchedule = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const schedule = await DoctorFacilitySchedule.findByPk(id);
+        if (!schedule) return res.status(404).json({ detail: 'Schedule not found' });
+        
+        if (req.user.admin_type === 'FACILITY_ADMIN' && schedule.facilityId != req.user.facility_id) {
+            return res.status(403).json({ detail: 'Permission denied' });
+        }
+
+        await schedule.destroy();
+        res.json({ message: 'Deleted' });
+    } catch (error) {
+        res.status(500).json({ detail: 'Error deleting schedule' });
     }
 };
 

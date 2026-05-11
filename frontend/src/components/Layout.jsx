@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Calendar, Users, Clock, Home, User, BarChart, FileText, MessageSquare, Settings, Shield, UserPlus, LogOut, CreditCard, MessagesSquare, Activity, Brain, Stethoscope } from 'lucide-react';
+import { Calendar, Users, Clock, Home, User, BarChart, FileText, MessageSquare, Settings, Shield, UserPlus, LogOut, CreditCard, MessagesSquare, Activity, Brain, Stethoscope, Video } from 'lucide-react';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
@@ -33,10 +33,9 @@ export default function Layout({ children }) {
     { path: '/patient/dashboard', icon: Home, label: t('home') },
     { path: '/patient/search-doctors', icon: Users, label: t('findDoctor') },
     { path: '/patient/appointments', icon: Calendar, label: t('appointments') },
+    { path: '/patient/ai-consultation', icon: Brain, label: 'Tư vấn AI', target: 'chat' },
     { path: '/patient/payments', icon: CreditCard, label: t('payments') },
-    { path: '/patient/medical-records', icon: FileText, label: 'Hồ sơ bệnh án' },
-    { path: '#', target: 'chat', icon: Brain, label: 'Tư vấn AI' },
-    { path: '/patient/ai-history', icon: Activity, label: 'Lịch sử AI' },
+    { path: '/patient/medical-records', icon: FileText, label: 'Hồ sơ bệnh nhân' },
     { path: '/patient/messages', icon: MessageSquare, label: 'Tin nhắn' },
     { path: '/patient/account-settings', icon: Settings, label: 'Cài đặt tài khoản' }
   ];
@@ -52,23 +51,31 @@ export default function Layout({ children }) {
     { path: '/doctor/service-settings', icon: Settings, label: 'Cài đặt dịch vụ' }
   ];
 
-  let adminLinks = [
-    { path: '/admin/dashboard', icon: Home, label: t('home') },
-    { path: '/admin/create-accounts', icon: UserPlus, label: t('createAccounts') },
-    { path: '/admin/doctors', icon: Users, label: t('doctors') },
-    { path: '/admin/staffs', icon: Users, label: 'Nhân viên / Lễ tân' },
-    { path: '/admin/patients', icon: FileText, label: t('patients') },
-    { path: '/admin/stats', icon: BarChart, label: t('stats') },
-    { path: '/admin/payments', icon: CreditCard, label: t('payments') },
-    { path: '/admin/reports', icon: FileText, label: 'Báo cáo' },
-    { path: '/admin/ai-diagnoses', icon: Brain, label: 'Chẩn đoán AI' },
-    { path: '/admin/specialties', icon: Stethoscope, label: 'Chuyên khoa' },
-    { path: '/admin/system-settings', icon: Settings, label: 'Cài đặt hệ thống' }
-  ];
-
-  // Add Admins management link if user has permission
-  if (role === 'admin' && user?.admin_permissions?.can_create_admins) {
-    adminLinks.push({ path: '/admin/admins', icon: Shield, label: t('admins') });
+  const isSuper = user?.admin_type === 'SUPER_ADMIN';
+  let adminLinks = [];
+  
+  if (role === 'admin') {
+    if (isSuper) {
+      adminLinks = [
+        { path: '/admin/dashboard', icon: Home, label: 'Tổng quan hệ thống' },
+        { path: '/admin/specialties', icon: Stethoscope, label: 'Danh mục hệ thống' },
+        { path: '/admin/admins', icon: Shield, label: 'Admin cơ sở' },
+        { path: '/admin/system-settings', icon: Settings, label: 'Cấu hình hệ thống' },
+        { path: '/admin/ai-diagnoses', icon: Brain, label: 'Cấu hình AI' },
+      ];
+    } else {
+      adminLinks = [
+        { path: '/admin/dashboard', icon: Home, label: 'Bảng điều khiển cơ sở' },
+        { path: '/admin/doctors', icon: Users, label: t('doctors') },
+        { path: '/admin/staffs', icon: Users, label: 'Nhân viên / Lễ tân' },
+        { path: '/admin/patients', icon: FileText, label: t('patients') },
+        { path: '/admin/stats', icon: BarChart, label: t('stats') },
+        { path: '/admin/payments', icon: CreditCard, label: t('payments') },
+        { path: '/admin/reports', icon: FileText, label: 'Báo cáo' },
+        { path: '/admin/ai-diagnoses', icon: Brain, label: 'Dữ liệu AI' },
+        { path: '/admin/system-settings', icon: Settings, label: 'Cài đặt cơ sở' },
+      ];
+    }
   }
 
 
@@ -80,7 +87,8 @@ export default function Layout({ children }) {
     { path: '/staff/triage-queue', icon: Activity, label: 'Hàng chờ AI Triage' },
     { path: '/staff/payments', icon: CreditCard, label: 'Hỗ trợ thanh toán' },
     { path: '/staff/messages', icon: MessageSquare, label: 'Hỗ trợ giao tiếp' },
-    { path: '/staff/video-support', icon: Brain, label: 'Hỗ trợ khám online' },
+    { path: '/staff/video-support', icon: Video, label: 'Hỗ trợ khám online' },
+    { path: '/staff/ai-diagnoses', icon: Brain, label: 'Dữ liệu AI' },
   ];
 
   const links = role === 'patient' ? patientLinks
@@ -96,7 +104,7 @@ export default function Layout({ children }) {
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Sidebar */}
       <aside className="w-64 bg-white dark:bg-gray-800 shadow-xl fixed h-full z-50 flex flex-col">
-        <div className="p-6 flex-1">
+        <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
           <Link
             to={role === 'admin' ? '/admin/dashboard' : role === 'doctor' ? '/doctor/dashboard' : role === 'staff' ? '/staff/dashboard' : '/'}
             className="flex items-center gap-2 mb-8 justify-center cursor-pointer"

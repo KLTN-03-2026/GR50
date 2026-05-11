@@ -1,9 +1,13 @@
-﻿import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import React, { useContext } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
 import Layout from '../../components/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Users, FileText, BarChart, Shield, UserPlus, CreditCard, ClipboardList, Activity, Stethoscope, Settings } from 'lucide-react';
+import { 
+  Users, FileText, BarChart, Shield, UserPlus, 
+  CreditCard, ClipboardList, Activity, Stethoscope, 
+  Settings, Brain 
+} from 'lucide-react';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -22,68 +26,79 @@ export default function AdminDashboard() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <QuickActionCard
-              icon={<UserPlus className="w-8 h-8" />}
-              title={t('createAccount')}
-              description={t('createAccountDesc')}
-              onClick={() => navigate('/admin/create-accounts')}
-            />
-            <QuickActionCard
-              icon={<Users className="w-8 h-8" />}
-              title={t('manageDoctors')}
-              description={t('manageDoctorsDesc')}
-              onClick={() => navigate('/admin/doctors')}
-            />
-            <QuickActionCard
-              icon={<FileText className="w-8 h-8" />}
-              title={t('patientList')}
-              description={t('patientListDesc')}
-              onClick={() => navigate('/admin/patients')}
-            />
-            <QuickActionCard
-              icon={<BarChart className="w-8 h-8" />}
-              title={t('statistics')}
-              description={t('statisticsDesc')}
-              onClick={() => navigate('/admin/stats')}
-            />
-            {user?.admin_permissions?.can_create_admins && (
-              <QuickActionCard
-                icon={<Shield className="w-8 h-8" />}
-                title={t('manageAdmins')}
-                description={t('manageAdminsDesc')}
-                onClick={() => navigate('/admin/admins')}
-              />
+            {user?.admin_type === 'SUPER_ADMIN' ? (
+              <>
+                <QuickActionCard
+                  icon={<Shield className="w-8 h-8" />}
+                  title="Quản lý Admin cơ sở"
+                  description="Quản lý tài khoản quản trị cho từng cơ sở y tế"
+                  onClick={() => navigate('/admin/admins')}
+                />
+                <QuickActionCard
+                  icon={<Stethoscope className="w-8 h-8" />}
+                  title="Danh mục hệ thống"
+                  description="Quản lý chuyên khoa, dịch vụ dùng chung"
+                  onClick={() => navigate('/admin/specialties')}
+                />
+                <QuickActionCard
+                  icon={<Activity className="w-8 h-8" />}
+                  title="Cấu hình AI"
+                  description="Giám sát và cấu hình dịch vụ AI toàn hệ thống"
+                  onClick={() => navigate('/admin/ai-diagnoses')}
+                />
+                <QuickActionCard
+                  icon={<Settings className="w-8 h-8" />}
+                  title="Cấu hình hệ thống"
+                  description="Cài đặt tham số, bảo mật và nhật ký hệ thống"
+                  onClick={() => navigate('/admin/system-settings')}
+                />
+              </>
+            ) : (
+              <>
+                <QuickActionCard
+                  icon={<Users className="w-8 h-8" />}
+                  title={t('manageDoctors')}
+                  description={t('manageDoctorsDesc')}
+                  onClick={() => navigate('/admin/doctors')}
+                />
+                <QuickActionCard
+                  icon={<UserPlus className="w-8 h-8" />}
+                  title="Tạo tài khoản"
+                  description="Cấp tài khoản cho Bác sĩ và Nhân viên mới"
+                  onClick={() => navigate('/admin/create-accounts')}
+                />
+                <QuickActionCard
+                  icon={<FileText className="w-8 h-8" />}
+                  title={t('patientList')}
+                  description={t('patientListDesc')}
+                  onClick={() => navigate('/admin/patients')}
+                />
+                <QuickActionCard
+                  icon={<BarChart className="w-8 h-8" />}
+                  title={t('statistics')}
+                  description={t('statisticsDesc')}
+                  onClick={() => navigate('/admin/stats')}
+                />
+                <QuickActionCard
+                  icon={<CreditCard className="w-8 h-8" />}
+                  title={t('payments')}
+                  description="Quản lý doanh thu và đối soát giao dịch"
+                  onClick={() => navigate('/admin/payments')}
+                />
+                <QuickActionCard
+                  icon={<ClipboardList className="w-8 h-8" />}
+                  title="Báo cáo vận hành"
+                  description="Xem báo cáo chi tiết về lịch hẹn và doanh thu"
+                  onClick={() => navigate('/admin/reports')}
+                />
+                <QuickActionCard
+                   icon={<Brain className="w-8 h-8" />}
+                   title="Dữ liệu AI"
+                   description="Giám sát chẩn đoán và điều phối AI"
+                   onClick={() => navigate('/admin/ai-diagnoses')}
+                />
+              </>
             )}
-            <QuickActionCard
-              icon={<CreditCard className="w-8 h-8" />}
-              title={t('paymentsConfig')}
-              description={t('paymentsConfigDesc')}
-              onClick={() => navigate('/admin/payments')}
-            />
-            <QuickActionCard
-              icon={<ClipboardList className="w-8 h-8" />}
-              title={t('reportsConfig')}
-              description={t('reportsConfigDesc')}
-              onClick={() => navigate('/admin/reports')}
-            />
-            <QuickActionCard
-              icon={<Activity className="w-8 h-8" />}
-              title={t('aiDiagnosesConfig')}
-              description={t('aiDiagnosesConfigDesc')}
-              onClick={() => navigate('/admin/ai-diagnoses')}
-            />
-            <QuickActionCard
-              icon={<Stethoscope className="w-8 h-8" />}
-              title={t('specialtiesConfig')}
-              description={t('specialtiesConfigDesc')}
-              onClick={() => navigate('/admin/specialties')}
-            />
-            <QuickActionCard
-              icon={<Settings className="w-8 h-8" />}
-              title={t('systemSettingsConfig')}
-              description={t('systemSettingsConfigDesc')}
-              onClick={() => navigate('/admin/system-settings')}
-            />
           </div>
         </div>
       </div>

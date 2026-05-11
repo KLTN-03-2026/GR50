@@ -358,18 +358,25 @@ exports.getAppointments = async (req, res) => {
             order: [['NgayTao', 'DESC']]
         });
 
-        const result = appointments.map(a => ({
-            id: a.Id_DatLich,
-            patient_name: `${a.BenhNhan?.NguoiDung?.Ho || ''} ${a.BenhNhan?.NguoiDung?.Ten || ''}`.trim(),
-            doctor_name: `${a.DoctorSchedule?.Doctor?.NguoiDung?.Ho || ''} ${a.DoctorSchedule?.Doctor?.NguoiDung?.Ten || ''}`.trim(),
-            specialty: a.DoctorSchedule?.Doctor?.ChuyenKhoa?.TenChuyenKhoa,
-            status: a.TrangThai,
-            time: a.DoctorSchedule?.KhungGio,
-            date: a.NgayHen || a.ThoiDiemDat,
-            fee: a.GiaTien
-        }));
+        const result = appointments.map(a => {
+            const doctor = a.DoctorSchedule?.Doctor;
+            const doctorName = doctor ? `${doctor.NguoiDung?.Ho || ''} ${doctor.NguoiDung?.Ten || ''}`.trim() : 'Bác sĩ trực';
+            
+            return {
+                id: a.Id_DatLich,
+                Id_DatLich: a.Id_DatLich,
+                patient_name: `${a.BenhNhan?.NguoiDung?.Ho || ''} ${a.BenhNhan?.NguoiDung?.Ten || ''}`.trim(),
+                doctor_name: doctorName || 'Bác sĩ trực',
+                specialty: a.DoctorSchedule?.Doctor?.ChuyenKhoa?.TenChuyenKhoa || 'Tổng quát',
+                status: a.TrangThai,
+                time: a.DoctorSchedule?.GioBatDau || '08:30',
+                date: a.NgayHen || a.ThoiDiemDat,
+                fee: a.GiaTien,
+                MaDatLich: a.MaDatLich
+            };
+        });
 
-        res.json(appointments);
+        res.json(result);
     } catch (error) {
         console.error('StaffGetAppointments Error:', error);
         res.status(500).json({ detail: 'Error fetching appointments' });
@@ -655,16 +662,19 @@ exports.getTriageQueue = async (req, res) => {
 
         const triageItems = await AITriage.findAll({
             where: {
-                TrangThaiChuyenGiao: 'pending',
+                [Op.or]: [
+                    { TrangThaiChuyenGiao: 'pending' },
+                    { TrangThaiChuyenGiao: { [Op.is]: null } }
+                ],
                 ...facilityFilter
             },
-            include: [{ model: NguoiDung, as: 'nguoiDung', attributes: ['Ho', 'Ten'] }],
-            order: [['NgayCapNhat', 'DESC']]
+            include: [{ model: NguoiDung, as: 'aituvanUser', attributes: ['Ho', 'Ten'] }],
+            order: [['NgayTao', 'DESC']]
         });
 
         const result = triageItems.map(t => ({
             id: t.Id_AITuVanPhien,
-            patient_name: `${t.nguoiDung?.Ho || ''} ${t.nguoiDung?.Ten || ''}`.trim(),
+            patient_name: `${t.aituvanUser?.Ho || ''} ${t.aituvanUser?.Ten || ''}`.trim(),
             summary: t.TrieuChungTomTat || t.TieuDe || 'Chưa có thông tin',
             diagnosis: t.ChuanDoanSoBo || 'Chưa có chẩn đoán',
             suggested_specialty: t.GoiYChuyenKhoa || 'Nội tổng hợp',
@@ -752,7 +762,7 @@ exports.getPatientById = async (req, res) => {
  */
 exports.createAppointment = async (req, res) => {
     try {
-        const { patientId, slotId, note } = req.body;
+        const { patientId, slotId, note, aiSessionId } = req.body;
         
         // Check if staff has access to this slot's facility
         const slot = await DoctorSchedule.findByPk(slotId);
@@ -773,7 +783,8 @@ exports.createAppointment = async (req, res) => {
             TrangThai: 'DaXacNhan', // Staff bookings are auto-confirmed
             GhiChu: note,
             ThoiDiemDat: new Date(),
-            NgayHen: slot.NgayDate // Assuming slot has NgayDate
+            NgayHen: slot.NgayDate,
+            aiSessionId: aiSessionId || null
         });
 
 
@@ -801,18 +812,20 @@ exports.getOnlineConsultations = async (req, res) => {
             where: facilityFilter,
             include: [{
                 model: DoctorSchedule,
-                where: { LoaiKham: 'Online', NgayDate: today }
+                as: 'DoctorSchedule',
+                where: { LoaiKham: 'Online', NgayDate: today },
+                include: [{ model: BacSi, as: 'Doctor', include: [{ model: NguoiDung, attributes: ['Ten'] }] }]
             }, {
                 model: BenhNhan,
                 include: [{ model: NguoiDung, attributes: ['Ho', 'Ten'] }]
             }],
-            order: [[DoctorSchedule, 'GioBatDau', 'ASC']]
+            order: [[{ model: DoctorSchedule, as: 'DoctorSchedule' }, 'GioBatDau', 'ASC']]
         });
 
         const result = sessions.map(s => ({
             id: s.Id_DatLich,
             patient: `${s.BenhNhan?.NguoiDung?.Ho || ''} ${s.BenhNhan?.NguoiDung?.Ten || ''}`.trim(),
-            doctor: `BS. ${s.DoctorSchedule?.BacSi?.NguoiDung?.Ten || 'Chưa phân' }`,
+            doctor: `BS. ${s.DoctorSchedule?.Doctor?.NguoiDung?.Ten || 'Chưa phân' }`,
             status: s.TrangThai,
             time: s.DoctorSchedule?.GioBatDau,
             quality: 'Good' // Mocked quality metric
@@ -839,7 +852,7 @@ exports.getSupportConversations = async (req, res) => {
 
         const conversations = await AITriage.findAll({
             where: facilityFilter,
-            include: [{ model: NguoiDung, as: 'nguoiDung', attributes: ['Ho', 'Ten', 'Email'] }],
+            include: [{ model: NguoiDung, as: 'aituvanUser', attributes: ['Ho', 'Ten', 'Email'] }],
             order: [['NgayCapNhat', 'DESC']],
             limit: 20
         });

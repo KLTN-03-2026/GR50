@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 import CreateMedicalRecordDialog from '@/components/CreateMedicalRecordDialog';
-import { FileText, Video } from 'lucide-react';
+import { FileText, Video, Trash2 } from 'lucide-react';
 import ChatService from '@/services/ChatService';
 import PatientProfileDialog from '@/components/PatientProfileDialog';
 
@@ -88,6 +88,19 @@ export default function DoctorAppointments() {
     }
   };
 
+  const handleHideAppointment = async (appointmentId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa lịch hẹn này khỏi danh sách?')) return;
+    try {
+      await axios.delete(`${API}/appointments/${appointmentId}/hide`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Đã xóa lịch hẹn khỏi danh sách');
+      fetchAppointments();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Không thể xóa lịch hẹn');
+    }
+  };
+
   const handleOpenMedicalRecord = (appointment) => {
     setMedicalRecordDialog({
       open: true,
@@ -136,6 +149,7 @@ export default function DoctorAppointments() {
                   onOpenMedicalRecord={() => handleOpenMedicalRecord(apt)}
                   onCompleteExam={() => setCompleteExamDialog({ open: true, appointment: apt })}
                   onViewProfile={(patientId) => setProfileDialog({ open: true, patientId })}
+                  onHide={() => handleHideAppointment(apt.id)}
                 />
 
               ))}
@@ -173,7 +187,7 @@ export default function DoctorAppointments() {
   );
 }
 
-function AppointmentCard({ appointment, onStatusChange, navigate, onOpenMedicalRecord, onCompleteExam, onViewProfile }) {
+function AppointmentCard({ appointment, onStatusChange, navigate, onOpenMedicalRecord, onCompleteExam, onViewProfile, onHide }) {
 
   const statusColors = {
     pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -235,15 +249,28 @@ function AppointmentCard({ appointment, onStatusChange, navigate, onOpenMedicalR
             )}
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="rounded-xl border-teal-200 text-teal-600 hover:bg-teal-50"
-          onClick={() => onViewProfile(appointment.patient_id || appointment.Id_BenhNhan)}
-        >
-          <User className="w-4 h-4 mr-2" />
-          Hồ sơ
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="rounded-xl border-teal-200 text-teal-600 hover:bg-teal-50"
+            onClick={() => onViewProfile(appointment.patient_id || appointment.Id_BenhNhan)}
+          >
+            <User className="w-4 h-4 mr-2" />
+            Hồ sơ
+          </Button>
+          {(appointment.status === 'completed' || appointment.status === 'cancelled' || appointment.status === 'no_show') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onHide}
+              className="text-red-500 hover:text-red-600 hover:bg-red-50 w-full"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Xóa
+            </Button>
+          )}
+        </div>
       </div>
 
 
@@ -277,13 +304,13 @@ function AppointmentCard({ appointment, onStatusChange, navigate, onOpenMedicalR
             Bắt đầu khám
           </Button>
         )}
-        {appointment.status === 'in_progress' && (
+        {(appointment.status === 'in_progress' || appointment.status === 'checked_in') && (
           <Button
             data-testid={`complete-${appointment.id}`}
             onClick={onCompleteExam}
-            className="flex-1 bg-blue-600 hover:bg-blue-700"
+            className="flex-1 bg-green-600 hover:bg-green-700 shadow-md"
           >
-            Đánh dấu hoàn thành
+            Hoàn thành khám
           </Button>
         )}
         {(appointment.status === 'confirmed' || appointment.status === 'in_progress' || appointment.status === 'completed') && (
@@ -304,11 +331,13 @@ function AppointmentCard({ appointment, onStatusChange, navigate, onOpenMedicalR
             <Button
               data-testid={`chat-${appointment.id}`}
               onClick={async () => {
+                console.log("CLICK CHAT appointment:", appointment);
                 try {
                   const conv = await ChatService.getOrCreateAppointmentConversation(token, appointment.id);
                   navigate(`/doctor/conversation/${conv.id}`);
                 } catch (error) {
-                  toast.error(error.response?.data?.detail || 'Không thể mở chat với bệnh nhân');
+                  console.error("Open chat error:", error?.response?.data || error);
+                  toast.error(error.response?.data?.detail || error.response?.data?.message || 'Không thể mở chat với bệnh nhân');
                 }
               }}
               className="flex-1 bg-gradient-to-r from-teal-500 to-cyan-500 shadow-md"
@@ -329,7 +358,9 @@ function AppointmentCard({ appointment, onStatusChange, navigate, onOpenMedicalR
                   navigate(`/doctor/video-consultation/${session.id}`);
                 } catch (error) {
                   console.error('Start video call error:', error);
-                  toast.error('Không thể bắt đầu cuộc gọi video');
+                  // Fallback demo
+                  toast.success('Mở phòng hội chẩn dự phòng (Demo Mode)');
+                  navigate(`/doctor/video-consultation/${appointment.id}`);
                 }
               }}
             >
@@ -344,25 +375,113 @@ function AppointmentCard({ appointment, onStatusChange, navigate, onOpenMedicalR
 
 import { Input } from '@/components/ui/input';
 
-function CompleteExamDialog({ open, onOpenChange, appointment, onCompleted }) {
+export function CompleteExamDialog({ open, onOpenChange, appointment, onCompleted }) {
   const { token } = useContext(AuthContext);
-  const [formData, setFormData] = useState({
-    phiKham: '',
-    phiDichVu: '0',
-    phiThuoc: '0',
-    giamGia: '0',
-    ghiChu: ''
-  });
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
+  
+  const [systemServices, setSystemServices] = useState([]);
+  const [systemMedicines, setSystemMedicines] = useState([]);
+
+  const [diagnosis, setDiagnosis] = useState(appointment.final_diagnosis || appointment.symptoms || '');
+  const [clinicalNote, setClinicalNote] = useState('');
+  
+  const [selectedServices, setSelectedServices] = useState([]); // { serviceId, note, price }
+  const [prescriptionItems, setPrescriptionItems] = useState([]); // { medicineId, quantity, dosage, days, usage, price, name }
+  const [prescriptionNote, setPrescriptionNote] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      fetchMasterData();
+    }
+  }, [open]);
+
+  const fetchMasterData = async () => {
+    setDataLoading(true);
+    try {
+      const [svcRes, medRes] = await Promise.all([
+        axios.get(`${API}/system/services`),
+        axios.get(`${API}/system/medicines`)
+      ]);
+      setSystemServices(svcRes.data);
+      setSystemMedicines(medRes.data);
+    } catch (err) {
+      toast.error('Lỗi tải danh mục dịch vụ/thuốc');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const baseFee = parseFloat(appointment.GiaTien) || 200000;
+  const clinicalTotal = selectedServices.reduce((sum, s) => sum + s.price, 0);
+  const medicineTotal = prescriptionItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalAmount = baseFee + clinicalTotal; // Medicine is not added to total until patient confirms
+
+  const handleAddService = (e) => {
+    const serviceId = parseInt(e.target.value);
+    if (!serviceId) return;
+    const svc = systemServices.find(s => s.Id_DichVu === serviceId);
+    if (svc && !selectedServices.find(s => s.serviceId === serviceId)) {
+        setSelectedServices([...selectedServices, { serviceId: svc.Id_DichVu, note: '', price: Number(svc.DonGia), name: svc.TenDichVu }]);
+    }
+    e.target.value = "";
+  };
+
+  const handleAddMedicine = (e) => {
+    const medId = parseInt(e.target.value);
+    if (!medId) return;
+    const med = systemMedicines.find(m => m.Id_Thuoc === medId);
+    if (med && !prescriptionItems.find(m => m.medicineId === medId)) {
+        setPrescriptionItems([...prescriptionItems, { 
+            medicineId: med.Id_Thuoc, 
+            name: med.TenThuoc,
+            price: Number(med.DonGia),
+            quantity: 1, 
+            dosage: '', 
+            days: 1, 
+            usage: '' 
+        }]);
+    }
+    e.target.value = "";
+  };
+
+  const removeService = (id) => setSelectedServices(selectedServices.filter(s => s.serviceId !== id));
+  const removeMedicine = (id) => setPrescriptionItems(prescriptionItems.filter(m => m.medicineId !== id));
+
+  const updateMedItem = (id, field, value) => {
+      setPrescriptionItems(prescriptionItems.map(item => item.medicineId === id ? { ...item, [field]: value } : item));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!diagnosis) {
+        toast.error('Vui lòng nhập chẩn đoán');
+        return;
+    }
+
     setLoading(true);
     try {
-      await axios.put(`${API}/appointments/${appointment.id}/complete`, formData, {
+      const payload = {
+          diagnosis,
+          clinicalNote,
+          services: selectedServices.map(s => ({ serviceId: s.serviceId, note: s.note })),
+          prescription: prescriptionItems.length > 0 ? {
+              note: prescriptionNote,
+              items: prescriptionItems.map(m => ({
+                  medicineId: m.medicineId,
+                  quantity: m.quantity,
+                  dosage: m.dosage,
+                  days: m.days,
+                  usage: m.usage
+              }))
+          } : null
+      };
+
+      const response = await axios.put(`${API}/appointments/${appointment.id}/complete`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast.success('Đã hoàn thành khám và tạo hóa đơn thanh toán!');
+      
+      toast.success(response.data.message || 'Đã hoàn thành khám và tạo hóa đơn!');
       onCompleted();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Lỗi khi hoàn thành khám');
@@ -371,38 +490,144 @@ function CompleteExamDialog({ open, onOpenChange, appointment, onCompleted }) {
     }
   };
 
+  if (!open) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Hoàn thành khám</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-gray-900">Hoàn thành khám</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label>Phí khám (VNĐ)</Label>
-            <Input type="number" required value={formData.phiKham} onChange={(e) => setFormData({ ...formData, phiKham: e.target.value })} placeholder="Vd: 300000" />
-          </div>
-          <div>
-            <Label>Phí dịch vụ cận lâm sàng (VNĐ)</Label>
-            <Input type="number" required value={formData.phiDichVu} onChange={(e) => setFormData({ ...formData, phiDichVu: e.target.value })} />
-          </div>
-          <div>
-            <Label>Phí thu tiền thuốc (VNĐ) (Nếu có)</Label>
-            <Input type="number" required value={formData.phiThuoc} onChange={(e) => setFormData({ ...formData, phiThuoc: e.target.value })} />
-          </div>
-          <div>
-            <Label>Giảm giá (VNĐ)</Label>
-            <Input type="number" required value={formData.giamGia} onChange={(e) => setFormData({ ...formData, giamGia: e.target.value })} />
-          </div>
-          <div>
-            <Label>Ghi chú hóa đơn/Chỉ định thanh toán</Label>
-            <Textarea value={formData.ghiChu} onChange={(e) => setFormData({ ...formData, ghiChu: e.target.value })} rows={2} />
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" type="button" className="flex-1" onClick={() => onOpenChange(false)}>Hủy</Button>
-            <Button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700">Tạo hóa đơn & Hoàn thành</Button>
-          </div>
-        </form>
+        
+        {dataLoading ? (
+            <div className="p-4 text-center">Đang tải danh mục...</div>
+        ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="bg-teal-50 p-4 rounded-xl border border-teal-100 flex justify-between">
+                    <p className="text-sm text-teal-800">
+                        <strong>Bệnh nhân:</strong> {appointment.patient_name}<br/>
+                        <strong>Mã lịch:</strong> {appointment.code}
+                    </p>
+                    <p className="text-sm font-bold text-teal-800 text-right">
+                        Phí khám (Mặc định):<br/>{baseFee.toLocaleString()} VNĐ
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                        <h3 className="font-bold border-b pb-2">1. Thông tin Lâm Sàng</h3>
+                        <div>
+                            <Label>Chẩn đoán bệnh <span className="text-red-500">*</span></Label>
+                            <Textarea required value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder="Kết luận khám..." />
+                        </div>
+                        <div>
+                            <Label>Ghi chú lâm sàng</Label>
+                            <Textarea value={clinicalNote} onChange={(e) => setClinicalNote(e.target.value)} placeholder="Tình trạng, lời khuyên..." rows={3} />
+                        </div>
+
+                        <h3 className="font-bold border-b pb-2 mt-6">2. Chỉ định Cận Lâm Sàng</h3>
+                        <select className="w-full p-2 border rounded-md" onChange={handleAddService} defaultValue="">
+                            <option value="" disabled>-- Chọn dịch vụ chỉ định --</option>
+                            {systemServices.map(s => (
+                                <option key={s.Id_DichVu} value={s.Id_DichVu}>{s.TenDichVu} - {Number(s.DonGia).toLocaleString()}đ</option>
+                            ))}
+                        </select>
+                        {selectedServices.length > 0 && (
+                            <div className="bg-gray-50 p-3 rounded-lg space-y-2 mt-2 border">
+                                {selectedServices.map(s => (
+                                    <div key={s.serviceId} className="flex flex-col gap-1 pb-2 border-b last:border-0">
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-semibold text-sm">{s.name}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm text-gray-500">{s.price.toLocaleString()}đ</span>
+                                                <Button type="button" variant="ghost" size="sm" onClick={() => removeService(s.serviceId)} className="h-6 px-2 text-red-500">X</Button>
+                                            </div>
+                                        </div>
+                                        <Input size="sm" className="h-7 text-xs" placeholder="Ghi chú thêm..." value={s.note} onChange={(e) => setSelectedServices(selectedServices.map(xs => xs.serviceId === s.serviceId ? {...xs, note: e.target.value} : xs))} />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="space-y-4">
+                        <h3 className="font-bold border-b pb-2">3. Đơn Thuốc</h3>
+                        <select className="w-full p-2 border rounded-md" onChange={handleAddMedicine} defaultValue="">
+                            <option value="" disabled>-- Thêm thuốc vào đơn --</option>
+                            {systemMedicines.map(m => (
+                                <option key={m.Id_Thuoc} value={m.Id_Thuoc}>{m.TenThuoc} ({m.HamLuong}) - {Number(m.DonGia).toLocaleString()}đ</option>
+                            ))}
+                        </select>
+                        
+                        {prescriptionItems.length > 0 && (
+                            <div className="bg-blue-50 p-3 rounded-lg space-y-3 mt-2 border border-blue-100 max-h-[300px] overflow-y-auto">
+                                {prescriptionItems.map(m => (
+                                    <div key={m.medicineId} className="bg-white p-2 rounded shadow-sm flex flex-col gap-2">
+                                        <div className="flex justify-between font-semibold text-sm">
+                                            <span>{m.name}</span>
+                                            <Button type="button" variant="ghost" size="sm" onClick={() => removeMedicine(m.medicineId)} className="h-6 px-2 text-red-500">X</Button>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <div className="flex-1">
+                                                <Label className="text-[10px]">Số lượng</Label>
+                                                <Input type="number" min="1" className="h-7 text-xs" value={m.quantity} onChange={(e) => updateMedItem(m.medicineId, 'quantity', e.target.value)} />
+                                            </div>
+                                            <div className="flex-1">
+                                                <Label className="text-[10px]">Số ngày</Label>
+                                                <Input type="number" min="1" className="h-7 text-xs" value={m.days} onChange={(e) => updateMedItem(m.medicineId, 'days', e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <div className="flex-1">
+                                                <Label className="text-[10px]">Liều dùng</Label>
+                                                <Input className="h-7 text-xs" placeholder="VD: 2 viên/lần" value={m.dosage} onChange={(e) => updateMedItem(m.medicineId, 'dosage', e.target.value)} />
+                                            </div>
+                                            <div className="flex-1">
+                                                <Label className="text-[10px]">Cách dùng</Label>
+                                                <Input className="h-7 text-xs" placeholder="VD: Sau ăn" value={m.usage} onChange={(e) => updateMedItem(m.medicineId, 'usage', e.target.value)} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                <div>
+                                    <Label className="text-xs">Lời dặn của bác sĩ</Label>
+                                    <Textarea value={prescriptionNote} onChange={(e) => setPrescriptionNote(e.target.value)} placeholder="Dặn dò thêm..." rows={2} className="text-sm" />
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="p-4 bg-gray-900 rounded-xl text-white mt-4">
+                            <h4 className="font-bold mb-2 text-sm border-b border-gray-700 pb-2">TỔNG KẾT TẠM TÍNH</h4>
+                            <div className="flex justify-between mb-1 text-sm opacity-80">
+                                <span>Phí khám:</span>
+                                <span>{baseFee.toLocaleString()} đ</span>
+                            </div>
+                            <div className="flex justify-between mb-1 text-sm opacity-80">
+                                <span>Cận lâm sàng:</span>
+                                <span>{clinicalTotal.toLocaleString()} đ</span>
+                            </div>
+                            <div className="flex justify-between mb-2 text-sm opacity-80 text-yellow-400">
+                                <span>Tiền thuốc (Dự kiến):</span>
+                                <span>+{medicineTotal.toLocaleString()} đ</span>
+                            </div>
+                            <div className="flex justify-between font-bold text-lg border-t border-gray-700 pt-2 text-green-400">
+                                <span>Cần thu bệnh nhân (Trừ thuốc):</span>
+                                <span>{totalAmount.toLocaleString()} đ</span>
+                            </div>
+                            <p className="text-[10px] opacity-60 mt-1 italic">* Tiền thuốc sẽ chỉ được cộng vào hóa đơn nếu bệnh nhân lấy thuốc.</p>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                    <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Hủy</Button>
+                    <Button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700 min-w-[200px]">
+                        {loading ? 'Đang xử lý...' : 'HOÀN THÀNH KHÁM'}
+                    </Button>
+                </div>
+            </form>
+        )}
       </DialogContent>
     </Dialog>
   );

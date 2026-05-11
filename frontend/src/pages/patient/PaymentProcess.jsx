@@ -332,7 +332,7 @@ export default function PaymentProcess() {
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600 dark:text-gray-300">Chi nhánh:</span>
-                            <span className="font-semibold text-gray-900 dark:text-white">TP.HCM</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">Đà Nẵng</span>
                           </div>
                           <div className="flex justify-between items-center border-t pt-3">
                             <span className="text-sm text-gray-600 dark:text-gray-300">Số tài khoản:</span>

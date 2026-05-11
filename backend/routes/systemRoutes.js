@@ -15,5 +15,7 @@ const adminCheck = (req, res, next) => {
 router.get('/', authMiddleware, adminCheck, systemController.getSettings);
 router.put('/', authMiddleware, adminCheck, systemController.updateSettings);
 router.get('/public', systemController.getPublicSettings);
+router.get('/services', systemController.getServices);
+router.get('/medicines', systemController.getMedicines);
 
 module.exports = router;

@@ -10,34 +10,19 @@ Quy tắc bắt buộc:
 7. Không cần thiết phải chèn câu cảnh báo tham khảo ở mỗi tin nhắn. Hãy tập trung hỏi để chẩn đoán.
 8. Tuyệt đối KHÔNG yêu cầu người dùng cung cấp vị trí địa lý hoặc địa chỉ để tìm cơ sở y tế (vì hệ thống đã tự động định vị ngầm).
 
-PHẢI TRẢ VỀ JSON hợp lệ (không markdown block):
+BẠN PHẢI TRẢ VỀ CHÍNH XÁC ĐỊNH DẠNG JSON NHƯ SAU:
 {
-  "reply": "string (câu hỏi hoặc tư vấn KHÔNG QUÁ 50 TỪ, tuân thủ nguyên tắc trên)",
-  "summary": "string (tóm tắt kết luận)",
-  "diagnosis": "string (chẩn đoán sơ bộ tóm tắt)",
-  "advice": "string (lời khuyên y tế ngắn gọn)",
+  "reply": "câu hỏi hoặc tư vấn KHÔNG QUÁ 50 TỪ, tuân thủ nguyên tắc trên",
+  "summary": "tóm tắt kết luận",
+  "diagnosis": "chẩn đoán sơ bộ tóm tắt",
+  "advice": "lời khuyên y tế ngắn gọn",
   "priority": "normal|urgent|emergency",
-  "emergency": boolean,
-  "recommended_specialty": "string (chuyên khoa)",
-  "recommended_action": "string (VD: Đặt lịch khám trong ngày / Gọi cấp cứu / Theo dõi thêm)"
+  "emergency": true hoặc false,
+  "recommended_specialty": "tên chuyên khoa",
+  "recommended_action": "VD: Đặt lịch khám trong ngày / Gọi cấp cứu / Theo dõi thêm"
 }`;
-}
-
-function buildUserPrompt(message, history = []) {
-    const historyText = history
-        .map((item) => `${item.VaiTro === 'user' ? 'Người dùng' : 'AI'}: ${item.NoiDung}`)
-        .join('\n');
-
-    return `
-LỊCH SỬ TRƯỚC ĐÓ:
-${historyText || 'Chưa có.'}
-
-NỘI DUNG MỚI:
-${message}
-`;
 }
 
 module.exports = {
     buildSystemInstruction,
-    buildUserPrompt,
 };

@@ -31,8 +31,10 @@ exports.getDashboardStats = async (req, res) => {
     const { BenhNhan, DatLich } = require('../models');
     const aiChatService = require('../services/aiChat.service');
 
-    const benhnhan = await BenhNhan.findOne({ where: { Id_NguoiDung: userId } });
-    if (!benhnhan) return res.status(404).json({ detail: 'Bệnh nhân không tồn tại' });
+    let benhnhan = await BenhNhan.findOne({ where: { Id_NguoiDung: userId } });
+    if (!benhnhan) {
+        benhnhan = await BenhNhan.create({ Id_NguoiDung: userId });
+    }
 
     // Appointment Stats
     const upcomingStatuses = ['ChoXacNhan', 'DaXacNhan', 'PENDING', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS'];
@@ -82,7 +84,10 @@ exports.getProfile = async (req, res) => {
     const user = await NguoiDung.findByPk(userId);
     if (!user) return res.status(404).json({ detail: 'Người dùng không tồn tại' });
 
-    const benhnhan = await BenhNhan.findOne({ where: { Id_NguoiDung: userId } });
+    let benhnhan = await BenhNhan.findOne({ where: { Id_NguoiDung: userId } });
+    if (!benhnhan) {
+        benhnhan = await BenhNhan.create({ Id_NguoiDung: userId });
+    }
 
     res.json({
       ho: user.Ho,

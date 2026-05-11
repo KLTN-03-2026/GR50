@@ -24,4 +24,9 @@ router.delete('/delete-admin/:id', authMiddleware, isSuperAdmin, adminController
 router.get('/ai-diagnoses', authMiddleware, isAdmin, adminController.getAIDiagnoses);
 router.put('/update-permissions', authMiddleware, isSuperAdmin, adminController.updatePermissions);
 
+// Doctor Schedule Management
+router.post('/doctor-schedules', authMiddleware, isAdmin, adminController.assignDoctorSchedule);
+router.get('/doctor-schedules', authMiddleware, isAdmin, adminController.getDoctorFacilitySchedules);
+router.delete('/doctor-schedules/:id', authMiddleware, isAdmin, adminController.deleteDoctorFacilitySchedule);
+
 module.exports = router;

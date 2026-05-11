@@ -58,7 +58,7 @@ export default function ConversationList({ role = 'patient' }) {
 
   const filteredConversations = conversations.filter(conv => 
     conv.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.conversation_type?.toLowerCase().includes(searchTerm.toLowerCase())
+    conv.conversationType?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -137,11 +137,11 @@ function FilterBadge({ children, active, onClick }) {
 }
 
 function ConversationItem({ conversation, onClick, currentUserId }) {
-  const typeInfo = CONVERSATION_TYPES[conversation.conversation_type] || CONVERSATION_TYPES.support_chat;
+  const typeInfo = CONVERSATION_TYPES[conversation.conversationType] || CONVERSATION_TYPES.support_chat;
   const TypeIcon = typeInfo.icon;
   
   const lastMessage = conversation.messages?.[0];
-  const participant = conversation.participants?.find(p => p.user_id !== currentUserId) || conversation.participants?.[0];
+  const participant = conversation.participants?.find(p => p.userId !== currentUserId) || conversation.participants?.[0];
   
   return (
     <div 
@@ -167,13 +167,13 @@ function ConversationItem({ conversation, onClick, currentUserId }) {
             {conversation.title || 'Cuộc hội thoại'}
           </h4>
           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight whitespace-nowrap ml-2">
-            {conversation.last_message_at ? formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true, locale: vi }) : ''}
+            {conversation.lastMessageAt ? formatDistanceToNow(new Date(conversation.lastMessageAt), { addSuffix: true, locale: vi }) : ''}
           </span>
         </div>
         
         <div className="flex items-center gap-2">
           <p className="text-sm text-gray-500 dark:text-gray-400 truncate flex-1">
-            {lastMessage?.sender_id === currentUserId && <span className="font-semibold text-teal-600 mr-1">Bạn:</span>}
+            {lastMessage?.senderId === currentUserId && <span className="font-semibold text-teal-600 mr-1">Bạn:</span>}
             {lastMessage?.content || <span className="italic">Chưa có tin nhắn nào</span>}
           </p>
           {conversation.unread_count > 0 && (

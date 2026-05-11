@@ -28,7 +28,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Edit2, Trash2, Plus, MapPin, Settings, Shield, CreditCard, Building2 } from 'lucide-react';
 
 export default function SystemSettings() {
-    const { token } = useContext(AuthContext);
+    const { user, token } = useContext(AuthContext);
+    const isSuperAdmin = user?.admin_type === 'SUPER_ADMIN';
     const [clinics, setClinics] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -54,7 +55,11 @@ export default function SystemSettings() {
             const response = await axios.get(`${API}/clinics`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setClinics(response.data);
+            let data = response.data;
+            if (!isSuperAdmin) {
+                data = data.filter(c => c.Id_PhongKham === user?.facility_id || user?.facilities?.some(f => f.id === c.Id_PhongKham));
+            }
+            setClinics(data);
         } catch (error) {
             console.error('Error fetching clinics:', error);
             toast.error('Không thể tải danh sách phòng khám');
@@ -131,17 +136,23 @@ export default function SystemSettings() {
                 <Tabs defaultValue="clinics" className="w-full">
                     <TabsList className="mb-6 bg-white dark:bg-gray-800 border p-1 rounded-lg">
                         <TabsTrigger value="clinics" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-600"><Building2 className="w-4 h-4 mr-2" /> Quản lý Cơ sở y tế</TabsTrigger>
-                        <TabsTrigger value="general" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-600"><Settings className="w-4 h-4 mr-2" /> Cấu hình chung</TabsTrigger>
-                        <TabsTrigger value="payment" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-600"><CreditCard className="w-4 h-4 mr-2" /> Cổng thanh toán</TabsTrigger>
-                        <TabsTrigger value="security" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-600"><Shield className="w-4 h-4 mr-2" /> Bảo mật & Phân quyền</TabsTrigger>
+                        {isSuperAdmin && (
+                            <>
+                                <TabsTrigger value="general" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-600"><Settings className="w-4 h-4 mr-2" /> Cấu hình chung</TabsTrigger>
+                                <TabsTrigger value="payment" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-600"><CreditCard className="w-4 h-4 mr-2" /> Cổng thanh toán</TabsTrigger>
+                                <TabsTrigger value="security" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-600"><Shield className="w-4 h-4 mr-2" /> Bảo mật & Phân quyền</TabsTrigger>
+                            </>
+                        )}
                     </TabsList>
 
                     <TabsContent value="clinics">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-semibold">Danh sách Phòng khám & Bệnh viện</h2>
-                            <Button onClick={() => handleOpenDialog()} className="bg-gradient-to-r from-teal-500 to-cyan-500">
-                                <Plus className="w-4 h-4 mr-2" /> Thêm Cơ sở
-                            </Button>
+                            {isSuperAdmin && (
+                                <Button onClick={() => handleOpenDialog()} className="bg-gradient-to-r from-teal-500 to-cyan-500">
+                                    <Plus className="w-4 h-4 mr-2" /> Thêm Cơ sở
+                                </Button>
+                            )}
                         </div>
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
                             <Table>
@@ -177,9 +188,11 @@ export default function SystemSettings() {
                                                     <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(item)} className="text-blue-500 hover:bg-blue-50 mr-1">
                                                         <Edit2 className="w-4 h-4" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(item.Id_PhongKham)} className="text-red-500 hover:bg-red-50">
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
+                                                    {isSuperAdmin && (
+                                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.Id_PhongKham)} className="text-red-500 hover:bg-red-50">
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
                                                 </TableCell>
                                             </TableRow>
                                         ))
@@ -189,86 +202,90 @@ export default function SystemSettings() {
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="general">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Thông tin Website</CardTitle>
-                                <CardDescription>Quản lý các thông tin hiển thị chung trên toàn hệ thống.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Tên Website (Brand Name)</Label>
-                                        <Input defaultValue="MediSched AI" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Hotline hỗ trợ</Label>
-                                        <Input defaultValue="1900 1234" />
-                                    </div>
-                                    <div className="col-span-2 space-y-2">
-                                        <Label>Email liên hệ</Label>
-                                        <Input defaultValue="support@medisched.ai" />
-                                    </div>
-                                    <div className="col-span-2 space-y-2">
-                                        <Label>Mô tả ngắn (SEO Meta Description)</Label>
-                                        <Textarea defaultValue="Nền tảng đặt lịch khám bệnh thông minh tích hợp AI." />
-                                    </div>
-                                </div>
-                            </CardContent>
-                            <CardFooter>
-                                <Button className="bg-teal-500 hover:bg-teal-600" onClick={() => toast.success('Đã lưu cấu hình chung')}>Lưu thay đổi</Button>
-                            </CardFooter>
-                        </Card>
-                    </TabsContent>
+                    {isSuperAdmin && (
+                        <>
+                            <TabsContent value="general">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Thông tin Website</CardTitle>
+                                        <CardDescription>Quản lý các thông tin hiển thị chung trên toàn hệ thống.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label>Tên Website (Brand Name)</Label>
+                                                <Input defaultValue="MediSched AI" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Hotline hỗ trợ</Label>
+                                                <Input defaultValue="1900 1234" />
+                                            </div>
+                                            <div className="col-span-2 space-y-2">
+                                                <Label>Email liên hệ</Label>
+                                                <Input defaultValue="support@medisched.ai" />
+                                            </div>
+                                            <div className="col-span-2 space-y-2">
+                                                <Label>Mô tả ngắn (SEO Meta Description)</Label>
+                                                <Textarea defaultValue="Nền tảng đặt lịch khám bệnh thông minh tích hợp AI." />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button className="bg-teal-500 hover:bg-teal-600" onClick={() => toast.success('Đã lưu cấu hình chung')}>Lưu thay đổi</Button>
+                                    </CardFooter>
+                                </Card>
+                            </TabsContent>
 
-                    <TabsContent value="payment">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Cấu hình Cổng thanh toán (VNPay / Momo)</CardTitle>
-                                <CardDescription>Cài đặt các thông số API để kết nối thanh toán trực tuyến.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>VNPay TmnCode</Label>
-                                    <Input type="password" defaultValue="vnpay_code_xyz" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>VNPay HashSecret</Label>
-                                    <Input type="password" defaultValue="************************" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Momo PartnerCode</Label>
-                                    <Input type="password" defaultValue="MOMO_PARTNER_ABC" />
-                                </div>
-                            </CardContent>
-                            <CardFooter>
-                                <Button className="bg-teal-500 hover:bg-teal-600" onClick={() => toast.success('Đã lưu cấu hình thanh toán')}>Lưu cấu hình</Button>
-                            </CardFooter>
-                        </Card>
-                    </TabsContent>
+                            <TabsContent value="payment">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Cấu hình Cổng thanh toán (VNPay / Momo)</CardTitle>
+                                        <CardDescription>Cài đặt các thông số API để kết nối thanh toán trực tuyến.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label>VNPay TmnCode</Label>
+                                            <Input type="password" defaultValue="vnpay_code_xyz" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>VNPay HashSecret</Label>
+                                            <Input type="password" defaultValue="************************" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Momo PartnerCode</Label>
+                                            <Input type="password" defaultValue="MOMO_PARTNER_ABC" />
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button className="bg-teal-500 hover:bg-teal-600" onClick={() => toast.success('Đã lưu cấu hình thanh toán')}>Lưu cấu hình</Button>
+                                    </CardFooter>
+                                </Card>
+                            </TabsContent>
 
-                    <TabsContent value="security">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Bảo mật hệ thống</CardTitle>
-                                <CardDescription>Cài đặt các chính sách mật khẩu và phiên đăng nhập.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Thời gian hết hạn phiên làm việc (Session Timeout)</Label>
-                                    <Input type="number" defaultValue="120" />
-                                    <p className="text-xs text-gray-500">Đơn vị: phút</p>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Số lần đăng nhập sai tối đa trước khi khóa tài khoản</Label>
-                                    <Input type="number" defaultValue="5" />
-                                </div>
-                            </CardContent>
-                            <CardFooter>
-                                <Button className="bg-teal-500 hover:bg-teal-600" onClick={() => toast.success('Đã lưu chính sách bảo mật')}>Lưu chính sách</Button>
-                            </CardFooter>
-                        </Card>
-                    </TabsContent>
+                            <TabsContent value="security">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Bảo mật hệ thống</CardTitle>
+                                        <CardDescription>Cài đặt các chính sách mật khẩu và phiên đăng nhập.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label>Thời gian hết hạn phiên làm việc (Session Timeout)</Label>
+                                            <Input type="number" defaultValue="120" />
+                                            <p className="text-xs text-gray-500">Đơn vị: phút</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Số lần đăng nhập sai tối đa trước khi khóa tài khoản</Label>
+                                            <Input type="number" defaultValue="5" />
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button className="bg-teal-500 hover:bg-teal-600" onClick={() => toast.success('Đã lưu chính sách bảo mật')}>Lưu chính sách</Button>
+                                    </CardFooter>
+                                </Card>
+                            </TabsContent>
+                        </>
+                    )}
                 </Tabs>
 
                 {/* Dialog Thêm / Sửa */}

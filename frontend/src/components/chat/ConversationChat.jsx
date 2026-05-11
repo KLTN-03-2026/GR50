@@ -50,7 +50,7 @@ export default function ConversationChat({ role = 'patient' }) {
 
     newSocket.on('new_message', (message) => {
       setMessages(prev => [...prev, message]);
-      if (message.sender_id !== user.id) {
+      if (message.senderId !== user.id) {
         ChatService.markAsRead(token, id);
       }
     });
@@ -130,7 +130,10 @@ export default function ConversationChat({ role = 'patient' }) {
     );
   }
 
-  const otherParticipant = conversation?.participants.find(p => p.user_id !== user.id)?.user;
+  const otherParticipant = conversation?.participants.find(p => p.userId !== user.id)?.user;
+  
+  const doctorMessagesCount = messages.filter(msg => msg.senderRole === 'doctor').length;
+  const isPatientWaiting = role === 'patient' && conversation?.conversationType === 'appointment_chat' && doctorMessagesCount === 0;
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in-95 duration-500">
@@ -162,7 +165,7 @@ export default function ConversationChat({ role = 'patient' }) {
         </div>
 
         <div className="flex items-center gap-2">
-          {conversation?.conversation_type === 'appointment_chat' && (
+          {conversation?.conversationType === 'appointment_chat' && (
             <>
               <Button 
                 variant="ghost" 
@@ -212,12 +215,12 @@ export default function ConversationChat({ role = 'patient' }) {
         style={{ scrollBehavior: 'smooth' }}
       >
         {messages.map((msg, idx) => {
-          const isMine = msg.sender_id === user.id;
-          const msgDate = new Date(msg.created_at || msg.createdAt || Date.now());
-          const prevMsgDate = idx > 0 ? new Date(messages[idx-1].created_at || messages[idx-1].createdAt || Date.now()) : null;
+          const isMine = msg.senderId === user.id;
+          const msgDate = new Date(msg.createdAt || Date.now());
+          const prevMsgDate = idx > 0 ? new Date(messages[idx-1].createdAt || Date.now()) : null;
           const showTime = idx === 0 || msgDate - prevMsgDate > 300000; // 5 mins
 
-          if (msg.message_type === 'call_event') {
+          if (msg.messageType === 'call_event') {
             return (
               <div key={msg.id} className="flex justify-center my-4">
                 <div className="bg-white/80 dark:bg-gray-800/80 px-4 py-1.5 rounded-full text-xs font-medium text-gray-500 dark:text-gray-400 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-2">
@@ -277,12 +280,12 @@ export default function ConversationChat({ role = 'patient' }) {
 
       {/* Input Area */}
       <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
-        <form onSubmit={handleSend} className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-2xl border border-gray-100 dark:border-gray-700 focus-within:border-teal-500 dark:focus-within:border-teal-500 transition-all">
+        <form onSubmit={handleSend} className={`flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-2xl border border-gray-100 dark:border-gray-700 focus-within:border-teal-500 dark:focus-within:border-teal-500 transition-all ${isPatientWaiting ? 'opacity-70 cursor-not-allowed' : ''}`}>
           <div className="flex gap-1 px-1">
-            <Button type="button" variant="ghost" size="icon" className="w-10 h-10 rounded-full text-gray-400 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20">
+            <Button type="button" variant="ghost" size="icon" disabled={isPatientWaiting} className="w-10 h-10 rounded-full text-gray-400 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20">
               <Paperclip className="w-5 h-5" />
             </Button>
-            <Button type="button" variant="ghost" size="icon" className="w-10 h-10 rounded-full text-gray-400 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20">
+            <Button type="button" variant="ghost" size="icon" disabled={isPatientWaiting} className="w-10 h-10 rounded-full text-gray-400 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20">
               <ImageIcon className="w-5 h-5" />
             </Button>
           </div>
@@ -290,13 +293,14 @@ export default function ConversationChat({ role = 'patient' }) {
           <Input 
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Nhập tin nhắn của bạn..."
-            className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base py-6 h-10"
+            disabled={isPatientWaiting}
+            placeholder={isPatientWaiting ? "Bạn chỉ có thể trả lời sau khi bác sĩ nhắn tin..." : "Nhập tin nhắn của bạn..."}
+            className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base py-6 h-10 disabled:opacity-100"
           />
           
           <Button 
             type="submit" 
-            disabled={!input.trim() || sending}
+            disabled={!input.trim() || sending || isPatientWaiting}
             className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white w-12 h-12 rounded-xl shadow-lg shadow-teal-500/20 shrink-0"
           >
             {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}

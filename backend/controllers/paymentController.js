@@ -1,177 +1,249 @@
-const { ThanhToan, DatLich: Appointment, BenhNhan, NguoiDung, LichKham: DoctorSchedule, BacSi } = require('../models');
+const { 
+    PaymentRequest, 
+    PaymentTransaction, 
+    HoaDon, 
+    DatLich, 
+    BenhNhan, 
+    NguoiDung, 
+    PhongKham,
+    LichKham,
+    BacSi,
+    sequelize 
+} = require('../models');
+const { Op } = require('sequelize');
 
-exports.getMyPayments = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const bn = await BenhNhan.findOne({ where: { Id_NguoiDung: userId } });
-    if (!bn) return res.json([]);
+/**
+ * Bắt đầu yêu cầu thanh toán (Patient side)
+ */
+exports.createPaymentRequest = async (req, res) => {
+    const transaction = await sequelize.transaction();
+    try {
+        const { appointmentId } = req.params;
+        const { paymentMethod, policyAccepted } = req.body;
 
-    const payments = await ThanhToan.findAll({
-      where: { Id_BenhNhan: bn.Id_BenhNhan },
-      order: [['NgayTao', 'DESC']],
-      include: [
-        {
-          model: Appointment,
-          as: 'Appointment',
-          include: [
-            {
-              model: BenhNhan,
-              include: [{ model: NguoiDung }]
-            },
-            {
-              model: DoctorSchedule,
-              as: 'DoctorSchedule',
-              include: [{ model: BacSi, as: 'Doctor', include: [{ model: NguoiDung }] }]
-            }
-          ]
+        const appointment = await DatLich.findByPk(appointmentId, {
+            include: [{ model: PhongKham, as: 'Clinic' }]
+        });
+
+        if (!appointment) {
+            return res.status(404).json({ detail: 'Không tìm thấy lịch hẹn.' });
         }
-      ]
-    });
 
-    res.json(payments.map(p => {
-      let doctor_name = 'Bác Sĩ';
-      if (p.Appointment && p.Appointment.DoctorSchedule && p.Appointment.DoctorSchedule.Doctor && p.Appointment.DoctorSchedule.Doctor.NguoiDung) {
-        doctor_name = p.Appointment.DoctorSchedule.Doctor.NguoiDung.Ho + ' ' + p.Appointment.DoctorSchedule.Doctor.NguoiDung.Ten;
-      }
-      return {
-        payment_id: p.Id_ThanhToan,
-        status: p.TrangThai === 'PAID' || p.TrangThai === 'ThanhCong' ? 'completed' : 'pending',
-        amount: parseFloat(p.SoTien),
-        payment_method: p.PhuongThuc,
-        transaction_id: p.MaGiaoDich,
-        created_at: p.NgayTao,
-        payment_date: p.NgayCapNhat,
-        doctor_name: doctor_name
-      };
-    }));
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ detail: 'Internal server error' });
-  }
+        // 1. Tính toán số tiền (Lấy từ phí khám của bác sĩ hoặc cấu hình phòng khám)
+        const amount = appointment.TongTien || 500000; // Mặc định nếu chưa có
+
+        // 2. Tạo PaymentRequest
+        const expiredAt = new Date();
+        expiredAt.setMinutes(expiredAt.getMinutes() + 15); // QR hết hạn sau 15p
+
+        const paymentRequest = await PaymentRequest.create({
+            appointmentId: appointment.Id_DatLich,
+            patientId: appointment.Id_BenhNhan,
+            facilityId: appointment.Id_PhongKham,
+            amount: amount,
+            paymentMethod: paymentMethod,
+            status: 'WAITING_PAYMENT',
+            expiredAt: expiredAt,
+            policyAccepted: policyAccepted,
+            policyVersion: 'PAYMENT_POLICY_V2'
+        }, { transaction });
+
+        // 3. Xử lý theo từng phương thức
+        let responseData = {
+            paymentId: paymentRequest.id,
+            appointmentId: appointment.Id_DatLich,
+            amount: amount,
+            status: 'WAITING_PAYMENT',
+            expiredAt: expiredAt
+        };
+
+        if (paymentMethod === 'BANK_QR') {
+            // Giả lập tạo QR động
+            responseData.bankName = "Vietcombank";
+            responseData.bankAccountNumber = "1012345678";
+            responseData.bankAccountName = appointment.Clinic?.TenPhongKham || "MEDISCHED SYSTEM";
+            responseData.transferContent = `MED APT${appointment.Id_DatLich} PAT${appointment.Id_BenhNhan}`;
+            responseData.qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=bank_vcb_acc_${responseData.bankAccountNumber}_amt_${amount}_msg_${responseData.transferContent}`;
+        } else if (paymentMethod === 'VNPAY' || paymentMethod === 'GATEWAY') {
+            responseData.paymentUrl = `https://sandbox.vnpay.vn/paymentv2/vpcpay.html?orderId=${paymentRequest.id}&amount=${amount}`;
+        }
+
+        await transaction.commit();
+        res.json(responseData);
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Create payment request error:', error);
+        res.status(500).json({ detail: 'Internal server error' });
+    }
+};
+
+/**
+ * Webhook nhận thông báo thanh toán (Simulated)
+ */
+exports.handlePaymentWebhook = async (req, res) => {
+    const { provider } = req.params;
+    const payload = req.body;
+
+    // Trong thực tế sẽ verify signature ở đây
+    
+    const transaction = await sequelize.transaction();
+    try {
+        // Giả sử payload có orderId (paymentRequestId) và status
+        const { orderId, transactionId, amount, content, status } = payload;
+
+        const pr = await PaymentRequest.findByPk(orderId);
+        if (!pr) return res.status(404).json({ detail: 'Request not found' });
+
+        if (pr.status === 'PAID') {
+            return res.status(200).json({ detail: 'Already processed' });
+        }
+
+        // Tạo Transaction record
+        const pt = await PaymentTransaction.create({
+            paymentRequestId: pr.id,
+            appointmentId: pr.appointmentId,
+            facilityId: pr.facilityId,
+            provider: provider.toUpperCase(),
+            amount: pr.amount,
+            paidAmount: amount,
+            status: (parseFloat(amount) === parseFloat(pr.amount)) ? 'SUCCESS' : 'MISMATCH_AMOUNT',
+            transactionCode: transactionId,
+            transferContent: content,
+            moneyReceived: true,
+            paidAt: new Date(),
+            rawPayload: payload
+        }, { transaction });
+
+        if (pt.status === 'SUCCESS') {
+            await finalizePayment(pr, pt, transaction);
+        } else {
+            pr.status = pt.status;
+            await pr.save({ transaction });
+        }
+
+        await transaction.commit();
+        res.json({ status: 'OK' });
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Webhook error:', error);
+        res.status(500).json({ detail: 'Error processing webhook' });
+    }
+};
+
+/**
+ * Thanh toán tại quầy (Staff side)
+ */
+exports.confirmCounterPayment = async (req, res) => {
+    const { appointmentId } = req.params;
+    const { amountReceived, note } = req.body;
+    const staffId = req.user.id;
+
+    const transaction = await sequelize.transaction();
+    try {
+        const appointment = await DatLich.findByPk(appointmentId);
+        if (!appointment) return res.status(404).json({ detail: 'Appointment not found' });
+
+        const pr = await PaymentRequest.create({
+            appointmentId: appointment.Id_DatLich,
+            patientId: appointment.Id_BenhNhan,
+            facilityId: appointment.Id_PhongKham,
+            amount: appointment.TongTien || amountReceived,
+            paymentMethod: 'COUNTER',
+            status: 'PAID',
+            policyAccepted: true
+        }, { transaction });
+
+        const pt = await PaymentTransaction.create({
+            paymentRequestId: pr.id,
+            appointmentId: pr.appointmentId,
+            facilityId: pr.facilityId,
+            provider: 'CASH',
+            amount: pr.amount,
+            paidAmount: amountReceived,
+            status: 'SUCCESS',
+            transactionCode: `CASH-${Date.now()}`,
+            moneyReceived: true,
+            paidAt: new Date(),
+            rawPayload: { note, staffId }
+        }, { transaction });
+
+        await finalizePayment(pr, pt, transaction);
+
+        await transaction.commit();
+        res.json({ detail: 'Xác nhận thanh toán tại quầy thành công.', invoiceCreated: true });
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Counter payment error:', error);
+        res.status(500).json({ detail: 'Internal server error' });
+    }
+};
+
+/**
+ * Helper: Chốt thanh toán, cập nhật lịch hẹn và tạo hóa đơn
+ */
+async function finalizePayment(paymentRequest, paymentTransaction, dbTransaction) {
+    // 1. Cập nhật trạng thái PaymentRequest
+    paymentRequest.status = 'PAID';
+    await paymentRequest.save({ transaction: dbTransaction });
+
+    // 2. Cập nhật trạng thái Lịch hẹn
+    const appointment = await DatLich.findByPk(paymentRequest.appointmentId);
+    appointment.TrangThai = 'CONFIRMED'; // Đã xác nhận
+    await appointment.save({ transaction: dbTransaction });
+
+    // 3. Tạo hóa đơn chính thức
+    await HoaDon.create({
+        Id_DatLich: appointment.Id_DatLich,
+        Id_PhongKham: appointment.Id_PhongKham,
+        patientId: appointment.Id_BenhNhan,
+        paymentId: paymentRequest.id,
+        TongTien: paymentTransaction.paidAmount,
+        PhiKham: paymentTransaction.paidAmount,
+        TrangThai: 'PAID',
+        GhiChu: `Thanh toán tự động qua ${paymentTransaction.provider}. Mã GD: ${paymentTransaction.transactionCode}`
+    }, { transaction: dbTransaction });
+}
+
+/**
+ * Lấy lịch sử thanh toán
+ */
+exports.getMyPayments = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        let bn = await BenhNhan.findOne({ where: { Id_NguoiDung: userId } });
+        if (!bn) {
+            bn = await BenhNhan.create({ Id_NguoiDung: userId });
+        }
+        if (!bn) return res.json([]);
+
+        const requests = await PaymentRequest.findAll({
+            where: { patientId: bn.Id_BenhNhan },
+            order: [['createdAt', 'DESC']],
+            include: [
+                { model: DatLich, as: 'appointment', include: [{ model: PhongKham, as: 'Clinic' }] },
+                { model: PaymentTransaction, as: 'transactions' }
+            ]
+        });
+
+        res.json(requests);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ detail: 'Internal server error' });
+    }
 };
 
 exports.getPaymentById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const payment = await ThanhToan.findByPk(id, {
-      include: [
-        {
-          model: Appointment,
-          as: 'Appointment',
-          include: [
-            {
-              model: BenhNhan,
-              include: [{ model: NguoiDung }]
-            },
-            {
-              model: DoctorSchedule,
-              as: 'DoctorSchedule',
-              include: [{ model: BacSi, as: 'Doctor', include: [{ model: NguoiDung }] }]
-            }
-          ]
-        }
-      ]
-    });
-
-    if (!payment) return res.status(404).json({ detail: 'Payment not found' });
-
-    let patient_name = 'Bệnh Nhân';
-    let doctor_name = 'Bác Sĩ';
-
-    if (payment.Appointment) {
-      if (payment.Appointment.BenhNhan?.NguoiDung) {
-        patient_name = payment.Appointment.BenhNhan.NguoiDung.Ho + ' ' + payment.Appointment.BenhNhan.NguoiDung.Ten;
-      }
-      if (payment.Appointment.DoctorSchedule?.Doctor?.NguoiDung) {
-        doctor_name = payment.Appointment.DoctorSchedule.Doctor.NguoiDung.Ho + ' ' + payment.Appointment.DoctorSchedule.Doctor.NguoiDung.Ten;
-      }
+    try {
+        const { id } = req.params;
+        const pr = await PaymentRequest.findByPk(id, {
+            include: [
+                { model: DatLich, as: 'appointment' },
+                { model: PaymentTransaction, as: 'transactions' }
+            ]
+        });
+        if (!pr) return res.status(404).json({ detail: 'Not found' });
+        res.json(pr);
+    } catch (error) {
+        res.status(500).json({ detail: 'Internal server error' });
     }
-
-    res.json({
-      payment_id: payment.Id_ThanhToan,
-      status: payment.TrangThai === 'PAID' || payment.TrangThai === 'ThanhCong' ? 'completed' : 'pending',
-      amount: parseFloat(payment.SoTien),
-      payment_method: payment.PhuongThuc,
-      transaction_id: payment.MaGiaoDich,
-      created_at: payment.NgayTao,
-      payment_date: payment.NgayTao,
-      doctor_name: doctor_name,
-      patient_name: patient_name
-    });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ detail: 'Internal server error' });
-  }
-};
-
-exports.processPayment = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { payment_method } = req.body;
-
-    const payment = await ThanhToan.findByPk(id);
-    if (!payment) return res.status(404).json({ detail: 'Payment not found' });
-
-    payment.TrangThai = 'PAID';
-    payment.PhuongThuc = payment_method === 'mock_bank' ? 'VNPay' : (payment_method === 'mock_wallet' ? 'Momo' : 'TienMat');
-    payment.MaGiaoDich = `TXN-${Date.now()}`;
-    await payment.save();
-
-    // Do NOT update Appointment to DaXacNhan/Confirm upon payment anymore
-    // Because payment only occurs when Appointment is already COMPLETED.
-    if (payment.Id_HoaDon) {
-      const { HoaDon } = require('../models');
-      await HoaDon.update({ TrangThai: 'PAID' }, { where: { Id_HoaDon: payment.Id_HoaDon } });
-    }
-
-    res.json({ status: 'completed', transaction_id: payment.MaGiaoDich });
-  } catch (error) {
-    console.error('Process payment error:', error);
-    res.status(500).json({ detail: 'Internal server error: ' + error.message });
-  }
-};
-
-exports.createPayment = async (req, res) => {
-  try {
-    const { appointmentId } = req.body;
-
-    const datLich = await Appointment.findByPk(appointmentId);
-    if (!datLich) {
-      return res.status(404).json({ detail: 'Appointment not found' });
-    }
-
-    if (datLich.TrangThai !== 'COMPLETED' && datLich.TrangThai !== 'DaKham') {
-      return res.status(400).json({ detail: 'Bạn chỉ có thể thanh toán sau khi bác sĩ đã khám xong (Trạng thái: Hoàn thành).' });
-    }
-
-    let payment = await ThanhToan.findOne({
-      where: {
-        Id_DatLich: appointmentId,
-        TrangThai: 'UNPAID'
-      }
-    });
-
-    // If we only have old 'ChoThanhToan'
-    if (!payment) {
-      payment = await ThanhToan.findOne({
-        where: {
-          Id_DatLich: appointmentId,
-          TrangThai: 'ChoThanhToan'
-        }
-      });
-    }
-
-    if (!payment) {
-      return res.status(404).json({ detail: 'Không tìm thấy thông tin thanh toán (hóa đơn chưa được lập).' });
-    }
-
-    res.json({
-      payment_id: payment.Id_ThanhToan,
-      status: 'pending'
-    });
-  } catch (error) {
-    console.error('Create payment error:', error);
-    res.status(500).json({ detail: 'Internal server error' });
-  }
 };

@@ -6,12 +6,12 @@ const updateDoctors = async () => {
     console.log(`Found ${doctors.length} doctors to update.`);
 
     const trainingPlaces = [
+      'Đại học Kỹ thuật Y - Dược Đà Nẵng',
+      'Đại học Y Dược Huế',
+      'Khoa Y Dược - Đại học Đà Nẵng',
       'Đại học Y Hà Nội',
       'Đại học Y Dược TP.HCM',
-      'Đại học Y Dược Huế',
-      'Học viện Quân y',
-      'Đại học Y Dược Cần Thơ',
-      'Đại học Y Khoa Phạm Ngọc Thạch'
+      'Học viện Quân y'
     ];
 
     const languages = [
@@ -37,11 +37,11 @@ const updateDoctors = async () => {
     ];
 
     const workplaces = [
-      'Bệnh viện Bạch Mai',
-      'Bệnh viện Chợ Rẫy',
-      'Bệnh viện Trung ương Huế',
-      'Bệnh viện Đại học Y Dược',
-      'Bệnh viện Việt Đức'
+      'Bệnh viện Đa khoa Đà Nẵng',
+      'Bệnh viện C Đà Nẵng',
+      'Bệnh viện Hoàn Mỹ Đà Nẵng',
+      'Bệnh viện Phụ sản - Nhi Đà Nẵng',
+      'Bệnh viện Ung bướu Đà Nẵng'
     ];
 
     for (let i = 0; i < doctors.length; i++) {

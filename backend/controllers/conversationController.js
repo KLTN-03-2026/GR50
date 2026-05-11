@@ -336,6 +336,16 @@ exports.sendMessage = async (req, res) => {
       return res.status(403).json({ detail: 'Access denied' });
     }
 
+    const conversation = await Conversation.findByPk(id);
+    if (userRole === 'patient' && conversation && conversation.conversationType === 'appointment_chat') {
+      const doctorMessageCount = await Message.count({
+        where: { conversationId: id, senderRole: 'doctor' }
+      });
+      if (doctorMessageCount === 0) {
+        return res.status(403).json({ detail: 'Bạn chỉ có thể nhắn tin sau khi bác sĩ đã bắt đầu cuộc trò chuyện.' });
+      }
+    }
+
     const message = await Message.create({
       conversationId: id,
       senderId: userId,

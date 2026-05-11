@@ -1,6 +1,6 @@
 const axios = require('axios');
 const { AITuVanPhien, AITuVanTinNhan, NoiDungChoDuyet } = require('../models');
-const { buildSystemInstruction, buildUserPrompt } = require('../utils/aiPromptBuilder');
+const { buildSystemInstruction } = require('../utils/aiPromptBuilder');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -73,44 +73,49 @@ async function getSessionHistory(sessionId) {
 // ─── Gemini call ──────────────────────────────────────────────────────────────
 
 async function callGemini(message, history) {
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const path = require('path');
+    delete require.cache[require.resolve('dotenv')];
+    require('dotenv').config({ path: path.resolve(__dirname, '../.env'), override: true });
+    
     const primaryKey = process.env.GEMINI_API_KEY;
-    const fallbackKey = process.env.GEMINI_API_KEY_FALLBACK || 'AIzaSyCAFj8gcyd56LjkUV7qVmuuRmDdgii8eQw';
-    const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
-    const base = process.env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com/v1beta';
+    const fallbackKey = process.env.GEMINI_API_KEY_FALLBACK || 'AIzaSyCiCTDxrMosJCyje-X0IxV9apdTjIC7KYs';
+    const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
     if (!primaryKey && !fallbackKey) throw new Error('Chưa cấu hình GEMINI_API_KEY');
 
-    const prompt = `${buildSystemInstruction()}\n\n${buildUserPrompt(message, history)}`;
+    const systemInstruction = buildSystemInstruction();
+
+    const formattedHistory = history.map(item => ({
+        role: item.VaiTro === 'user' ? 'user' : 'model',
+        parts: [{ text: item.NoiDung }]
+    }));
 
     const makeRequest = async (key) => {
-        const response = await axios.post(
-            `${base}/models/${model}:generateContent`,
-            { 
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.2
-                }
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': key,
-                },
-                timeout: 30000,
+        const genAI = new GoogleGenerativeAI(key);
+        const model = genAI.getGenerativeModel({
+            model: modelName,
+            systemInstruction: { parts: [{ text: systemInstruction }] },
+            generationConfig: {
+                temperature: 0.2,
+                responseMimeType: "application/json"
             }
-        );
-        return response?.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        });
+
+        const chat = model.startChat({ history: formattedHistory });
+        const result = await chat.sendMessage([{ text: message }]);
+        return result.response.text();
     };
 
     try {
         return await makeRequest(primaryKey || fallbackKey);
     } catch (error) {
-        console.warn('Primary Gemini API key failed, attempting fallback key...', error?.response?.data || error.message);
+        console.warn('Primary Gemini API key failed, attempting fallback key...', error.message);
         if (primaryKey && fallbackKey && primaryKey !== fallbackKey) {
             try {
                 return await makeRequest(fallbackKey);
             } catch (fallbackErr) {
-                console.error('Fallback Gemini API key also failed', fallbackErr?.response?.data || fallbackErr.message);
+                console.error('Fallback Gemini API key also failed', fallbackErr.message);
                 throw fallbackErr;
             }
         }
@@ -227,16 +232,20 @@ async function findNearbyFacilities(lat, lng, specialtyName) {
 // ─── Exported service functions ───────────────────────────────────────────────
 
 async function chatSession(currentUser, payload) {
-    const userId = currentUser.id || currentUser.Id_NguoiDung;
-    const session = await findOrCreateSession(userId, payload.sessionId, payload.message);
+    const userId = currentUser ? (currentUser.id || currentUser.Id_NguoiDung) : null;
+    let session = null;
+    let history = [];
 
-    const history = await getSessionHistory(session.Id_AITuVanPhien);
+    if (userId) {
+        session = await findOrCreateSession(userId, payload.sessionId, payload.message);
+        history = await getSessionHistory(session.Id_AITuVanPhien);
 
-    await AITuVanTinNhan.create({
-        Id_AITuVanPhien: session.Id_AITuVanPhien,
-        VaiTro: 'user',
-        NoiDung: payload.message.trim(),
-    });
+        await AITuVanTinNhan.create({
+            Id_AITuVanPhien: session.Id_AITuVanPhien,
+            VaiTro: 'user',
+            NoiDung: payload.message.trim(),
+        });
+    }
 
     const rawText = await callGemini(payload.message.trim(), history);
     const result = normalizeAIResult(rawText, payload.message.trim());
@@ -254,27 +263,39 @@ async function chatSession(currentUser, payload) {
         }
     };
 
-    await AITuVanTinNhan.create({
-        Id_AITuVanPhien: session.Id_AITuVanPhien,
-        VaiTro: 'assistant',
-        NoiDung: result.reply,
-        RawJson: enrichedJson,
-    });
+    if (userId && session) {
+        await AITuVanTinNhan.create({
+            Id_AITuVanPhien: session.Id_AITuVanPhien,
+            VaiTro: 'assistant',
+            NoiDung: result.reply,
+            RawJson: enrichedJson,
+        });
 
-    await session.update({
-        TrieuChungTomTat: result.summary,
-        GoiYChuyenKhoa: result.recommended_specialty,
-        MucDoUuTien: result.priority,
-        ChuanDoanSoBo: result.diagnosis,
-        LoiKhuyen: result.advice,
-        Id_PhongKham: nearbyFacilities.length > 0 ? nearbyFacilities[0].facility_id : null,
-        TrangThai: 'DangHoatDong',
-    });
+        const priorityMap = {
+            low: "Thap",
+            normal: "TrungBinh",
+            medium: "TrungBinh",
+            high: "Cao",
+            urgent: "KhanCap",
+            emergency: "KhanCap"
+        };
+        const mucDoUuTien = priorityMap[result.priority?.toLowerCase()] || "TrungBinh";
+
+        await session.update({
+            TrieuChungTomTat: result.summary,
+            GoiYChuyenKhoa: result.recommended_specialty,
+            MucDoUuTien: mucDoUuTien,
+            ChuanDoanSoBo: result.diagnosis,
+            LoiKhuyen: result.advice,
+            Id_PhongKham: nearbyFacilities.length > 0 ? nearbyFacilities[0].facility_id : null,
+            TrangThai: 'DangHoatDong',
+        });
+    }
 
     await saveModerationIfNeeded(payload.message.trim(), result.reply, result);
 
     return {
-        sessionId: session.Id_AITuVanPhien,
+        sessionId: session ? session.Id_AITuVanPhien : null,
         reply: result.reply,
         summary: result.summary,
         diagnosis: result.diagnosis,

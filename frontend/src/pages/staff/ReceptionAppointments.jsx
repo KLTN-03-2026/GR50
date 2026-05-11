@@ -98,10 +98,20 @@ export default function ReceptionAppointments() {
       'IN_PROGRESS': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
       'DaKham': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
       'COMPLETED': 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
+      'PENDING_PAYMENT': 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+      'PAID_WAITING_CONFIRMATION': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
       'CANCELLED': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
       'Huy': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
     };
-    return <Badge className={`rounded-full border-none px-3 ${styles[status] || 'bg-gray-100'}`}>{status}</Badge>;
+    const statusLabels = {
+      'PENDING_PAYMENT': 'Chờ thanh toán',
+      'PAID_WAITING_CONFIRMATION': 'Đã trả tiền (Chờ đối soát)',
+      'CONFIRMED': 'Đã xác nhận',
+      'CHECKED_IN': 'Đã đến',
+      'IN_PROGRESS': 'Đang khám',
+      'COMPLETED': 'Hoàn thành'
+    };
+    return <Badge className={`rounded-full border-none px-3 ${styles[status] || 'bg-gray-100'}`}>{statusLabels[status] || status}</Badge>;
   };
 
   return (
@@ -182,12 +192,14 @@ export default function ReceptionAppointments() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{appt.patient_name || appt.BenhNhan?.NguoiDung ? `${appt.BenhNhan.NguoiDung.Ho} ${appt.BenhNhan.NguoiDung.Ten}` : 'N/A'}</h3>
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                            {appt.patient_name || (appt.BenhNhan?.NguoiDung ? `${appt.BenhNhan?.NguoiDung?.Ho || ''} ${appt.BenhNhan?.NguoiDung?.Ten || ''}`.trim() : 'N/A')}
+                          </h3>
                           {getStatusBadge(appt.TrangThai || appt.status)}
                         </div>
                         <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
                           <span className="flex items-center gap-1 font-medium text-teal-600 dark:text-teal-400">
-                            <Stethoscope className="w-3 h-3" /> BS. {appt.doctor_name || appt.LichKham?.BacSi?.NguoiDung ? `${appt.LichKham.BacSi.NguoiDung.Ho} ${appt.LichKham.BacSi.NguoiDung.Ten}` : 'N/A'}
+                            <Stethoscope className="w-3 h-3" /> BS. {appt.doctor_name || (appt.DoctorSchedule?.Doctor?.NguoiDung ? `${appt.DoctorSchedule?.Doctor?.NguoiDung?.Ho || ''} ${appt.DoctorSchedule?.Doctor?.NguoiDung?.Ten || ''}`.trim() : 'N/A')}
                           </span>
                           <span className="flex items-center gap-1"><Timer className="w-3 h-3" /> {appt.MaDatLich}</span>
                         </div>
@@ -195,7 +207,28 @@ export default function ReceptionAppointments() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {['PENDING', 'CONFIRMED', 'ChoXacNhan', 'DaXacNhan'].includes(appt.TrangThai || appt.status) && (
+                      {(appt.TrangThai === 'PENDING_PAYMENT' || appt.status === 'pending_payment') && (
+                        <Button 
+                          onClick={async () => {
+                            if (window.confirm(`Xác nhận bệnh nhân ${appt.patient_name} đã nộp tiền mặt 500.000đ tại quầy?`)) {
+                              try {
+                                await axios.post(`${API}/payments/appointments/${appt.id || appt.Id_DatLich}/counter`, { amountReceived: 500000, note: 'Thu tiền mặt tại quầy lễ tân' }, {
+                                  headers: { Authorization: `Bearer ${token}` }
+                                });
+                                toast.success('Xác nhận thanh toán và tạo hóa đơn thành công!');
+                                fetchAppointments();
+                              } catch (e) {
+                                toast.error('Lỗi xác nhận thanh toán');
+                              }
+                            }
+                          }}
+                          className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-lg transition-all px-6 font-bold"
+                        >
+                          Thu tiền mặt
+                        </Button>
+                      )}
+
+                      {['CONFIRMED', 'DaXacNhan'].includes(appt.TrangThai || appt.status) && (
                         <Button 
                           onClick={() => handleCheckIn(appt.id || appt.Id_DatLich)}
                           className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg transition-all px-8 font-bold"
@@ -214,17 +247,17 @@ export default function ReceptionAppointments() {
                         <DropdownMenuContent align="end" className="w-56 rounded-xl p-2 shadow-2xl border-gray-100 dark:border-gray-700">
                           <DropdownMenuLabel>Hành động vận hành</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="rounded-lg gap-2 cursor-pointer" onClick={() => updateStatus(appt.id, 'CHECKED_IN')}>
+                          <DropdownMenuItem className="rounded-lg gap-2 cursor-pointer" onClick={() => updateStatus(appt.id || appt.Id_DatLich, 'CHECKED_IN')}>
                             <CheckCircle2 className="w-4 h-4 text-indigo-500" /> Đánh dấu đã đến
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="rounded-lg gap-2 cursor-pointer" onClick={() => updateStatus(appt.id, 'IN_PROGRESS')}>
+                          <DropdownMenuItem className="rounded-lg gap-2 cursor-pointer" onClick={() => updateStatus(appt.id || appt.Id_DatLich, 'IN_PROGRESS')}>
                             <Timer className="w-4 h-4 text-emerald-500" /> Chuyển vào khám
                           </DropdownMenuItem>
                           <DropdownMenuItem className="rounded-lg gap-2 cursor-pointer">
                             <ArrowRightLeft className="w-4 h-4 text-blue-500" /> Đổi bác sĩ / Điều phối
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="rounded-lg gap-2 text-red-600 dark:text-red-400 cursor-pointer" onClick={() => updateStatus(appt.id, 'CANCELLED')}>
+                          <DropdownMenuItem className="rounded-lg gap-2 text-red-600 dark:text-red-400 cursor-pointer" onClick={() => updateStatus(appt.id || appt.Id_DatLich, 'CANCELLED')}>
                             <XCircle className="w-4 h-4" /> Hủy lịch hẹn
                           </DropdownMenuItem>
                         </DropdownMenuContent>

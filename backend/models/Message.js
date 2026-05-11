@@ -3,31 +3,35 @@ const sequelize = require('../config/database');
 
 const Message = sequelize.define('Message', {
   id: { type: DataTypes.BIGINT, autoIncrement: true, primaryKey: true },
-  conversation_id: { 
+  conversationId: { 
     type: DataTypes.BIGINT, 
     allowNull: false,
+    field: 'conversation_id',
     references: { model: 'conversations', key: 'id' }
   },
-  sender_id: { 
+  senderId: { 
     type: DataTypes.INTEGER, 
     allowNull: false,
+    field: 'sender_id',
     references: { model: 'nguoidung', key: 'Id_NguoiDung' }
   },
-  sender_role: {
+  senderRole: {
     type: DataTypes.ENUM('patient', 'doctor', 'staff', 'admin', 'system'),
-    allowNull: false
+    allowNull: false,
+    field: 'sender_role'
   },
-  message_type: {
+  messageType: {
     type: DataTypes.ENUM('text', 'image', 'file', 'system', 'call_event'),
     allowNull: false,
-    defaultValue: 'text'
+    defaultValue: 'text',
+    field: 'message_type'
   },
   content: { type: DataTypes.TEXT, allowNull: true },
-  reply_to_message_id: { type: DataTypes.BIGINT, allowNull: true },
-  is_edited: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
-  edited_at: { type: DataTypes.DATE, allowNull: true },
-  is_deleted: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
-  deleted_at: { type: DataTypes.DATE, allowNull: true }
+  replyToMessageId: { type: DataTypes.BIGINT, allowNull: true, field: 'reply_to_message_id' },
+  isEdited: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_edited' },
+  editedAt: { type: DataTypes.DATE, allowNull: true, field: 'edited_at' },
+  isDeleted: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_deleted' },
+  deletedAt: { type: DataTypes.DATE, allowNull: true, field: 'deleted_at' }
 }, {
   tableName: 'messages',
   underscored: true,

@@ -15,359 +15,241 @@ import {
   MessageSquare,
   Send,
   User,
-  CheckCircle
+  Clock,
+  Zap,
+  UserCheck
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function ReceptionTriageQueue() {
   const { token, currentFacility } = useContext(AuthContext);
 
-  const [triageItems, setTriageItems] = useState([]);
-  const [doctors, setDoctors] = useState([]);
+  const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [selectedDoctorId, setSelectedDoctorId] = useState('');
-  const [assigning, setAssigning] = useState(false);
-  const [filterPriority, setFilterPriority] = useState('all');
-  const [showReport, setShowReport] = useState(false);
+  const [selectedApt, setSelectedApt] = useState(null);
+  const [pushingId, setPushingId] = useState(null);
 
   useEffect(() => {
     if (token && currentFacility) {
-        fetchData();
+        fetchQueue();
+        const interval = setInterval(fetchQueue, 10000); // Auto refresh every 10s
+        return () => clearInterval(interval);
     }
   }, [currentFacility, token]);
 
-
-  const fetchData = async () => {
+  const fetchQueue = async () => {
     try {
-      const [triageRes, doctorsRes] = await Promise.all([
-        axios.get(`${API}/staff/triage-queue?facility_id=${currentFacility.id}`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API}/staff/doctors-coord?facility_id=${currentFacility.id}`, { headers: { Authorization: `Bearer ${token}` } })
-      ]);
-      setTriageItems(triageRes.data);
-
-      setDoctors(doctorsRes.data);
+      const res = await axios.get(`${API}/queues?facility_id=${currentFacility.id}`, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      setQueue(res.data);
     } catch (error) {
-      console.error('Failed to fetch data', error);
-      toast.error('Không thể lấy dữ liệu phân loại hoặc danh sách bác sĩ');
+      console.error('Failed to fetch queue', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAssignDoctor = async () => {
-    if (!selectedDoctorId) {
-        toast.error("Vui lòng chọn bác sĩ");
-        return;
-    }
-
-    setAssigning(true);
+  const handlePushNext = async (appointmentId) => {
+    setPushingId(appointmentId);
     try {
-        await axios.post(`${API}/staff/triage/assign-doctor`,
-            { triageId: selectedItem.id, doctorId: selectedDoctorId },
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        toast.success("Đã phân công bác sĩ thành công");
-        setSelectedItem(null);
-        setSelectedDoctorId('');
-        fetchData(); // Refresh list
+        const res = await axios.post(`${API}/queues/${appointmentId}/push-next`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        toast.success(res.data.message);
+        fetchQueue();
     } catch (error) {
-        console.error('Error assigning doctor:', error);
-        toast.error("Có lỗi xảy ra khi phân công bác sĩ");
+        const msg = error.response?.data?.detail || "Không thể điều phối bệnh nhân này";
+        toast.error(msg);
     } finally {
-        setAssigning(false);
+        setPushingId(null);
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority?.toLowerCase()) {
-      case 'critical': return 'bg-red-500';
-      case 'high': return 'bg-orange-500';
-      case 'medium': return 'bg-blue-500';
-      default: return 'bg-gray-400';
-    }
-  };
-
-  const getPriorityBadge = (priority) => {
-    switch (priority?.toLowerCase()) {
-      case 'critical': return 'bg-red-100 text-red-700';
-      case 'high': return 'bg-orange-100 text-orange-700';
-      case 'medium': return 'bg-blue-100 text-blue-700';
-      default: return 'bg-gray-100 text-gray-700';
+  const getPriorityBadge = (level) => {
+    switch (level) {
+      case 'URGENT': return 'bg-red-500 text-white shadow-red-200';
+      case 'HIGH': return 'bg-orange-500 text-white shadow-orange-200';
+      case 'MEDIUM': return 'bg-blue-500 text-white shadow-blue-200';
+      default: return 'bg-gray-400 text-white shadow-gray-200';
     }
   };
 
   return (
     <Layout>
-      <div className="p-8 space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Hàng Chờ AI Triage</h1>
-          <p className="text-gray-500 dark:text-gray-400">Xem kết quả phân loại từ AI để điều phối bệnh nhân đến đúng chuyên khoa.</p>
+      <div className="p-8 space-y-8 bg-gray-50/50 min-h-screen">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest mb-1">
+               <Zap className="w-4 h-4 fill-indigo-600" />
+               Hệ thống điều phối 2.0
+            </div>
+            <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">Hàng Đợi Ưu Tiên</h1>
+            <p className="text-gray-500 font-medium">Điều phối bệnh nhân theo điểm số triage AI và cấp độ ưu tiên vận hành.</p>
+          </div>
+          
+          <div className="flex gap-4">
+             <Card className="border-none shadow-sm px-6 py-3 rounded-2xl flex items-center gap-4 bg-white">
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold">
+                   {queue.length}
+                </div>
+                <div>
+                   <p className="text-[10px] font-bold text-gray-400 uppercase">Đang chờ</p>
+                   <p className="font-black text-gray-900">Tổng lượt khám</p>
+                </div>
+             </Card>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Left Column: Triage List */}
-          <div className="lg:col-span-3 space-y-6">
-            {loading ? (
-              <div className="text-center py-12">Đang tải dữ liệu triage...</div>
-            ) : triageItems.length === 0 ? (
-              <div className="text-center py-12 text-gray-500 bg-white dark:bg-gray-800 rounded-3xl">
-                Không có bệnh nhân nào trong hàng chờ phân loại.
+        <div className="grid grid-cols-1 gap-8">
+           <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden bg-white">
+              <CardContent className="p-0">
+                 <Table>
+                    <TableHeader className="bg-gray-50/80">
+                       <TableRow className="hover:bg-transparent border-none">
+                          <TableHead className="w-[80px] font-black text-gray-400 uppercase text-[10px] px-8 py-6">Thứ tự</TableHead>
+                          <TableHead className="font-black text-gray-400 uppercase text-[10px]">Bệnh nhân</TableHead>
+                          <TableHead className="font-black text-gray-400 uppercase text-[10px]">Cấp ưu tiên</TableHead>
+                          <TableHead className="font-black text-gray-400 uppercase text-[10px]">Điểm / Lý do</TableHead>
+                          <TableHead className="font-black text-gray-400 uppercase text-[10px]">Thời gian chờ</TableHead>
+                          <TableHead className="font-black text-gray-400 uppercase text-[10px]">Hình thức</TableHead>
+                          <TableHead className="text-right px-8 font-black text-gray-400 uppercase text-[10px]">Hành động</TableHead>
+                       </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                       {loading ? (
+                          <TableRow><TableCell colSpan={7} className="text-center py-20 font-medium text-gray-400">Đang tải dữ liệu hàng đợi...</TableCell></TableRow>
+                       ) : queue.length === 0 ? (
+                          <TableRow><TableCell colSpan={7} className="text-center py-20 font-medium text-gray-400 italic">Chưa có bệnh nhân nào trong hàng đợi hôm nay.</TableCell></TableRow>
+                       ) : (
+                          queue.map((item, idx) => (
+                             <TableRow key={item.appointment_id} className="group hover:bg-indigo-50/30 transition-colors border-gray-50">
+                                <TableCell className="px-8 font-black text-2xl text-gray-300 group-hover:text-indigo-600 transition-colors">
+                                   {item.rank}
+                                </TableCell>
+                                <TableCell>
+                                   <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center font-bold text-gray-500">
+                                         {item.patient_name.charAt(0)}
+                                      </div>
+                                      <div>
+                                         <p className="font-bold text-gray-900">{item.patient_name}</p>
+                                         <p className="text-[10px] font-medium text-gray-400 uppercase">Mã: {item.code}</p>
+                                      </div>
+                                   </div>
+                                </TableCell>
+                                <TableCell>
+                                   <Badge className={`rounded-lg border-none font-black text-[10px] px-2 py-1 shadow-md ${getPriorityBadge(item.priority_level)}`}>
+                                      {item.priority_level}
+                                   </Badge>
+                                </TableCell>
+                                <TableCell>
+                                   <div className="space-y-1">
+                                      <p className="font-black text-indigo-600">{item.priority_score} điểm</p>
+                                      <p className="text-[10px] text-gray-500 font-medium line-clamp-1 italic">{item.priority_reason}</p>
+                                   </div>
+                                </TableCell>
+                                <TableCell>
+                                   <div className="flex items-center gap-1.5 text-gray-600 font-bold">
+                                      <Clock className="w-3.5 h-3.5" />
+                                      {item.wait_time} phút
+                                   </div>
+                                </TableCell>
+                                <TableCell>
+                                   <Badge variant="outline" className="rounded-lg border-gray-200 text-gray-500 font-black text-[9px] uppercase tracking-tighter">
+                                      {item.type}
+                                   </Badge>
+                                </TableCell>
+                                <TableCell className="text-right px-8">
+                                   <div className="flex justify-end gap-2">
+                                      <Button 
+                                         variant="ghost" 
+                                         size="sm" 
+                                         className="rounded-xl text-gray-400 hover:text-indigo-600"
+                                         onClick={() => setSelectedApt(item)}
+                                      >
+                                         Chi tiết
+                                      </Button>
+                                      <Button 
+                                         size="sm" 
+                                         className={`rounded-xl font-bold shadow-lg transition-all ${item.status === 'IN_PROGRESS' ? 'bg-green-500 hover:bg-green-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                         disabled={pushingId === item.appointment_id || item.status === 'IN_PROGRESS'}
+                                         onClick={() => handlePushNext(item.appointment_id)}
+                                      >
+                                         {item.status === 'IN_PROGRESS' ? (
+                                            <><UserCheck className="w-4 h-4 mr-1" /> Đã vào khám</>
+                                         ) : (
+                                            <><ArrowRight className="w-4 h-4 mr-1" /> Đẩy lượt kế</>
+                                         )}
+                                      </Button>
+                                   </div>
+                                </TableCell>
+                             </TableRow>
+                          ))
+                       )}
+                    </TableBody>
+                 </Table>
+              </CardContent>
+           </Card>
+        </div>
+
+        {/* Priority Detail Modal */}
+        <Dialog open={!!selectedApt} onOpenChange={() => setSelectedApt(null)}>
+           <DialogContent className="max-w-2xl rounded-[2.5rem] border-none shadow-3xl p-0 overflow-hidden">
+              <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-8 text-white">
+                 <DialogHeader>
+                    <div className="flex items-center gap-3 mb-2">
+                       <Brain className="w-6 h-6 fill-white/20" />
+                       <p className="text-xs font-black uppercase tracking-[0.2em] opacity-80">Phân tích ưu tiên AI</p>
+                    </div>
+                    <DialogTitle className="text-3xl font-black">{selectedApt?.patient_name}</DialogTitle>
+                 </DialogHeader>
               </div>
-            ) : triageItems
-                .filter(item => {
-                    if (filterPriority === 'high') {
-                        return item.priority?.toLowerCase() === 'critical' || item.priority?.toLowerCase() === 'high' || item.priority?.toLowerCase() === 'cao' || item.priority?.toLowerCase() === 'khẩn cấp';
-                    }
-                    return true;
-                })
-                .map((item) => (
-              <Card key={item.id} className="border-none shadow-lg hover:shadow-xl transition-all dark:bg-gray-800 rounded-3xl overflow-hidden group">
-                <CardContent className="p-0">
-                  <div className="flex flex-col md:flex-row">
-                    <div className={`w-2 md:w-3 ${getPriorityColor(item.priority)}`} />
-                    <div className="p-6 flex-1">
-                      <div className="flex flex-wrap items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center font-bold">
-                            {item.patient_name.charAt(0)}
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-bold">{item.patient_name}</h3>
-                            <Badge variant="outline" className={`mt-1 border-none ${getPriorityBadge(item.priority)}`}>
-                              Ưu tiên: {item.priority || 'Bình thường'}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
-                          <Activity className="w-4 h-4" />
-                          Phân loại: <span className="text-teal-600 dark:text-teal-400 font-bold">{item.suggested_specialty || 'Chưa xác định'}</span>
-                        </div>
-                      </div>
+              <div className="p-8 space-y-6">
+                 <div className="grid grid-cols-2 gap-4">
+                    <Card className="bg-gray-50 border-none rounded-2xl p-4">
+                       <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Mã lịch hẹn</p>
+                       <p className="font-black text-gray-900">{selectedApt?.code}</p>
+                    </Card>
+                    <Card className="bg-gray-50 border-none rounded-2xl p-4">
+                       <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Hình thức</p>
+                       <p className="font-black text-gray-900 uppercase">{selectedApt?.type}</p>
+                    </Card>
+                 </div>
 
-                      <div className="mt-6 p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700">
-                        <div className="flex items-start gap-3">
-                           <Brain className="w-5 h-5 text-purple-500 mt-1" />
-                          <div>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tóm tắt triệu chứng / Chẩn đoán</p>
-                            <p className="text-gray-700 dark:text-gray-300 mt-1 line-clamp-2">{item.summary}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-3 mt-6">
-                        <Button 
-                          className="flex-1 rounded-xl bg-gray-900 dark:bg-blue-600 hover:bg-gray-800 text-white"
-                          onClick={() => setSelectedItem(item)}
-                        >
-                          Xem chi tiết & Điều phối
-                        </Button>
-                      </div>
+                 <div className="space-y-4">
+                    <h3 className="font-black text-gray-900 uppercase text-xs tracking-widest">Cơ cấu điểm ưu tiên ({selectedApt?.priority_score}đ)</h3>
+                    <div className="p-6 bg-indigo-50/50 border border-indigo-100 rounded-[1.5rem] space-y-4">
+                       <div className="flex justify-between items-center">
+                          <span className="text-sm font-bold text-gray-600">Điểm Triage (AI):</span>
+                          <span className="font-black text-indigo-700">+ {selectedApt?.priority_score > 40 ? '40' : '20'}đ</span>
+                       </div>
+                       <div className="flex justify-between items-center">
+                          <span className="text-sm font-bold text-gray-600">Thời gian chờ:</span>
+                          <span className="font-black text-indigo-700">+ {selectedApt?.wait_time}đ</span>
+                       </div>
+                       <div className="pt-4 border-t border-indigo-100">
+                          <p className="text-xs font-bold text-indigo-600 mb-1 uppercase">Lý do hệ thống:</p>
+                          <p className="text-sm text-gray-700 font-medium leading-relaxed italic">"{selectedApt?.priority_reason}"</p>
+                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                 </div>
 
-          {/* Right Column: Stats & Legends */}
-          <div className="space-y-6">
-            <Card className="border-none shadow-lg dark:bg-gray-800 rounded-3xl">
-              <CardHeader>
-                <CardTitle className="text-lg">Tình trạng phân loại</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div 
-                  className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-colors ${filterPriority === 'high' ? 'bg-red-100 ring-2 ring-red-400' : 'bg-red-50 hover:bg-red-100'} dark:bg-red-950/30`}
-                  onClick={() => setFilterPriority(filterPriority === 'high' ? 'all' : 'high')}
-                >
-                  <span className="text-red-700 dark:text-red-400 font-bold text-sm">Cần ưu tiên</span>
-                  <span className="bg-red-500 text-white px-2 py-1 rounded-lg text-xs font-black">
-                    {triageItems.filter(i => i.priority?.toLowerCase() === 'critical' || i.priority?.toLowerCase() === 'high' || i.priority?.toLowerCase() === 'cao' || i.priority?.toLowerCase() === 'khẩn cấp').length}
-                  </span>
-                </div>
-                <div 
-                  className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-colors ${filterPriority === 'all' ? 'bg-blue-100 ring-2 ring-blue-400' : 'bg-blue-50 hover:bg-blue-100'} dark:bg-blue-950/30`}
-                  onClick={() => setFilterPriority('all')}
-                >
-                  <span className="text-blue-700 dark:text-blue-400 font-bold text-sm">Đang chờ (Tất cả)</span>
-                  <span className="bg-blue-500 text-white px-2 py-1 rounded-lg text-xs font-black">{triageItems.length}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-lg bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-3xl">
-              <CardContent className="p-6 text-center space-y-4">
-                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Brain className="w-8 h-8" />
-                </div>
-                <h3 className="font-bold text-lg">AI Phân Luồng</h3>
-                <p className="text-sm opacity-90">Sử dụng kết quả AI để tối ưu hóa thời gian chờ cho bệnh nhân.</p>
-                <Button 
-                  className="w-full bg-white text-indigo-600 hover:bg-gray-100 border-none"
-                  onClick={() => setShowReport(true)}
-                >
-                  Xem báo cáo hiệu quả
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Detail and Assignment Modal */}
-        <Dialog open={!!selectedItem} onOpenChange={(open) => {
-            if (!open) {
-                setSelectedItem(null);
-                setSelectedDoctorId('');
-            }
-        }}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-xl text-teal-700">
-                        <Activity className="w-6 h-6" />
-                        Chi tiết phân loại AI & Điều phối
-                    </DialogTitle>
-                </DialogHeader>
-
-                {selectedItem && (
-                    <div className="space-y-6 py-4">
-                        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
-                            <div>
-                                <p className="text-sm text-gray-500">Bệnh nhân</p>
-                                <p className="font-medium text-lg">{selectedItem.patient_name}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-sm text-gray-500">Cập nhật cuối</p>
-                                <p className="font-medium">
-                                    {selectedItem.time ? format(new Date(selectedItem.time), 'dd/MM/yyyy HH:mm', { locale: vi }) : 'N/A'}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <h3 className="font-semibold flex items-center gap-2 text-gray-700">
-                                <Activity className="w-4 h-4" />
-                                Tóm tắt triệu chứng
-                            </h3>
-                            <div className="p-4 bg-white border rounded-md text-gray-800 whitespace-pre-wrap">
-                                {selectedItem.summary}
-                            </div>
-                        </div>
-
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <h3 className="font-semibold text-purple-700">Chẩn đoán sơ bộ AI</h3>
-                                <div className="p-4 bg-purple-50 rounded-md text-purple-900 border border-purple-100 h-full">
-                                    {selectedItem.diagnosis}
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <h3 className="font-semibold text-blue-700">Chuyên khoa gợi ý</h3>
-                                <div className="p-4 bg-blue-50 rounded-md text-blue-900 border border-blue-100 font-medium h-full">
-                                    {selectedItem.suggested_specialty}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Assign Doctor Section */}
-                        <div className="pt-6 border-t space-y-4">
-                            <h3 className="font-semibold flex items-center gap-2 text-gray-800">
-                                <Send className="w-4 h-4" />
-                                Điều phối cho Bác sĩ phụ trách
-                            </h3>
-                            <div className="flex gap-4 items-end">
-                                <div className="flex-1 space-y-2">
-                                    <label className="text-sm font-medium text-gray-700">Chọn bác sĩ trực</label>
-                                    <Select value={selectedDoctorId} onValueChange={setSelectedDoctorId}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder={`Chọn bác sĩ ${selectedItem.suggested_specialty !== 'Nội tổng hợp' ? `chuyên khoa ${selectedItem.suggested_specialty}` : ''}...`} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {doctors.map((doctor) => (
-                                                <SelectItem key={doctor.id} value={doctor.id.toString()}>
-                                                    BS. {doctor.full_name} - {doctor.specialty || 'Chưa rõ'}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <Button
-                                    className="bg-teal-600 hover:bg-teal-700 text-white"
-                                    onClick={handleAssignDoctor}
-                                    disabled={assigning || !selectedDoctorId}
-                                >
-                                    {assigning ? 'Đang điều phối...' : 'Chuyển ca khám'}
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </DialogContent>
+                 <div className="pt-4 flex justify-end gap-3">
+                    <Button variant="outline" className="rounded-xl font-bold" onClick={() => setSelectedApt(null)}>Đóng</Button>
+                    <Button className="rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700" onClick={() => {
+                        handlePushNext(selectedApt.appointment_id);
+                        setSelectedApt(null);
+                    }}>Đẩy lượt ngay</Button>
+                 </div>
+              </div>
+           </DialogContent>
         </Dialog>
-
-        {/* AI Efficiency Report Modal */}
-        <Dialog open={showReport} onOpenChange={setShowReport}>
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-xl text-indigo-700">
-                        <Brain className="w-6 h-6" />
-                        Báo cáo hiệu quả AI Triage
-                    </DialogTitle>
-                    <CardDescription>Thống kê số liệu hệ thống AI phân luồng trong tháng này</CardDescription>
-                </DialogHeader>
-                <div className="space-y-6 py-4">
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-indigo-50 p-4 rounded-xl text-center">
-                            <p className="text-sm font-medium text-indigo-600 mb-1">Đã tiếp nhận</p>
-                            <p className="text-3xl font-black text-indigo-700">1,284</p>
-                            <p className="text-xs text-indigo-500 mt-1">ca bệnh</p>
-                        </div>
-                        <div className="bg-green-50 p-4 rounded-xl text-center">
-                            <p className="text-sm font-medium text-green-600 mb-1">Độ chính xác</p>
-                            <p className="text-3xl font-black text-green-700">94.2%</p>
-                            <p className="text-xs text-green-500 mt-1">chuyên khoa</p>
-                        </div>
-                        <div className="bg-purple-50 p-4 rounded-xl text-center">
-                            <p className="text-sm font-medium text-purple-600 mb-1">Thời gian tiết kiệm</p>
-                            <p className="text-3xl font-black text-purple-700">320</p>
-                            <p className="text-xs text-purple-500 mt-1">giờ làm việc</p>
-                        </div>
-                    </div>
-                    
-                    <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
-                        <h4 className="font-semibold text-gray-800 mb-3">Lợi ích mang lại:</h4>
-                        <ul className="space-y-3">
-                            <li className="flex items-start gap-2 text-sm text-gray-600">
-                                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                                <span>Giảm 60% thời gian chờ đợi ở khâu lấy số và phân loại ban đầu.</span>
-                            </li>
-                            <li className="flex items-start gap-2 text-sm text-gray-600">
-                                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                                <span>Phát hiện sớm và đánh dấu cảnh báo đỏ cho 42 ca cấp cứu khẩn cấp.</span>
-                            </li>
-                            <li className="flex items-start gap-2 text-sm text-gray-600">
-                                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                                <span>Giảm 85% tải công việc khai thác bệnh sử cho nhân viên lễ tân.</span>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div className="pt-4 border-t text-center">
-                        <Button onClick={() => setShowReport(false)} className="bg-indigo-600 hover:bg-indigo-700">Đóng báo cáo</Button>
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
-
       </div>
     </Layout>
   );

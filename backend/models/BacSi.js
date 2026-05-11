@@ -26,7 +26,11 @@ const BacSi = sequelize.define('BacSi', {
     AnhBangCap: { type: DataTypes.TEXT }, // JSON array of certificate image URLs
     
     LichLamViec: { type: DataTypes.TEXT }, // JSON data for recurring schedule
-    TrangThai: { type: DataTypes.ENUM('HoatDong', 'NgungHoatDong'), defaultValue: 'HoatDong' }
+    TrangThai: { type: DataTypes.ENUM('HoatDong', 'NgungHoatDong'), defaultValue: 'HoatDong' },
+    TrangThaiVanHanh: { 
+        type: DataTypes.ENUM('AVAILABLE', 'BUSY', 'ON_BREAK', 'OFFLINE'), 
+        defaultValue: 'AVAILABLE' 
+    }
 }, { tableName: 'bacsi', timestamps: true, createdAt: 'NgayTao', updatedAt: 'NgayCapNhat' });
 
 module.exports = BacSi;

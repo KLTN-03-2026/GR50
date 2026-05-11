@@ -250,33 +250,27 @@ function DoctorCard({ doctor, onBook }) {
         )}
         
         <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-           {doctor.facilities && doctor.facilities.length > 0 ? (
-             <div className="flex items-start gap-2 text-sm">
-               <MapPin className="w-4 h-4 text-teal-500 mt-0.5 flex-shrink-0" />
-               <div>
-                 {doctor.facilities.length === 1 ? (
-                   <>
-                     <p className="text-gray-700 dark:text-gray-300">
-                       <span className="font-medium">Cơ sở: </span>
-                       {doctor.facilities[0].name}
-                     </p>
-                     <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
-                       {doctor.facilities[0].address}
-                     </p>
-                   </>
-                 ) : (
-                   <>
-                     <p className="text-gray-700 dark:text-gray-300 font-medium">Khám tại {doctor.facilities.length} cơ sở</p>
-                     <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
-                       Chính: {doctor.facilities.find(f => f.is_primary)?.name || doctor.facilities[0].name}
-                     </p>
-                   </>
-                 )}
-               </div>
-             </div>
-           ) : (
-             <p className="text-sm text-gray-500 italic">Chưa có thông tin cơ sở</p>
-           )}
+            {doctor.facilities && doctor.facilities.length > 0 ? (
+              <div className="flex items-start gap-2 text-sm">
+                <MapPin className="w-4 h-4 text-teal-500 mt-0.5 flex-shrink-0" />
+                {(() => {
+                  const primaryFac = doctor.facilities.find(f => f.is_primary) || doctor.facilities[0];
+                  return (
+                    <div>
+                      <p className="text-gray-700 dark:text-gray-300">
+                        <span className="font-medium">Cơ sở: </span>
+                        {primaryFac.name}
+                      </p>
+                      <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+                        {primaryFac.address}
+                      </p>
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 italic">Chưa có thông tin cơ sở</p>
+            )}
         </div>
       </div>
 
@@ -300,7 +294,7 @@ function DoctorCard({ doctor, onBook }) {
           }}
           className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600"
         >
-          {doctor.facilities?.length > 1 ? 'Chọn cơ sở' : 'Đặt lịch'}
+          Đặt lịch
         </Button>
       </div>
     </div>

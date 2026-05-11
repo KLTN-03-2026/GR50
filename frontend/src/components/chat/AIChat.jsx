@@ -4,16 +4,17 @@ import { API } from '@/config';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Bot, User, Send, Loader2, Sparkles, BrainCircuit, MapPin, Navigation, PhoneCall, CalendarPlus, AlertTriangle } from 'lucide-react';
+import { Bot, User, Send, Loader2, Sparkles, BrainCircuit, MapPin, Navigation, PhoneCall, CalendarPlus, AlertTriangle, X, History, Image as ImageIcon, Paperclip, Mic } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import MapDirections from '@/components/map/MapDirections';
 
-export default function AIChat() {
+export default function AIChat({ isFloating = false, onClose }) {
   const { token } = useContext(AuthContext);
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Xin chào! Tôi là trợ lý AI y tế MediSched. Tôi có thể giúp bạn phân tích triệu chứng hoặc giải đáp thắc mắc về y khoa. Bạn đang cảm thấy thế nào?' }
+    { role: 'assistant', content: 'Xin chào! Tôi là trợ lý AI y tế MediSched AI. Tôi có thể giúp gì cho bạn?' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -72,7 +73,10 @@ export default function AIChat() {
       }]);
     } catch (error) {
       console.error('AI Chat error:', error);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Xin lỗi, tôi đang gặp sự cố kết nối. Vui lòng thử lại sau.' }]);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'Hiện tại hệ thống AI đang ở chế độ demo. Bạn có thể mô tả triệu chứng như đau đầu, sốt, ho, đau bụng để tôi gợi ý chuyên khoa phù hợp.' 
+      }]);
     } finally {
       setLoading(false);
     }
@@ -98,48 +102,45 @@ export default function AIChat() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+    <div className={`flex flex-col h-full bg-white dark:bg-gray-900 overflow-hidden ${isFloating ? '' : 'rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] border border-gray-100 dark:border-gray-800'}`}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-teal-500 p-6 flex items-center justify-between text-white">
-        <div className="flex items-center gap-4">
-          <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md shadow-inner">
-            <BrainCircuit className="w-8 h-8" />
+      <div className="bg-[#13b4b9] px-4 py-3 flex items-center justify-between text-white rounded-t-2xl">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-black flex items-center justify-center border-2 border-[#13b4b9]">
+             <img src="/ai-chat-icon.png" alt="Avatar" className="w-full h-full object-cover" />
           </div>
-          <div>
-            <h3 className="font-bold text-xl flex items-center gap-2">
-              Trợ lý AI Triage
-              <Sparkles className="w-4 h-4 text-yellow-300 fill-yellow-300" />
+          <div className="flex flex-col">
+            <h3 className="font-bold text-[15px] leading-tight">
+              Trợ lý AI y tế
             </h3>
-            <p className="text-xs text-white/70 flex items-center gap-1 mt-0.5">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              Thông minh & Phân luồng tự động
+            <p className="text-[11px] text-white/90 leading-tight">
+              Phân tích đa phương tiện 24/7
             </p>
           </div>
         </div>
+        
+        {isFloating && onClose && (
+          <button 
+            onClick={onClose}
+            className="p-1.5 hover:bg-white/20 rounded-full transition-all text-white"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/50 dark:bg-gray-900/30">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
         {messages.map((msg, idx) => (
-          <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''} animate-in slide-in-from-bottom-2 duration-300`}>
+          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
             <div className={`
-              w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm mt-1
-              ${msg.role === 'user' ? 'bg-indigo-100 text-indigo-600' : 'bg-purple-100 text-purple-600'}
+              max-w-[85%] rounded-2xl px-4 py-3 shadow-sm text-[14px] leading-relaxed
+              ${msg.role === 'user' 
+                ? 'bg-[#13b4b9] text-white rounded-br-sm' 
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-100 dark:border-gray-700 rounded-bl-sm'
+              }
             `}>
-              {msg.role === 'user' ? <User className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
-            </div>
-            
-            <div className={`flex flex-col gap-3 max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                <div className={`
-                rounded-2xl px-6 py-4 text-sm leading-relaxed shadow-sm
-                ${msg.role === 'user' 
-                    ? 'bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-tr-none' 
-                    : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-gray-700 rounded-tl-none'}
-                `}>
-                {msg.content}
-                </div>
-
-                {/* Render Rich UI for AI Response */}
+              <div className="whitespace-pre-wrap">{msg.content}</div>  {/* Render Rich UI for AI Response */}
                 {msg.raw && (
                     <div className="w-full space-y-3 pl-2">
                         {/* Priority Badge */}
@@ -180,19 +181,19 @@ export default function AIChat() {
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="mt-3 grid grid-cols-3 gap-2">
+                                            <div className="mt-3 grid grid-cols-2 gap-2">
                                                 <Button 
                                                   size="sm" 
                                                   variant="outline" 
-                                                  className="h-8 text-[10px] sm:text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-1" 
-                                                  onClick={() => window.open(`/facilities/${facility.facility_id}`, '_blank')}
+                                                  className="h-8 text-[11px] font-medium border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-2" 
+                                                  onClick={() => window.open(`/facility/${facility.facility_id}`, '_blank')}
                                                 >
                                                     Xem chi tiết
                                                 </Button>
                                                 <Button 
                                                   size="sm" 
                                                   variant="outline" 
-                                                  className="h-8 text-[10px] sm:text-xs border-teal-200 text-teal-700 hover:bg-teal-50 px-1" 
+                                                  className="h-8 text-[11px] font-medium border-teal-200 text-teal-700 hover:bg-teal-50 px-2" 
                                                   onClick={() => {
                                                     if (location && facility.lat && facility.lng) {
                                                       setSelectedDestination({
@@ -205,14 +206,14 @@ export default function AIChat() {
                                                     }
                                                   }}
                                                 >
-                                                    <MapPin className="w-3 h-3 mr-1 hidden sm:inline" /> Chỉ đường
+                                                    <MapPin className="w-3 h-3 mr-1" /> Chỉ đường
                                                 </Button>
                                                 <Button 
                                                   size="sm" 
-                                                  className="h-8 text-[10px] sm:text-xs bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white shadow-md shadow-teal-500/20 px-1"
-                                                  onClick={() => window.open(`/booking?facility_id=${facility.facility_id}`, '_blank')}
+                                                  className="col-span-2 h-8 text-[12px] font-medium bg-[#13b4b9] hover:bg-[#0ca3a8] text-white shadow-sm px-2"
+                                                  onClick={() => window.open(`/patient/search-doctors?facility_id=${facility.facility_id}`, '_blank')}
                                                 >
-                                                    <CalendarPlus className="w-3 h-3 mr-1 hidden sm:inline" /> Đặt lịch
+                                                    <CalendarPlus className="w-3.5 h-3.5 mr-1.5" /> Đặt lịch khám
                                                 </Button>
                                             </div>
                                         </Card>
@@ -226,13 +227,10 @@ export default function AIChat() {
           </div>
         ))}
         {loading && (
-          <div className="flex gap-4 animate-pulse">
-            <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 mt-1">
-              <Bot className="w-6 h-6" />
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl rounded-tl-none px-6 py-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-purple-500" />
-              <span className="text-sm text-gray-400 font-medium">AI đang phân tích triệu chứng...</span>
+          <div className="flex justify-start animate-pulse">
+            <div className="max-w-[85%] rounded-2xl rounded-bl-sm px-4 py-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-[#13b4b9]" />
+              <span className="text-sm text-gray-500">Đang phân tích...</span>
             </div>
           </div>
         )}
@@ -295,20 +293,27 @@ export default function AIChat() {
                 </div>
             </div>
         )}
-        <form onSubmit={handleSend} className="flex gap-3 bg-gray-50 dark:bg-gray-800 p-2 rounded-2xl border border-gray-100 dark:border-gray-700 focus-within:border-purple-500 transition-all">
+        <form onSubmit={handleSend} className="flex gap-2 items-center bg-gray-50 dark:bg-gray-800 p-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition-all mx-2 mb-2">
+          <div className="flex gap-2 text-gray-400 pl-3">
+            <button type="button" className="hover:text-gray-600 transition-colors"><ImageIcon className="w-4 h-4" /></button>
+            <button type="button" className="hover:text-gray-600 transition-colors"><Paperclip className="w-4 h-4" /></button>
+          </div>
           <Input 
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Mô tả triệu chứng hoặc câu hỏi của bạn..."
-            className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-base shadow-none"
+            placeholder="Nhập triệu chứng..."
+            className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-sm shadow-none px-2 text-gray-700 h-8"
           />
-          <Button 
-            type="submit" 
-            disabled={!input.trim() || loading}
-            className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-lg shadow-purple-500/20 shrink-0"
-          >
-            <Send className="w-5 h-5" />
-          </Button>
+          <div className="flex gap-3 text-gray-400 items-center pr-1">
+             <button type="button" className="hover:text-gray-600 transition-colors"><Mic className="w-4 h-4" /></button>
+             <Button 
+                type="submit" 
+                disabled={!input.trim() || loading}
+                className={`w-8 h-8 rounded-full shadow-none shrink-0 p-0 flex items-center justify-center transition-colors ${input.trim() && !loading ? 'bg-[#13b4b9] hover:bg-[#0ca3a8] text-white' : 'bg-gray-200 text-white'}`}
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+          </div>
         </form>
       </div>
     </div>

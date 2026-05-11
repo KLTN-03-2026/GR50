@@ -363,7 +363,7 @@ export default function LandingPage() {
                       toast.info("Vui lòng đăng nhập để sử dụng Tư vấn AI");
                       navigate('/login');
                     } else {
-                      window.dispatchEvent(new Event('toggle-floating-chat'));
+                      navigate('/patient/ai-consultation');
                     }
                   }}
                   className="relative overflow-hidden bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-xl hover:shadow-2xl hover:shadow-violet-500/30 transform hover:-translate-y-1 transition-all duration-300 text-lg px-8 py-6 h-auto rounded-full group border-0"
@@ -371,7 +371,7 @@ export default function LandingPage() {
                   <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 skew-x-12 -translate-x-full"></div>
                   <div className="flex items-center gap-3 relative z-10">
                     <Brain className="w-6 h-6 animate-pulse" />
-                    <span className="font-bold">Tư vấn sức khỏe AI miễn phí</span>
+                    <span className="font-bold">Tư vấn sức khỏe AI 2.0</span>
                   </div>
                 </Button>
               </div>
